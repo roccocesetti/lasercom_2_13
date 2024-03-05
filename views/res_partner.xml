@@ -1,0 +1,221 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+	<template id="assets_backend_partner" name="custom_assets_kanban_view"
+		inherit_id="web.assets_backend">
+		<xpath expr="." position="inside">
+			<script type="text/javascript"
+				src="/lasercom/static/src/js/custom.js"></script>
+		</xpath>
+	</template>
+
+	<!--
+    <record id="contacts.action_contacts" model="ir.actions.act_window">
+        <field name="name">Res partner</field>
+        <field name="type">ir.actions.act_window</field>
+        <field name="res_model">res.partner</field>
+        <field name="view_mode">kanban,list,form</field>
+    </record>
+    -->
+
+	<record id="res_partner_search_inherit" model="ir.ui.view">
+		<field name="name">res.partner.search.inherit</field>
+		<field name="model">res.partner</field>
+		<field name="inherit_id" ref="base.view_res_partner_filter" />
+		<field name="arch" type="xml">
+			<xpath expr="//search/field[@name='parent_id']" position="replace">
+				<field name="name" domain="[('is_company', '=', True)]"
+					string="Nome cliente"
+					filter_domain="[('display_name', 'ilike', self)]" />
+				<field name="street" string="Via"
+					filter_domain="[('street', 'ilike', self)]" />
+				<field name="city" string="Città"
+					filter_domain="[('city', 'ilike', self)]" />
+				<field name="state_id" operator="child_of" string="Provincia"
+					filter_domain="[('state_id.name', 'ilike', self)]" />
+			</xpath>
+			<xpath expr="//search/field[@name='name']" position="attributes">
+				<attribute name="invisible">1</attribute>
+			</xpath>
+			<xpath expr="//search/field[@name='email']" position="attributes">
+				<attribute name="invisible">1</attribute>
+			</xpath>
+			<xpath expr="//search/field[@name='category_id']"
+				position="attributes">
+				<attribute name="invisible">1</attribute>
+			</xpath>
+			<xpath expr="//search/field[@name='phone']" position="attributes">
+				<attribute name="invisible">1</attribute>
+			</xpath>
+			<xpath expr="//search/field[@name='user_id']" position="attributes">
+				<attribute name="invisible">1</attribute>
+			</xpath>
+			<xpath expr="//search/filter[@name='type_person']"
+				position="attributes">
+				<attribute name="invisible">1</attribute>
+			</xpath>
+			<xpath expr="//search/filter[@name='type_company']"
+				position="attributes">
+				<attribute name="invisible">1</attribute>
+			</xpath>
+			<xpath expr="//search//group/filter[@name='salesperson']"
+				position="attributes">
+				<attribute name="invisible">1</attribute>
+			</xpath>
+			<xpath expr="//search/filter[@name='type_company']" position="after">
+				<filter string="Clienti" name="category_id_clienti"
+					domain="[('category_id', '=', 'Clienti')]" />
+				<filter string="Potenziali" name="category_id_potenziali"
+					domain="[('category_id', '=', 'Potenziali')]" />
+			</xpath>
+		</field>
+	</record>
+
+	<record id="res_partner_view_inherit" model="ir.ui.view">
+		<field name="name">res.partner.form.inherit</field>
+		<field name="model">res.partner</field>
+		<field name="inherit_id" ref="base.view_partner_form" />
+		<field name="arch" type="xml">
+			<!--
+            <xpath expr="//group[@name='sale']/field[@name='user_id']"
+			position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+            -->
+			<xpath expr="//group[@name='sale']/field[@name='user_id']"
+				position="after">
+				<field name="venditore_ids" widget="many2many_tags" />
+			</xpath>
+			<xpath expr="//field[@name='vat']" position="after">
+				<field name="prodotto" />
+				<field name="data_installazione" widget="date" />
+			</xpath>
+			<xpath expr="//field[@name='category_id']" position="after">
+				<field name="rivendita" widget="char" />
+			</xpath>
+			<xpath expr="//field[@name='website']" position="replace">
+				<field name="website" invisible="1" />
+			</xpath>
+
+		</field>
+	</record>
+
+	<record id="res_partner_tree_view_inherit" model="ir.ui.view">
+		<field name="name">res.partner.tree.inherit</field>
+		<field name="model">res.partner</field>
+		<field name="inherit_id" ref="base.view_partner_tree" />
+		<field name="arch" type="xml">
+			<xpath expr="//field[@name='vat']" position="after">
+				<field name="data_installazione" string="Data installazione" />
+				<field name="write_date" string="Ultima modifica" />
+			</xpath>
+		</field>
+	</record>
+
+	<record id="res_partner_kanban_inherit" model="ir.ui.view">
+		<field name="name">res.partner.kanban.inherit</field>
+		<field name="model">res.partner</field>
+		<field name="inherit_id" ref="base.res_partner_kanban_view" />
+		<field name="arch" type="xml">
+			<xpath expr="//kanban/templates/t//div" position="replace">
+				<div
+					class="oe_kanban_global_click o_kanban_record_has_image_fill o_res_partner_kanban">
+					<t t-if="!record.is_company.raw_value">
+						<t t-if="record.type.raw_value === 'delivery'"
+							t-set="placeholder"
+							t-value="'/base/static/img/truck.png'" />
+						<t t-elif="record.type.raw_value === 'invoice'"
+							t-set="placeholder"
+							t-value="'/base/static/img/money.png'" />
+						<t t-else="" t-set="placeholder"
+							t-value="'/base/static/img/avatar_grey.png'" />
+						<div class="o_kanban_image_fill_left d-none d-md-block"
+							t-attf-style="background-image:url('#{kanban_image('res.partner', 'image_128', record.id.raw_value,  placeholder)}')">
+							<img class="o_kanban_image_inner_pic"
+								t-if="record.parent_id.raw_value"
+								t-att-alt="record.parent_id.value"
+								t-att-src="kanban_image('res.partner', 'image_128', record.parent_id.raw_value)" />
+						</div>
+						<div class="o_kanban_image d-md-none"
+							t-attf-style="background-image:url('#{kanban_image('res.partner', 'image_128', record.id.raw_value,  placeholder)}')">
+							<img class="o_kanban_image_inner_pic"
+								t-if="record.parent_id.raw_value"
+								t-att-alt="record.parent_id.value"
+								t-att-src="kanban_image('res.partner', 'image_128', record.parent_id.raw_value)" />
+						</div>
+					</t>
+					<t t-else="">
+						<t t-set="placeholder"
+							t-value="'/base/static/img/company_image.png'" />
+						<div class="o_kanban_image" style="margin-left: 0px;">
+							<field name="image_1920" widget="image"
+								src="kanban_image('res.partner', 'image_128', record.id.raw_value)"
+								class="oe_avatar" nolabel="1"
+								options="{'image_preview': 'image_128'}" />
+						</div>
+					</t>
+					<div class="oe_kanban_details">
+						<strong class="o_kanban_record_title oe_partner_heading">
+							<field name="display_name" />
+						</strong>
+						<div
+							class="o_kanban_tags_section oe_kanban_partner_categories" />
+						<ul>
+							<li
+								t-if="record.parent_id.raw_value and !record.function.raw_value">
+								<field name="parent_id" />
+							</li>
+							<li
+								t-if="!record.parent_id.raw_value and record.function.raw_value">
+								<field name="function" />
+							</li>
+							<li
+								t-if="record.city.raw_value and !record.country_id.raw_value">
+								<field name="city" />
+							</li>
+							<li
+								t-if="!record.city.raw_value and record.country_id.raw_value">
+								<field name="country_id" />
+							</li>
+							<li
+								t-if="record.city.raw_value and record.country_id.raw_value"><field
+									name="city" />, <field name="country_id" />
+							</li>
+							<li>
+								<span class="text-muted">
+									<field name="industry_id" />
+								</span>
+							</li>
+							<li>
+								<field name="category_id"
+									widget="many2many_tags"
+									options="{'color_field': 'color', 'no_create_edit': True}" />
+							</li>
+							<li>
+								<t t-foreach="get_m2m_data('venditori_ids')"
+									t-as="category_data">
+									<t
+										t-esc="category_data.data['display_name']" />
+								</t>
+							</li>
+						</ul>
+						<div class="oe_kanban_partner_links" />
+					</div>
+				</div>
+			</xpath>
+		</field>
+	</record>
+
+	<record id="res_partner_category_form_inherit" model="ir.ui.view">
+		<field name="name">res.partner.category.form.inherit</field>
+		<field name="model">res.partner.category</field>
+		<field name="inherit_id" ref="base.view_partner_category_form" />
+		<field name="arch" type="xml">
+			<xpath expr="//field[@name='parent_id']" position="after">
+				<field name="color" />
+			</xpath>
+		</field>
+	</record>
+
+
+</odoo>

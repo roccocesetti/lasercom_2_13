@@ -1,0 +1,283 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+	<template id="assets_backend_crm" name="custom_assets_crm_kanban_view"
+		inherit_id="web.assets_backend">
+		<xpath expr="." position="inside">
+			<link rel="stylesheet" href="/lasercom/static/src/css/custom.css" />
+		</xpath>
+	</template>
+
+	<record id="crm_lead_search_inherit" model="ir.ui.view">
+		<field name="name">crm.lead.search.inherit</field>
+		<field name="model">crm.lead</field>
+		<field name="inherit_id" ref="crm.view_crm_case_opportunities_filter" />
+		<field name="arch" type="xml">
+			<xpath expr="//search/field[@name='partner_id']" position="replace">
+				<field name="partner_id" operator="child_of"
+					string="Nome cliente"
+					filter_domain="[('partner_id.name', 'ilike', self)]" />
+				<field name="partner_id" operator="child_of" string="Via"
+					filter_domain="[('street', 'ilike', self)]" />
+				<field name="partner_id" operator="child_of" string="Città"
+					filter_domain="[('city', 'ilike', self)]" />
+				<field name="partner_id" operator="child_of" string="Provincia"
+					filter_domain="[('partner_id.state_id', 'ilike', self)]" />
+			</xpath>
+			<xpath expr="//search/field[@name='name']" position="attributes">
+				<attribute name="invisible">1</attribute>
+			</xpath>
+			<xpath expr="//search/field[@name='tag_ids']" position="attributes">
+				<attribute name="invisible">1</attribute>
+			</xpath>
+			<xpath expr="//search/field[@name='user_id']" position="attributes">
+				<attribute name="invisible">1</attribute>
+			</xpath>
+			<xpath expr="//search/field[@name='team_id']" position="attributes">
+				<attribute name="invisible">1</attribute>
+			</xpath>
+			<xpath expr="//search/field[@name='stage_id']" position="attributes">
+				<attribute name="invisible">1</attribute>
+			</xpath>
+			<xpath expr="//search/field[@name='country_id']"
+				position="attributes">
+				<attribute name="invisible">1</attribute>
+			</xpath>
+			<xpath expr="//search/field[@name='city']" position="attributes">
+				<attribute name="invisible">1</attribute>
+			</xpath>
+			<xpath expr="//search/filter[@name='creation_date']"
+				position="attributes">
+				<attribute name="invisible">1</attribute>
+			</xpath>
+			<xpath expr="//search/filter[@name='close_date']"
+				position="attributes">
+				<attribute name="invisible">1</attribute>
+			</xpath>
+			<xpath expr="//search/filter[@name='won']" position="attributes">
+				<attribute name="invisible">1</attribute>
+			</xpath>
+			<xpath expr="//search/filter[@name='lost']" position="attributes">
+				<attribute name="invisible">1</attribute>
+			</xpath>
+			<xpath expr="//search/filter[@name='open_opportunities']"
+				position="attributes">
+				<attribute name="invisible">1</attribute>
+			</xpath>
+			<xpath expr="//search/filter[@name='unassigned']"
+				position="attributes">
+				<attribute name="invisible">1</attribute>
+			</xpath>
+			<xpath expr="//search/filter[@name='assigned_to_me']"
+				position="attributes">
+				<attribute name="invisible">1</attribute>
+			</xpath>
+			<xpath expr="//search/filter[@name='message_needaction']"
+				position="attributes">
+				<attribute name="invisible">1</attribute>
+			</xpath>
+			<xpath expr="//search/group/filter[@name='compaign']"
+				position="attributes">
+				<attribute name="invisible">1</attribute>
+			</xpath>
+			<xpath expr="//search/group/filter[@name='medium']"
+				position="attributes">
+				<attribute name="invisible">1</attribute>
+			</xpath>
+			<xpath expr="//search/group/filter[@name='source']"
+				position="attributes">
+				<attribute name="invisible">1</attribute>
+			</xpath>
+			<xpath expr="//search/group/filter[@name='lostreason']"
+				position="attributes">
+				<attribute name="invisible">1</attribute>
+			</xpath>
+			<xpath expr="//search/filter[@name='assigned_to_me']"
+				position="before">
+				<filter string="Clienti" name="partner_id_category_id_clienti"
+					domain="[('partner_id.category_id', '=', 'Clienti')]" />
+				<filter string="Potenziali"
+					name="partner_id_category_id_potenziali"
+					domain="[('partner_id.category_id', '=', 'Potenziali')]" />
+			</xpath>
+			<xpath expr="//search/filter[@name='assigned_to_me']"
+				position="after">
+				<filter string="Data instalazione" name="data_installazione"
+					date="data_installazione" />
+			</xpath>
+		</field>
+	</record>
+
+	<record id="crm_lead_quick_create_opportunity_form_inherit"
+		model="ir.ui.view">
+		<field name="name">crm.lead.quick_create_opportunity_form.inherit</field>
+		<field name="model">crm.lead</field>
+		<field name="inherit_id" ref="crm.quick_create_opportunity_form" />
+		<field name="arch" type="xml">
+			<xpath expr="//field[@name='planned_revenue']" position="attributes">
+				<attribute name="invisible">1</attribute>
+			</xpath>
+			<xpath expr="//field[@name='company_currency']"
+				position="attributes">
+				<attribute name="invisible">1</attribute>
+			</xpath>
+		</field>
+	</record>
+
+	<record id="crm_lead_form_inherit" model="ir.ui.view">
+		<field name="name">crm.lead.form.inherit</field>
+		<field name="model">crm.lead</field>
+		<field name="inherit_id" ref="crm.crm_lead_view_form" />
+		<field name="arch" type="xml">
+			<xpath expr="//sheet/div[@class='oe_title']/h2"
+				position="attributes">
+				<attribute name="invisible">1</attribute>
+			</xpath>
+			<xpath expr="//field[@name='user_id']" position="attributes">
+				<attribute name="invisible">1</attribute>
+			</xpath>
+			<xpath expr="//field[@name='team_id']" position="attributes">
+				<attribute name="invisible">1</attribute>
+			</xpath>
+			<xpath
+				expr="//notebook/page[@name='lead']/group/group[1]/field[@name='website']"
+				position="attributes">
+				<attribute name="invisible">1</attribute>
+			</xpath>
+			<xpath
+				expr="//notebook/page[@name='lead']/group/group[1]/field[@name='lang_id']"
+				position="attributes">
+				<attribute name="invisible">1</attribute>
+			</xpath>
+			<xpath expr="//notebook/page[@name='lead']/group/group[3]"
+				position="attributes">
+				<attribute name="invisible">1</attribute>
+			</xpath>
+			<xpath
+				expr="//notebook/page[@name='lead']/group/group[@name='Misc']"
+				position="attributes">
+				<attribute name="invisible">1</attribute>
+			</xpath>
+			<xpath expr="//notebook/page[@name='lead']" position="attributes">
+				<attribute name="autofocus" add="autofocus" separator=" " />
+			</xpath>
+		</field>
+	</record>
+
+	<record id="crm_lead_kanban_view_inherit" model="ir.ui.view">
+		<field name="name">crm.lead.crm_lead_kanban_view.inherit</field>
+		<field name="model">crm.lead</field>
+		<field name="inherit_id" ref="crm.crm_case_kanban_view_leads" />
+		<field name="arch" type="xml">
+			<xpath expr="//kanban/templates/t/div" position="replace">
+				<div
+					t-attf-class="#{!selection_mode ? kanban_color(record.color.raw_value) : ''} oe_kanban_global_click">
+					<div class="o_dropdown_kanban dropdown">
+						<a class="dropdown-toggle o-no-caret btn" role="button"
+							data-toggle="dropdown" data-display="static"
+							href="#" aria-label="Dropdown menu"
+							title="Dropdown menu">
+							<span class="fa fa-ellipsis-v" />
+						</a>
+						<div class="dropdown-menu" role="menu">
+							<t t-if="widget.editable">
+								<a role="menuitem" type="edit"
+									class="dropdown-item">Edit</a>
+							</t>
+							<t t-if="widget.deletable">
+								<a role="menuitem" type="delete"
+									class="dropdown-item">Delete</a>
+							</t>
+							<ul class="oe_kanban_colorpicker" data-field="color" />
+						</div>
+					</div>
+					<div class="oe_kanban_content">
+						<div class="o_kanban_record_subtitle">
+							<strong t-if="record.partner_id.value">
+								<t t-esc="record.partner_id.value" />
+							</strong>
+						</div>
+						<div>
+							<span class="text-muted o_kanban_record_title">
+								<field name="street"
+									attrs="{'invisible': [('street', '==', False)]}" />
+								<t t-if="record.city.value"> , <field
+										name="city" />
+								</t>
+							</span>
+						</div>
+						<div>
+							<span class="text-muted o_kanban_record_title">
+								<t t-if="record.partner_address_phone.value">
+									<field name="partner_address_phone"
+										widget="phone" readonly="1"
+										attrs="{'invisible': [('partner_address_phone', '==', False)]}" />
+								</t>
+								<t t-if="record.mobile">
+									<span class="pull-right">
+										<field name="mobile" widget="phone"
+											readonly="1"
+											attrs="{'invisible': [('mobile', '==', False)]}" />
+									</span>
+								</t>
+							</span>
+						</div>
+						<div t-if="record.date_deadline.value">
+							<span class="o_kanban_record_title">Chiusura
+								prevista: <span class="text-muted">
+									<field name="date_deadline" />
+								</span></span>
+						</div>
+						<div>
+							<field name="tag_ids" widget="many2many_tags"
+								options="{'color_field': 'color'}" />
+						</div>
+						<div>
+							<t t-esc="record.partner_id.category_id" />
+						</div>
+
+						<div class="o_kanban_record_bottom">
+							<div class="oe_kanban_bottom_left">
+								<field name="priority" widget="priority"
+									groups="base.group_user" />
+								<t
+									t-if="record.message_needaction_counter.raw_value">
+									<span role="alert"
+										class="oe_kanban_mail_new"
+										title="Unread Messages">
+										<i class="fa fa-comments"
+											aria-label="Unread messages"
+											role="img" />
+										<t
+											t-raw="record.message_needaction_counter.raw_value" />
+									</span>
+								</t>
+								<field name="activity_ids"
+									widget="kanban_activity" />
+							</div>
+							<div class="oe_kanban_bottom_right">
+								<img
+									t-att-src="kanban_image('res.partner', 'image_128', record.partner_id.raw_value)"
+									t-att-title="record.partner_id.value"
+									t-att-alt="record.partner_id.value"
+									class="oe_kanban_avatar" />
+							</div>
+						</div>
+					</div>
+				</div>
+			</xpath>
+		</field>
+	</record>
+
+	<record id="crm_lead_tree_opportunity_view_inherit" model="ir.ui.view">
+		<field name="name">crm.lead.tree.opportunity.inherit</field>
+		<field name="model">crm.lead</field>
+		<field name="inherit_id" ref="crm.crm_case_tree_view_oppor" />
+		<field name="arch" type="xml">
+			<xpath expr="//field[@name='partner_id']" position="after">
+				<field name="data_installazione" optional="show" />
+			</xpath>
+		</field>
+	</record>
+
+</odoo>

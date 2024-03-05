@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+	<!--
+    <record id="res_partner_rule_venditori" model="ir.rule">
+        <field name="name">res.partner.venditore</field>
+        <field name="model_id" ref="base.model_res_partner" />
+        <field name="global" eval="True" />
+        <field name="groups" eval="[(4, ref('group_venditore'))]" />
+        <field name="domain_force"
+	eval="['|',('venditore_ids','in',user.id),('venditore_ids','=',False)]" />
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+    -->
+
+</odoo>

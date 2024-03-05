@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+	<record id="res_country_state_tree_view_inherit" model="ir.ui.view">
+		<field name="name">res.country.state.tree.inherit</field>
+		<field name="model">res.country.state</field>
+		<field name="inherit_id" ref="base.view_country_state_tree" />
+		<field name="arch" type="xml">
+			<xpath expr="//field[@name='country_id']" position="after">
+				<field name="venditore_ids" widget="many2many_tags" />
+			</xpath>
+		</field>
+	</record>
+
+</odoo>

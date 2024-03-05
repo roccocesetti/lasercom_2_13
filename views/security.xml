@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+	<record id="res_partner_management" model="ir.module.category">
+		<field name="name">Contatti</field>
+		<field name="description">Livello di accesso per Contatti</field>
+		<field name="sequence">1</field>
+	</record>
+
+	<record id="group_venditore" model="res.groups">
+		<field name="name">Venditore</field>
+		<field name="category_id" ref="res_partner_management" />
+	</record>
+
+	<record id="group_telemarketing" model="res.groups">
+		<field name="name">Telemarketing</field>
+		<field name="category_id" ref="res_partner_management" />
+	</record>
+
+	<record id="group_amministratore" model="res.groups">
+		<field name="name">Amministratore</field>
+		<field name="category_id" ref="res_partner_management" />
+	</record>
+
+	<!--
+    <record id="res_country_state_venditore" model="ir.rule">
+        <field name="name">res.country.state.venditore</field>
+        <field name="model_id" ref="base.res_country_state"/>
+        <field name="domain_force">[('venditore_ids','in',user.id)]</field>
+    </record>
+    -->
+
+</odoo>
