@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record model="ir.ui.view" id="sale_string_price_sale_order">
+        <field name="name">sale.order.string_price.view.form</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_order_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='amount_total']" position="after">
+                    <field name="total_purchase_price" groups="lasercom.group_amministratore"/>
+                    <field name="sale_string_price"  groups="base.group_user" />
+            </xpath>
+        </field>
+    </record>
+
+    <record model="ir.ui.view" id="sale_string_price_sale_order_line">
+        <field name="name">sale.order.line.string_price.view.form</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_order_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='order_line']/form//field[@name='price_unit']" position="after">
+                <field name="sale_string_price" groups="base.group_user"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record model="ir.ui.view" id="sale_string_price_sale_order_line_form">
+        <field name="name">sale.order.line.tree.string_price.view.form</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_order_form"/>
+        <field name="arch" type="xml">
+           <xpath expr="//field[@name='order_line']/tree//field[@name='price_unit']" position="after">
+                <field name="sale_string_price" optional="show" groups="base.group_user"/>
+            </xpath>
+           <xpath expr="//field[@name='order_line']/tree//field[@name='price_unit']" position="attributes">
+                <attribute name='optional'>hide</attribute>
+            </xpath>
+        </field>
+    </record>
+    <record model="ir.ui.view" id="sale_margin_sale_order_hide">
+        <field name="name">sale.order.margin.view.form</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale_margin.sale_margin_sale_order"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='margin']" position="replace">
+                    <field name="margin" groups="lasercom.group_amministratore"/>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

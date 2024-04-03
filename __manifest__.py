@@ -19,12 +19,13 @@
     'version': '0.1',
 
     # any module necessary for this one to work correctly
-    'depends': ['base','crm'],
+    'depends': ['base','crm','sale','sale_margin','lasercom'],
 
     # always loaded
     'data': [
         #'security/ir.model.access.csv',
         'wizard/crm_lead_view.xml',
+        'views/sale_string_price_view.xml',
         
     ],
 }
