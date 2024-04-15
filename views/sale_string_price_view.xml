@@ -6,10 +6,25 @@
         <field name="model">sale.order</field>
         <field name="inherit_id" ref="sale.view_order_form"/>
         <field name="arch" type="xml">
-            <xpath expr="//field[@name='amount_total']" position="after">
-                    <field name="total_purchase_price" groups="lasercom.group_amministratore"/>
-                    <field name="sale_string_price"  groups="base.group_user" />
+             <xpath expr="//group[@name='sale_total']" position="replace">
+                      <group class="oe_subtotal_footer oe_right" colspan="2" name="sale_total_laser">
+                       <field name="amount_untaxed" widget='monetary' options="{'currency_field': 'currency_id'}"/>
+                       <field name="amount_tax" widget='monetary' options="{'currency_field': 'currency_id'}"/>
+ 	                   <field name="footer_discount"  groups="base.group_user" />
+	                   <field name="sale_promotion"  groups="base.group_user" />
+	                   <field name="sale_acq_usage"  groups="base.group_user" />
+                                    <div class="oe_subtotal_footer_separator oe_inline o_td_label">
+                                        <label for="amount_total" />
+                                    </div>
+                                    <field name="amount_total" nolabel="1" class="oe_subtotal_footer_separator" widget='monetary' options="{'currency_field': 'currency_id'}"/>
+                   <field name="total_purchase_price" groups="lasercom.group_amministratore"/>
+                   <field name="sale_string_price"  groups="base.group_user" />
+                   <field name="sale_string_margin"  groups="base.group_user" />
+                                </group>
+ 
             </xpath>
+                        
+ 
         </field>
     </record>
 

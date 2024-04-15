@@ -15,21 +15,24 @@ def decode_protocollo(valore="0"):
                    '8':'VWZ',
                    '9':'YJY',
                    '0':'TTT',
-                   ',':':::',
-                   '.':';;;'
+                   ',':'V',
+                   '.':'P'
     }
-    myvalore=str(valore).replace('0',nprot['0'])
-    myvalore=myvalore.replace('1',nprot['1'])
-    myvalore=myvalore.replace('2',nprot['2'])
-    myvalore=myvalore.replace('3',nprot['3'])
-    myvalore=myvalore.replace('4',nprot['4'])
-    myvalore=myvalore.replace('5',nprot['5'])
-    myvalore=myvalore.replace('6',nprot['6'])
-    myvalore=myvalore.replace('7',nprot['7'])
-    myvalore=myvalore.replace('8',nprot['8'])
-    myvalore=myvalore.replace('9',nprot['9'])
-    myvalore=myvalore.replace(',',nprot[','])
-    myvalore=myvalore.replace('.',nprot['.'])
+    myvalore="A"
+    valchar2=""
+    id3=3
+    for valchar in valore:
+        id3= id3+1 if id3<3 else 0
+        if id3==0 :
+            valchar2= valchar
+        else:
+            valchar2= valchar2+valchar
+        if id3==3:    
+            myvalore= myvalore+nprot[valchar]+valchar2
+    if id3<3:
+            myvalore= myvalore+nprot[valchar]+valchar2
+    myvalore=myvalore.replace('.','VI').replace('.','PU')
+        
     return myvalore
     
 
@@ -73,11 +76,40 @@ class SaleOrderLine(models.Model):
 class SaleOrder(models.Model):
     _inherit = "sale.order"
 
-    total_purchase_price = fields.Monetary(compute='_product_purchase_price', help="It gives profitability by calculating the difference between the Unit Price and the cost.", currency_field='currency_id', store=True)
-    sale_string_price = fields.Char(compute='_product_purchase_price', store=True, precompute=True,string='Numero protocollo' )
+    total_purchase_price = fields.Monetary(compute='_product_purchase_price', help="protocollo", currency_field='currency_id', store=True)
+    sale_string_price = fields.Char(compute='_product_purchase_price', store=True, precompute=True,string='Numero protocollo vendita' )
+    footer_discount = fields.Float(string='Sconto piede (%)', digits='Discount', default=0.0)
+    sale_string_margin = fields.Char(compute='_product_purchase_price', store=True, precompute=True,string='Numero protocollo contabile ' )
+    sale_acq_usage = fields.Float(string='Valutazione usato', digits='Product Price', default=0.0)
+    sale_promotion = fields.Float(string='Promozione', digits='Product Price', default=0.0)
+
+    amount_untaxed = fields.Monetary(string='Untaxed Amount', store=True, readonly=True, compute='_amount_all', tracking=5)
+    amount_by_group = fields.Binary(string="Tax amount by group", compute='_amount_by_group', help="type: [(name, amount, base, formated amount, formated base)]")
+    amount_tax = fields.Monetary(string='Taxes', store=True, readonly=True, compute='_amount_all')
+    amount_total = fields.Monetary(string='Total', store=True, readonly=True, compute='_amount_all', tracking=4)
+    currency_rate = fields.Float("Currency Rate", compute='_compute_currency_rate', compute_sudo=True, store=True, digits=(12, 6), readonly=True, help='The rate of the currency to the currency of rate 1 applicable at the date of the order')
 
 
-    @api.depends('order_line.purchase_price')
+    @api.depends('order_line.price_total','sale_acq_usage','sale_promotion','footer_discount')
+    def _amount_all(self):
+        """
+        Compute the total amounts of the SO.
+        """
+        for order in self:
+            amount_untaxed = amount_tax = 0.0
+            for line in order.order_line:
+                amount_untaxed += line.price_subtotal
+                amount_tax += line.price_tax
+            amount_total=amount_untaxed + amount_tax    
+            amount_total=amount_total*(100-order.footer_discount)/100
+            amount_total=amount_total-order.sale_acq_usage-order.sale_promotion
+            order.update({
+                'amount_untaxed': amount_untaxed,
+                'amount_tax': amount_tax,
+                'amount_total': amount_total,
+            })
+
+    @api.depends('order_line.purchase_price','order_line.margin')
     def _product_purchase_price(self):
         if not all(self._ids):
             for order in self:
@@ -97,4 +129,7 @@ class SaleOrder(models.Model):
             for order in self:
                 order.total_purchase_price = mapped_data.get(order.id, 0.0)
         sale_string_price=   "{:.2f}".format(order.total_purchase_price) if order.total_purchase_price>0 else '999999999'  
+        sale_string_margin=   "{:.2f}".format(order.margin) if order.margin>0 else '999999999'  
         order.sale_string_price=decode_protocollo(sale_string_price)
+        order.sale_string_margin=decode_protocollo(sale_string_margin)
+        
