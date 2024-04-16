@@ -98,10 +98,12 @@ class SaleOrder(models.Model):
         for order in self:
             amount_untaxed = amount_tax = 0.0
             for line in order.order_line:
+                line.write({'discount':order.footer_discount})
+                
                 amount_untaxed += line.price_subtotal
                 amount_tax += line.price_tax
             amount_total=amount_untaxed + amount_tax    
-            amount_total=amount_total*(100-order.footer_discount)/100
+            #amount_total=amount_total*(100-order.footer_discount)/100
             amount_total=amount_total-order.sale_acq_usage-order.sale_promotion
             order.update({
                 'amount_untaxed': amount_untaxed,
