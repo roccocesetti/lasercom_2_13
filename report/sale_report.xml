@@ -6,8 +6,8 @@
 			string="Preventivo Lasercom"
 			model="sale.order"
 			report_type="qweb-pdf"
-			file="sale.report_saleorder_laser"
-			name="sale.report_saleorder_laser"
+			file="lasercom_2_13.report_saleorder_laser"
+			name="lasercom_2_13.report_saleorder_laser"
 			print_report_name="(object.state in ('draft', 'sent') and 'Quotation - %s' % (object.name)) or 'Order - %s' % (object.name)"
 		/>
 

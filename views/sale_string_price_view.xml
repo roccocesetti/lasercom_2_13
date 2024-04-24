@@ -11,7 +11,12 @@
                        <field name="amount_untaxed" widget='monetary' options="{'currency_field': 'currency_id'}"/>
                        <field name="amount_tax" widget='monetary' options="{'currency_field': 'currency_id'}"/>
  	                   <field name="footer_discount"  groups="base.group_user" />
+                                    <div class="oe_subtotal_footer_separator oe_inline o_td_label">
+                                    </div>
 	                   <field name="sale_promotion"  groups="base.group_user" />
+                                    <div class="oe_subtotal_footer_separator oe_inline o_td_label">
+                                    </div>
+	                   <field name="select_acq_usage"  groups="base.group_user" />
 	                   <field name="sale_acq_usage"  groups="base.group_user" />
                                     <div class="oe_subtotal_footer_separator oe_inline o_td_label">
                                         <label for="amount_total" />

@@ -26,6 +26,8 @@
         #'security/ir.model.access.csv',
         'wizard/crm_lead_view.xml',
         'views/sale_string_price_view.xml',
+        'report/sale_report_templates.xml',
+        'report/sale_report.xml',
         
     ],
 }
