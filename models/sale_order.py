@@ -1,8 +1,12 @@
 # -*- coding: utf-8 -*-
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
-from odoo import api, fields, models
+from odoo import api, fields, models, SUPERUSER_ID, _
 from odoo.tools.sql import column_exists, create_column
+from odoo.exceptions import AccessError, UserError, ValidationError
+from odoo.tools.misc import formatLang, get_lang
+from odoo.osv import expression
+from odoo.tools import float_is_zero, float_compare
 
 def decode_protocollo(valore="0"):
     nprot = {'1':'AAA',
@@ -82,7 +86,7 @@ class SaleOrderLine(models.Model):
 class SaleOrder(models.Model):
     _inherit = "sale.order"
 
-    total_purchase_price = fields.Monetary(compute='_product_purchase_price', help="protocollo", currency_field='currency_id', store=True)
+    total_purchase_price = fields.Monetary(string='Importo di riferimento',compute='_product_purchase_price', help="protocollo", currency_field='currency_id', store=True)
     sale_string_price = fields.Char(compute='_product_purchase_price', store=True, precompute=True,string='Numero protocollo vendita' )
     footer_discount = fields.Float(string='Sconto piede (%)', digits='Discount', default=0.0)
     sale_string_margin = fields.Char(compute='_product_purchase_price', store=True, precompute=True,string='Numero protocollo contabile ' )
@@ -99,13 +103,92 @@ class SaleOrder(models.Model):
     amount_tax = fields.Monetary(string='Taxes', store=True, readonly=True, compute='_amount_all')
     amount_total = fields.Monetary(string='Total', store=True, readonly=True, compute='_amount_all', tracking=4)
     currency_rate = fields.Float("Currency Rate", compute='_compute_currency_rate', compute_sudo=True, store=True, digits=(12, 6), readonly=True, help='The rate of the currency to the currency of rate 1 applicable at the date of the order')
+    codice_sdi = fields.Char('res.partner', related='partner_id.codice_sdi',readonly=False)
+    numero_contratto = fields.Char(string='Numero Contratto', required=False, copy=False, readonly=False, states={'draft': [('readonly', False)]},  default=lambda self: _('New'))
+    sale_caparra = fields.Monetary(string='Caparra', digits='Product Price', default=0.0,currency_field='currency_id',)
+
+    payment_direct=fields.Boolean(string='Pagamento Diretto',default=False)
+    payment_direct_allordine = fields.Monetary(string="All'ordine", digits='Product Price', default=0.0,currency_field='currency_id',)
+    payment_direct_allaconsegna = fields.Monetary(string='Alla consegna', digits='Product Price', default=0.0,currency_field='currency_id',)
+    payment_direct_num_titoli = fields.Integer(string='Numero Titoli', default=0)
+    payment_direct_importo_titoli = fields.Monetary(string='Importo titoli', digits='Product Price', default=0.0,currency_field='currency_id',)
+    payment_direct_nota = fields.Char(string='NOta', required=False, copy=False, readonly=False, default='a scadenza mensile a partire da 30 giorni data installazione')
+
     
+    leasing_direct=fields.Boolean(string='Leasing',default=False)    
+    leasing_direct_importo = fields.Monetary(string="Importo", digits='Product Price', default=0.0,currency_field='currency_id',)
+    leasing_direct_macrocanone = fields.Monetary(string='Macrocanone', digits='Product Price', default=0.0,currency_field='currency_id',)
+    leasing_direct_totale = fields.Monetary(string='Totale', store=True, readonly=False, compute='_amount_leasing', tracking=5,currency_field='currency_id',)
+    leasing_direct_numero_rate = fields.Integer(string='Numero Rate', default=0)
+    leasing_direct_importo_rate = fields.Monetary(string='Importo rate', digits='Product Price', default=0.0,currency_field='currency_id',)
+    leasing_direct_numero_mesi = fields.Integer(string='Numero mesi', default=0)
+    leasing_direct_nota = fields.Char(string='Nota', required=False, copy=False, readonly=False, default='Salvo approvazione Istituto erogante')
+    
+    finaziamento_direct=fields.Boolean(string='Finaziamento',default=False)    
+    finaziamento_direct_costodelbene = fields.Monetary(string="Costo del bene", digits='Product Price', default=0.0,currency_field='currency_id',)
+    finaziamento_direct_finanziamento = fields.Monetary(string='Finanziamento', digits='Product Price', default=0.0,currency_field='currency_id',)
+    finaziamento_direct_numero_rate = fields.Integer(string='Numero Rate', default=0)
+    finaziamento_direct_importo_rate = fields.Monetary(string='Importo rate', digits='Product Price', default=0.0,currency_field='currency_id',)
+    finaziamento_direct_numero_mesi = fields.Integer(string='Numero mesi', default=0)
+    finaziamento_direct_saldo_titolo = fields.Monetary(string='Saldo titoli', store=True, readonly=False, tracking=5,currency_field='currency_id',)
+    finaziamento_direct_nota = fields.Char(string='Nota', required=False, copy=False, readonly=False, default='Salvo approvazione Istituto erogante')
+    finaziamento_direct_nota_piede = fields.Text(string='Nota_piede', required=False, copy=False, readonly=False, default="LASER.COM snc SEDE OPERATIVA CENTRO ITALIA VIA PERU', 61 63066 GROTTAMMARE AP P.IVA 02177190440 " \
+"INFORMATIVA AI SENSI DELL'ART13 D.LGS.196 DEL 30/06/03 E SUCCESSIVE MODIFICHE ED INTEGRAZIONI" \
+"Laser.com snc è titolare del trattamento dei dati personali dell'acquirente, I dati necessari per la conclusione del contratto sono: la ragione sociale, la sede" \
+"legale,il numero di partita iva, il codice fiscale, il codice univoco o indirizzo Pec, la banca di appogigio. In mancanza di tali dati non sarà possibile" \
+"concludere il contratto. I dati verranno trattati esclusivamente da Laser.comsnc e comunicati ai soggetti terzi nei limiti degli adempimenti di natura fiscale." \
+"L'interessato,ai sensi e per gli effetti dell'art.7 può chiedere che i propri dati vengano corretti, cancellati, modificati nei limiti consentiti dalla normativa" \
+"vigente in materia fiscale. Il consenso scritto per il trattamento dei dati necessari alla conclusione del presente contratto non è richiesto dalla legge.")
+    data_contratto = fields.Date(string='Data contratto', readonly=True, copy=False, states={'draft': [('readonly', False)], 'sent': [('readonly', False)]},
+                                )
+   
+   
     @api.model
     def create(self, vals):
+        if vals.get('numero_contratto', _('New')) == _('New'):
+            seq_date = None
+            if 'data_contratto' in vals :
+                seq_date = fields.Datetime.context_timestamp(self, fields.Datetime.to_datetime(vals['data_contratto']))
+                if 'company_id' in vals:
+                    vals['numero_contratto'] = self.env['ir.sequence'].with_context(force_company=vals['company_id']).next_by_code(
+                        'sale.order.contract', sequence_date=seq_date) or _('New')
+                else:
+                    vals['numero_contratto'] = self.env['ir.sequence'].next_by_code('sale.order.contract', sequence_date=seq_date) or _('New')
+    
         vals.update({'note':'Prezzi iva esclusa, Trasporto, installazione, collaudo a nostro carico, Garanzia 24 mesi' })
         res=super(SaleOrder, self).create(vals)
         return res
+
+    def _write(self, vals):
+        """ Override of private write method in order to generate activities
+        based in the invoice status. As the invoice status is a computed field
+        triggered notably when its lines and linked invoice status changes the
+        flow does not necessarily goes through write if the action was not done
+        on the SO itself. We hence override the _write to catch the computation
+        of invoice_status field. """
+        mutable_vals = dict(vals)
+        if 'data_contratto' in mutable_vals and mutable_vals['data_contratto']:
+            if self.numero_contratto ==_('New'):
+                    seq_date = fields.Datetime.context_timestamp(self, fields.Datetime.to_datetime(mutable_vals['data_contratto']))
+                    if 'company_id' in vals:
+                        numero_contratto = self.env['ir.sequence'].with_context(force_company=vals['company_id']).next_by_code(
+                            'sale.order.contract', sequence_date=seq_date) or _('New')  
+                        mutable_vals.update({'numero_contratto':numero_contratto})
+                    else:
+                       numero_contratto= self.env['ir.sequence'].next_by_code('sale.order.contract', sequence_date=seq_date) or  _('New')
+                       mutable_vals.update({'numero_contratto':numero_contratto})
+        return super(SaleOrder, self)._write(mutable_vals)
          
+    @api.depends('leasing_direct_importo','leasing_direct_macrocanone')
+    def _amount_leasing(self):
+        """
+        Compute the total amounts of the SO.
+        """
+        for order in self:
+            leasing_direct_totale = order.leasing_direct_importo + order.leasing_direct_macrocanone
+            order.update({
+                'leasing_direct_totale': leasing_direct_totale,
+            })
 
     @api.depends('order_line.price_total','sale_acq_usage','sale_promotion','footer_discount','select_acq_usage')
     def _amount_all(self):

@@ -10,6 +10,15 @@
 			name="lasercom_2_13.report_saleorder_laser"
 			print_report_name="(object.state in ('draft', 'sent') and 'Quotation - %s' % (object.name)) or 'Order - %s' % (object.name)"
 		/>
+		<report
+			id="action_report_saleorder_laser_contratto"
+			string="Contratto Lasercom"
+			model="sale.order"
+			report_type="qweb-pdf"
+			file="lasercom_2_13.report_saleorder_laser_contratto"
+			name="lasercom_2_13.report_saleorder_laser_contratto"
+			print_report_name="(object.state in ('draft', 'sent') and 'Quotation - %s' % (object.name)) or 'Order - %s' % (object.name)"
+		/>
 
 	</data>
 </odoo>

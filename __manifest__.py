@@ -24,8 +24,10 @@
     # always loaded
     'data': [
         #'security/ir.model.access.csv',
+        'data/ir_sequence_data.xml',
         'wizard/crm_lead_view.xml',
-        'views/sale_string_price_view.xml',
+        'views/res_partner.xml',
+       'views/sale_string_price_view.xml',
         'report/sale_report_templates.xml',
         'report/sale_report.xml',
         
