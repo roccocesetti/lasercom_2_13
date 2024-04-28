@@ -17,8 +17,18 @@
 			report_type="qweb-pdf"
 			file="lasercom_2_13.report_saleorder_laser_contratto"
 			name="lasercom_2_13.report_saleorder_laser_contratto"
-			print_report_name="(object.state in ('draft', 'sent') and 'Quotation - %s' % (object.name)) or 'Order - %s' % (object.name)"
+			print_report_name="(object.state in ('draft', 'sent') and 'Contratto - %s' % (object.name)) or 'Contratto - %s' % (object.name)"
 		/>
-
+		<!--
+		<report
+			id="action_report_saleorder_laser_contratto_retro"
+			string="Contratto Lasercom retro"
+			model="sale.order"
+			report_type="qweb-pdf"
+			file="lasercom_2_13.report_saleorder_laser_contratto_retro"
+			name="lasercom_2_13.report_saleorder_laser_contratto_retro"
+			print_report_name="(object.state in ('draft', 'sent') and 'Retro - %s' % (object.name)) or 'Retro - %s' % (object.name)"
+		/>
+       -->
 	</data>
 </odoo>

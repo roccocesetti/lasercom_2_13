@@ -142,6 +142,8 @@ class SaleOrder(models.Model):
     data_contratto = fields.Date(string='Data contratto', readonly=True, copy=False, states={'draft': [('readonly', False)], 'sent': [('readonly', False)]},
                                 )
    
+    finaziamento_direct_retro = fields.Text(string='Retro', required=False, copy=False, readonly=False, default="" \
+"")
    
     @api.model
     def create(self, vals):

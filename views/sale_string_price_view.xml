@@ -70,6 +70,13 @@
                                 </group>
                             </group>
                          </page>
+
+                       <page string="Nota piede contratto" name="finaziamento_direct_nota_piede">
+                            <group name="Nota piede contratto" string="gruppo_finaziamento_nota_piede">
+                                    <field name="finaziamento_direct_nota_piede"/>
+							</group>
+                          </page>
+ 
  				</xpath>
  
         </field>

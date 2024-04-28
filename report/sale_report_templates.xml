@@ -1,6 +1,51 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
+ <template id="new_external_layout" inherit_id="web.external_layout_standard">
+ 		    <xpath expr="//div[@t-attf-class='header o_company_#{company.id}_layout']" position="replace">
+			        <div t-attf-class="header o_company_#{company.id}_layout" t-att-style="report_header_style">
+			            <div class="row col-12 mb2 mw-100">
+			                <div class="col-3 mb2">
+			                    <img t-if="company.logo" t-att-src="image_data_uri(company.logo)" style="max-height: 45px;" alt="Logo"/>
+			                </div>
+			                <div class="col-3 mb2">
+								
+							</div>
+				            <div class="col-3 mb2" name="company_address">
+				 			        <div class="row" style="text-align:right;">
+							            <span t-field="company.name"/>
+							        </div>
+				 			        <div class="row" style="text-align:right;">
+							            <span t-field="company.street"/> 
+							        </div>
+				 			        <div class="row" style="text-align:right;">
+							            <span t-field="company.zip"/>, 
+							            <span t-field="company.city"/>,
+							            <span t-if="company.state_id" t-field="company.state_id.code"/>,
+							        </div>
 
+				            </div>
+				            <div class="col-3 mb2" name="company_address_2">
+				 			        <div class="row" style="text-align:right;">P.iva:<span t-field="company.vat"/>
+							        </div>
+							        <div class="row" style="text-align:right;">Numero verde:<span t-field="company.numero_verde"/>
+							        </div>
+							        <div class="row" style="text-align:right;">email:<span  t-if="company.email" t-field="company.email"/>
+							        </div>
+				               
+				            </div>
+			                <div class="col-12 text-right" style="margin-top:22px;" t-field="company.report_header" name="moto"/>
+			            </div>
+				            <div t-if="company.logo or company.report_header" class="row zero_min_height">
+				                
+				                <div class="col-12">
+				                    <div style="border-bottom: 1px solid black;"/>
+				                </div>
+				            </div>
+			        </div>
+
+		    </xpath>
+
+    </template>
 
 
 	<template id="report_saleorder_document_laser">
@@ -11,6 +56,7 @@
 				<p t-if="doc.partner_id.vat"><t
 						t-esc="doc.company_id.country_id.vat_label or 'Tax ID'" />
 					: <span t-field="doc.partner_id.vat" /></p>
+				<p t-if="doc.partner_id.numero_verde">Numero verde: <span t-field="doc.partner_id.numero_verde" /></p>
 			</t>
 			<t
 				t-if="doc.partner_shipping_id == doc.partner_invoice_id
@@ -333,7 +379,10 @@
 
 	<template id="report_saleorder_document_laser_contratto">
 		<t t-call="web.external_layout">
-			<t t-set="address">
+			   <link rel="stylesheet" type="text/css" href="/lasercom_2_13/static/src/css/custom.css"/>
+    <t t-raw="0" />
+
+			<t t-set="address"><p>Spettabile </p>
 				<div t-field="doc.partner_id"
 					t-options='{"widget": "contact", "fields": ["address", "name"], "no_marker": True}' />
 				<p t-if="doc.partner_id.vat"><t
@@ -511,78 +560,74 @@
 						</div>
 					</div>
 				</div>
-			
-				<div class="oe_structure" />
-				<div class="row mt32 mb32" id="pagamenti">
-					<div 
-							class="col-auto mw-100 mb-2">
+				<div class="row mt32 mb32 " id="pagamenti">
+					<div class="col-auto mw-100 mb-2">
 							<p>Annotazioni_________________________</p>
 							<p>____________________________________</p> 
 							<p>____________________________________</p> 
-							<p t-if="doc.payment_direct" class="m-0" t-field="doc.payment_direct_nota" />
-							<p t-if="doc.leasing_direct" class="m-0" t-field="doc.leasing_direct_nota" />
-							<p t-if="doc.finaziamento_direct" class="m-0" t-field="doc.finaziamento_direct_nota" />
 					</div>
-					<div t-if="doc.payment_direct"
-							class="col-auto mw-100 mb-2">
-							<strong>pagamento diretto:</strong>
-							<strong>all'ordine:</strong>
-							<p class="m-0" t-field="doc.payment_direct_allordine" />
-							<strong>alla consegna:</strong>
-							<p class="m-0" t-field="doc.payment_direct_allaconsegna" />
+					<div t-if="doc.payment_direct" class="col-auto mw-100 mb-2 custom-border">
+							<div class="col-auto mw-100 mb-2 ">
+									<div class="row">
+									<p><strong>pagamento diretto:</strong>
+									<input type="checkbox" name="checkbox_diretto" t-att-checked="'checked' if your_condition else None"/></p>
+									</div>
+									<div class="row">
+									<strong>all'ordine:</strong>
+									<p class="m-0" t-field="doc.payment_direct_allordine"/></div>
+									<div class="row"><strong>alla consegna:</strong>
+									<p class="m-0" t-field="doc.payment_direct_allaconsegna" /></div>
+									<div class="row"><strong>Saldo:</strong></div>
+									<div class="row"><strong>numero titoli:</strong>
+									<p class="m-0" t-field="doc.payment_direct_num_titoli" /></div>
+									<div class="row"><strong>importo titoli:</strong>
+									<p class="m-0" t-field="doc.payment_direct_importo_titoli" /></div>
+									<div class="row"><p t-if="doc.payment_direct" class="m-0" t-field="doc.payment_direct_nota" /></div>
+							</div>
 					</div>
-					<div t-if="doc.payment_direct"
-							class="col-auto mw-100 mb-2">
-							<strong>Saldo:</strong>
-							<strong>numero titoli:</strong>
-							<p class="m-0" t-field="doc.payment_direct_num_titoli" />
-							<strong>importo titoli:</strong>
-							<p class="m-0" t-field="doc.payment_direct_importo_titoli" />
-						
-					</div>
-					<div t-if="doc.leasing_direct"
-							class="col-auto mw-100 mb-2">
-							<strong>Leasing:</strong>
-							<strong>Importo:</strong>
-							<p class="m-0" t-field="doc.leasing_direct_importo" />
-							<strong>Macrocanone:</strong>
-							<p class="m-0" t-field="doc.leasing_direct_macrocanone" />
-							<strong>Totale:</strong>
-							<p class="m-0" t-field="doc.leasing_direct_totale" />
-						
-					</div>
-					<div t-if="doc.leasing_direct"
-							class="col-auto mw-100 mb-2">
-							<strong>Numero rate:</strong>
-							<p class="m-0" t-field="doc.leasing_direct_numero_rate" />
-							<strong>Importo rate:</strong>
-							<p class="m-0" t-field="doc.leasing_direct_importo_rate" />
-							<strong>Numer mesi:</strong>
-							<p class="m-0" t-field="doc.leasing_direct_numero_mesi" />
-						
-					</div>
-					<div t-if="doc.finaziamento_direct"
-							class="col-auto mw-100 mb-2">
-							<strong>Finanziamento diretto:</strong>
-							<strong>Costo del bene:</strong>
-							<p class="m-0" t-field="doc.finaziamento_direct_costodelbene" />
-							<strong>Finanziamento:</strong>
-							<p class="m-0" t-field="doc.finaziamento_direct_finanziamento" />
-							<strong>Numero rate:</strong>
-							<p class="m-0" t-field="doc.finaziamento_direct_numero_rate" />
-					</div>
-					<div t-if="doc.finaziamento_direct"
-							class="col-auto mw-100 mb-2">
-							<strong>Importo Rate:</strong>
-							<p class="m-0" t-field="doc.finaziamento_direct_importo_rate" />
-							<strong>numero mesi:</strong>
-							<p class="m-0" t-field="doc.finaziamento_direct_numero_mesi" />
-							<strong>Saldo titolo:</strong>
-							<p class="m-0" t-field="doc.finaziamento_direct_saldo_titolo" />						
-					</div>
-
 				</div>
-				<div class="row mt32 mb32" id="pagamenti_nota_piede">
+				<div class="row  mt32 mb32 ">
+						<div t-if="doc.leasing_direct" class="col-auto mw-100 mb-2 custom-border">
+							<div class="col-auto mw-100 mb-2 ">							
+								<div class="row"><p><strong>Leasing:</strong>
+								<input type="checkbox" name="checkbox_diretto" t-att-checked="'checked' if your_condition else None"/></p>
+								</div>
+								<div class="row"><strong>Importo:</strong>
+								<p class="m-0" t-field="doc.leasing_direct_importo" /></div>
+								<div class="row"><strong>Macrocanone:</strong>
+								<p class="m-0" t-field="doc.leasing_direct_macrocanone" />
+								</div>
+								<div class="row"><strong>Totale:</strong>
+								<p class="m-0" t-field="doc.leasing_direct_totale" /></div>
+								<div class="row"><strong>Numero rate:</strong>
+								<p class="m-0" t-field="doc.leasing_direct_numero_rate" /></div>
+								<div class="row"><strong>Importo rate:</strong>
+								<p class="m-0" t-field="doc.leasing_direct_importo_rate" /></div>
+								<div class="row"><strong>Numer mesi:</strong>
+								<p class="m-0" t-field="doc.leasing_direct_numero_mesi" /></div>
+								<div class="row"><p t-if="doc.leasing_direct" class="m-0" t-field="doc.leasing_direct_nota" /></div>
+						</div>
+					</div>
+						<div t-if="doc.finaziamento_direct" class="col-auto mw-100 mb-2 custom-border">
+							<div class="col-auto mw-100 mb-2 ">							
+									<div class="row"><p><strong>Finanziamento diretto:</strong><input type="checkbox" name="checkbox_finaziamento_direct" t-att-checked="'checked' if your_condition else None"/></p></div>
+									<div class="row"><strong>Costo del bene:</strong>
+									<p class="m-0" t-field="doc.finaziamento_direct_costodelbene" /></div>
+									<div class="row"><strong>Finanziamento:</strong>
+									<p class="m-0" t-field="doc.finaziamento_direct_finanziamento" /></div>
+									<div class="row"><strong>Numero rate:</strong>
+									<p class="m-0" t-field="doc.finaziamento_direct_numero_rate" /></div>
+									<div class="row"><strong>Importo Rate:</strong>
+									<p class="m-0" t-field="doc.finaziamento_direct_importo_rate" /></div>
+									<div class="row"><strong>numero mesi:</strong>
+									<p class="m-0" t-field="doc.finaziamento_direct_numero_mesi" /></div>
+									<div class="row"><strong>Saldo da:</strong>
+									<p class="m-0" t-field="doc.finaziamento_direct_saldo_titolo" /></div>						
+									<div class="row"><p t-if="doc.finaziamento_direct" class="m-0" t-field="doc.finaziamento_direct_nota" /></div>
+							</div>
+					</div>
+				</div>
+				<div class="row mt32 mb32 custom-border"   id="pagamenti_nota_piede">
 					<p t-if="doc.finaziamento_direct_nota_piede" class="m-0" t-field="doc.finaziamento_direct_nota_piede" />
 					
 				</div>
@@ -592,7 +637,6 @@
 		</t>
 
 	</template>
-
 
 	<template id="report_saleorder_laser_contratto">
 		<t t-call="web.html_container">
@@ -606,5 +650,36 @@
 			</t>
 		</t>
 	</template>
+
+	<template id="report_saleorder_document_laser_contratto_retro">
+		<t t-call="web.external_layout">
+			   <link rel="stylesheet" type="text/css" href="/lasercom_2_13/static/src/css/custom.css"/>
+    <t t-raw="0" />
+			<div class="page">
+				<div class="oe_structure" />
+						<div t-if="doc.finaziamento_direct" class="col-auto mw-100 mb-2 custom-border">
+							<span t-if="doc.finaziamento_direct_retro" t-field="finaziamento_direct_retro" />
+						</div>
+
+			</div>
+
+		</t>
+
+	</template>
+
+	<template id="report_saleorder_laser_contratto_retro">
+		<t t-call="web.html_container">
+			<t t-foreach="docs" t-as="doc">
+				<t t-call="lasercom_2_13.report_saleorder_document_laser_contratto_retro"
+					t-lang="doc.partner_id.lang" >
+					<t t-set="company" t-value="doc.company_id" />
+					</t>
+					
+
+			</t>
+		</t>
+	</template>
+
+
 
 </odoo>

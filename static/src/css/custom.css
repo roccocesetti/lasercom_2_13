@@ -11,3 +11,8 @@
         display: block;
     }
 }
+.custom-border {
+    border: 1px solid #333;  // Cambia il colore del bordo a piacere
+    padding: 5px;
+    margin: 2px;
+}
