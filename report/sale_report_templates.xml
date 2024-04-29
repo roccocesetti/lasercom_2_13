@@ -95,7 +95,7 @@
 
 				<div class="row mt32 mb32" id="informations">
 					<div t-if="doc.sale_string_price"
-						class="col-auto mw-100 mb-2">
+						class="col-auto mw-100 mb-2" style="text-align:left; white-space: nowrap;">
 						<strong>protocollo di vendita:</strong>
 						<p class="m-0" t-field="doc.sale_string_price" />
 					</div>
