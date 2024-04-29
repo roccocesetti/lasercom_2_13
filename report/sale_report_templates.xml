@@ -7,20 +7,20 @@
 			                <div class="col-3 mb2">
 			                    <img t-if="company.logo" t-att-src="image_data_uri(company.logo)" style="max-height: 45px;" alt="Logo"/>
 			                </div>
-			                <div class="col-3 mb2">
+			                <div class="col-2 mb2">
 								
 							</div>
-				            <div class="col-3 mb2" name="company_address">
-				 			        <div class="row" style="text-align:right;">
+				            <div class="col-4 mb2" name="company_address">
+				 			        <div class="row" style="text-align:left;">
 							            <span t-field="company.name"/>
 							        </div>
-				 			        <div class="row" style="text-align:right;">
+				 			        <div class="row" style="text-align:left;">
 							            <span t-field="company.street"/> 
 							        </div>
-				 			        <div class="row" style="text-align:right;">
+				 			        <div class="row" style="text-align:left;">
 							            <span t-field="company.zip"/>, 
 							            <span t-field="company.city"/>,
-							            <span t-if="company.state_id" t-field="company.state_id.code"/>,
+							            <span t-if="company.state_id" t-field="company.state_id.code"/>
 							        </div>
 
 				            </div>
@@ -56,7 +56,6 @@
 				<p t-if="doc.partner_id.vat"><t
 						t-esc="doc.company_id.country_id.vat_label or 'Tax ID'" />
 					: <span t-field="doc.partner_id.vat" /></p>
-				<p t-if="doc.partner_id.numero_verde">Numero verde: <span t-field="doc.partner_id.numero_verde" /></p>
 			</t>
 			<t
 				t-if="doc.partner_shipping_id == doc.partner_invoice_id
