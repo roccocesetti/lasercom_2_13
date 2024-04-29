@@ -55,7 +55,7 @@
 					t-options='{"widget": "contact", "fields": ["address", "name"], "no_marker": True}' />
 				<p t-if="doc.partner_id.vat"><t
 						t-esc="doc.company_id.country_id.vat_label or 'Tax ID'" />
-					: <span t-field="doc.partner_id.vat" /></p>
+					: &gt;d="doc.partner_id.vat" /></p>
 			</t>
 			<t
 				t-if="doc.partner_shipping_id == doc.partner_invoice_id
@@ -564,9 +564,13 @@
 				</div>
 				<div class="row mt32 mb32 " id="pagamenti">
 					<div class="col-auto mw-100 mb-2">
+							<div class="row">
 							<p>Annotazioni_________________________</p>
-							<p>____________________________________</p> 
-							<p>____________________________________</p> 
+							</div>
+							<div class="row">
+							<p>_______________________________________</p></div> 
+							<div class="row">
+							<p>_______________________________________</p></div>
 					</div>
 					<div t-if="doc.payment_direct" class="col-auto mw-100 mb-2 custom-border">
 							<div class="col-auto mw-100 mb-2 ">
@@ -576,14 +580,14 @@
 									</div>
 									<div class="row">
 									<strong>all'ordine:</strong>
-									<p class="m-0" t-field="doc.payment_direct_allordine"/></div>
+									<p class="m-0"  t-if="doc.payment_direct_allordine &gt;0"  t-field="doc.payment_direct_allordine"/></div>
 									<div class="row"><strong>alla consegna:</strong>
-									<p class="m-0" t-field="doc.payment_direct_allaconsegna" /></div>
+									<p class="m-0" t-if="doc.payment_direct_allaconsegna &gt;0" t-field="doc.payment_direct_allaconsegna" /></div>
 									<div class="row"><strong>Saldo:</strong></div>
 									<div class="row"><strong>numero titoli:</strong>
-									<p class="m-0" t-field="doc.payment_direct_num_titoli" /></div>
+									<p class="m-0"  t-if="doc.payment_direct_num_titoli &gt;0" t-field="doc.payment_direct_num_titoli" /></div>
 									<div class="row"><strong>importo titoli:</strong>
-									<p class="m-0" t-field="doc.payment_direct_importo_titoli" /></div>
+									<p class="m-0"  t-if="doc.payment_direct_num_titoli &gt;0" t-field="doc.payment_direct_importo_titoli" /></div>
 									<div class="row"><p t-if="doc.payment_direct" class="m-0" t-field="doc.payment_direct_nota" /></div>
 							</div>
 					</div>
@@ -595,18 +599,18 @@
 								<input type="checkbox" name="checkbox_diretto" t-att-checked="'checked' if your_condition else None"/></p>
 								</div>
 								<div class="row"><strong>Importo:</strong>
-								<p class="m-0" t-field="doc.leasing_direct_importo" /></div>
+								<p class="m-0"  t-if="doc.leasing_direct_importo &gt;0" t-field="doc.leasing_direct_importo" /></div>
 								<div class="row"><strong>Macrocanone:</strong>
-								<p class="m-0" t-field="doc.leasing_direct_macrocanone" />
+								<p class="m-0" t-if="doc.leasing_direct_macrocanone &gt;0"  t-field="doc.leasing_direct_macrocanone" />
 								</div>
 								<div class="row"><strong>Totale:</strong>
-								<p class="m-0" t-field="doc.leasing_direct_totale" /></div>
+								<p class="m-0"  t-if="doc.leasing_direct_totale &gt;0" t-field="doc.leasing_direct_totale" /></div>
 								<div class="row"><strong>Numero rate:</strong>
-								<p class="m-0" t-field="doc.leasing_direct_numero_rate" /></div>
+								<p class="m-0"  t-if="doc.leasing_direct_numero_rate &gt;0" t-field="doc.leasing_direct_numero_rate" /></div>
 								<div class="row"><strong>Importo rate:</strong>
-								<p class="m-0" t-field="doc.leasing_direct_importo_rate" /></div>
+								<p class="m-0"  t-if="doc.leasing_direct_importo_rate &gt;0" t-field="doc.leasing_direct_importo_rate" /></div>
 								<div class="row"><strong>Numer mesi:</strong>
-								<p class="m-0" t-field="doc.leasing_direct_numero_mesi" /></div>
+								<p class="m-0"  t-if="doc.leasing_direct_numero_mesi &gt;0" t-field="doc.leasing_direct_numero_mesi" /></div>
 								<div class="row"><p t-if="doc.leasing_direct" class="m-0" t-field="doc.leasing_direct_nota" /></div>
 						</div>
 					</div>
@@ -614,17 +618,17 @@
 							<div class="col-auto mw-100 mb-2 ">							
 									<div class="row"><p><strong>Finanziamento diretto:</strong><input type="checkbox" name="checkbox_finaziamento_direct" t-att-checked="'checked' if your_condition else None"/></p></div>
 									<div class="row"><strong>Costo del bene:</strong>
-									<p class="m-0" t-field="doc.finaziamento_direct_costodelbene" /></div>
+									<p class="m-0"   t-if="doc.finaziamento_direct_costodelbene &gt;0" t-field="doc.finaziamento_direct_costodelbene" /></div>
 									<div class="row"><strong>Finanziamento:</strong>
-									<p class="m-0" t-field="doc.finaziamento_direct_finanziamento" /></div>
+									<p class="m-0"   t-if="doc.finaziamento_direct_finanziamento &gt;0" t-field="doc.finaziamento_direct_finanziamento" /></div>
 									<div class="row"><strong>Numero rate:</strong>
-									<p class="m-0" t-field="doc.finaziamento_direct_numero_rate" /></div>
+									<p class="m-0"   t-if="doc.finaziamento_direct_numero_rate &gt;0" t-field="doc.finaziamento_direct_numero_rate" /></div>
 									<div class="row"><strong>Importo Rate:</strong>
-									<p class="m-0" t-field="doc.finaziamento_direct_importo_rate" /></div>
+									<p class="m-0"   t-if="doc.finaziamento_direct_importo_rate &gt;0" t-field="doc.finaziamento_direct_importo_rate" /></div>
 									<div class="row"><strong>numero mesi:</strong>
-									<p class="m-0" t-field="doc.finaziamento_direct_numero_mesi" /></div>
+									<p class="m-0"   t-if="doc.finaziamento_direct_numero_mesi &gt;0" t-field="doc.finaziamento_direct_numero_mesi" /></div>
 									<div class="row"><strong>Saldo da:</strong>
-									<p class="m-0" t-field="doc.finaziamento_direct_saldo_titolo" /></div>						
+									<p class="m-0"   t-if="doc.finaziamento_direct_saldo_titolo &gt;0" t-field="doc.finaziamento_direct_saldo_titolo" /></div>						
 									<div class="row"><p t-if="doc.finaziamento_direct" class="m-0" t-field="doc.finaziamento_direct_nota" /></div>
 							</div>
 					</div>
