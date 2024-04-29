@@ -14,10 +14,10 @@
 				 			        <div class="row" style="text-align:left;">
 							            <span t-field="company.name"/>
 							        </div>
-				 			        <div class="row" style="text-align:left;">
+				 			        <div class="row" style="text-align:left; white-space: nowrap;">
 							            <span t-field="company.street"/> 
 							        </div>
-				 			        <div class="row" style="text-align:left;">
+				 			        <div class="row" style="text-align:left; white-space: nowrap;">
 							            <span t-field="company.zip"/>, 
 							            <span t-field="company.city"/>,
 							            <span t-if="company.state_id" t-field="company.state_id.code"/>
@@ -27,7 +27,7 @@
 				            <div class="col-3 mb2" name="company_address_2">
 				 			        <div class="row" style="text-align:right;">P.iva:<span t-field="company.vat"/>
 							        </div>
-							        <div class="row" style="text-align:right;">Numero verde:<span t-field="company.numero_verde"/>
+							        <div class="row"  t-att-style="'color: green;'"  style="text-align:right;">Numero verde:<span t-field="company.numero_verde"/>
 							        </div>
 							        <div class="row" style="text-align:right;">email:<span  t-if="company.email" t-field="company.email"/>
 							        </div>
@@ -130,6 +130,9 @@
 				<div class="row mt32 mb32" id="informations">
 					<t t-if="doc.order_line">
 							<span>Oggetto:</span><span t-field="doc.order_line[0].name" />
+							<span t-att-style="'color: red;'" >
+							Numero di selezioni:</span>
+                       		<span t-esc="len(doc.order_line)-1" t-att-style="'color: red;'" />
                        </t>
 					
 				</div>
