@@ -414,9 +414,13 @@
 						<strong>Agente:</strong>
 						<p class="m-0" t-field="doc.user_id" />
 					</div>
-					<div t-if="doc.user_id.name" class="col-auto mw-100 mb-2">
+					<div t-if="doc.user_id.name and doc.user_id.state_ids" class="col-auto mw-100 mb-2">
 						<strong>Zona:</strong>
-						<p class="m-0" t-field="doc.user_id" />
+						<p class="m-0" style="white-space: nowrap;">
+							<t t-foreach="doc.user_id.state_ids" t-as="state">
+								<t t-esc="state.name" /><span/>
+							</t>
+						</p>
 					</div>
 				</div>
 
