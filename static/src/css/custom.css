@@ -13,6 +13,9 @@
 }
 .custom-border {
     border: 1px solid #333;  // Cambia il colore del bordo a piacere
-    padding: 5px;
+  	padding-top: 5px;
+    padding-right: 1px;  /* Aumenta lo spazio orizzontale a destra */
+    padding-bottom: 5px;
+    padding-left: 20px;  /* Aumenta lo spazio orizzontale a sinistra */    
     margin: 2px;
 }

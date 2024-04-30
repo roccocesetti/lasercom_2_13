@@ -567,7 +567,7 @@
 					</div>
 				</div>
 				<div class="row mt32 mb32 col-12  " id="pagamenti">
-					<div class="col-6  mb-2">
+					<div class="col-5  mb-2">
 							<div class="row">
 							<p>Annotazioni_______________________________</p>
 							</div>
@@ -576,7 +576,7 @@
 							<div class="row">
 							<p>_____________________________________________</p></div>
 					</div>
-					<div t-if="doc.payment_direct" class="col-6 mb-2 custom-border">
+					<div t-if="doc.payment_direct" class="col-7 mb-2 custom-border">
 									<div class="row">
 									<p><strong>pagamento diretto:</strong>
 									<input type="checkbox" name="checkbox_diretto" t-att-checked="'checked' if your_condition else None"/></p>
