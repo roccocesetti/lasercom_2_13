@@ -7,6 +7,7 @@ from odoo.exceptions import AccessError, UserError, ValidationError
 from odoo.tools.misc import formatLang, get_lang
 from odoo.osv import expression
 from odoo.tools import float_is_zero, float_compare
+from datetime import datetime, timedelta
 
 def decode_protocollo(valore="0"):
     nprot = {'1':'AAA',
@@ -88,7 +89,8 @@ class SaleOrder(models.Model):
 
     total_purchase_price = fields.Monetary(string='Importo di riferimento',compute='_product_purchase_price', help="protocollo", currency_field='currency_id', store=True)
     sale_string_price = fields.Char(compute='_product_purchase_price', store=True, precompute=True,string='Numero protocollo vendita' )
-    footer_discount = fields.Float(string='Sconto piede (%)', digits='Discount', default=0.0)
+    footer_discount = fields.Float(string='Sconto(%)', digits='Discount', default=0.0)
+    importo_discount = fields.Monetary(string='Sconto', digits='Product Price', compute='_amount_all', tracking=4,default=0.0)
     sale_string_margin = fields.Char(compute='_product_purchase_price', store=True, precompute=True,string='Numero protocollo contabile ' )
     select_acq_usage = fields.Selection(
         [('vendors', 'Riacquisto'),
@@ -96,6 +98,8 @@ class SaleOrder(models.Model):
         string="Acquisto",
         default="vendors")
     sale_acq_usage = fields.Float(string='Valutazione usato', digits='Product Price', default=0.0)
+    sale_ritiro_usato=fields.Boolean(string='Ritiro usato',default=False)
+    sale_modello_usato = fields.Char(string='Modello usato', required=False, copy=False, readonly=False, default='')
     sale_promotion = fields.Float(string='Promozione', digits='Product Price', default=0.0)
 
     amount_untaxed = fields.Monetary(string='Untaxed Amount', store=True, readonly=True, compute='_amount_all', tracking=5)
@@ -149,7 +153,7 @@ class SaleOrder(models.Model):
     def create(self, vals):
         if vals.get('numero_contratto', _('New')) == _('New'):
             seq_date = None
-            if 'data_contratto' in vals :
+            if 'data_contratto' in vals and vals['data_contratto'] :
                 seq_date = fields.Datetime.context_timestamp(self, fields.Datetime.to_datetime(vals['data_contratto']))
                 if 'company_id' in vals:
                     vals['numero_contratto'] = self.env['ir.sequence'].with_context(force_company=vals['company_id']).next_by_code(
@@ -205,6 +209,7 @@ class SaleOrder(models.Model):
                 amount_untaxed += line.price_subtotal
                 amount_tax += line.price_tax
             amount_untaxed=amount_untaxed*(100-order.footer_discount)/100
+            importo_discount=amount_untaxed*(order.footer_discount)/100
             amount_total=amount_untaxed + amount_tax    
             amount_total=amount_total-order.sale_promotion
             if order.select_acq_usage=='vendors':
@@ -218,6 +223,7 @@ class SaleOrder(models.Model):
                 'amount_untaxed': amount_untaxed,
                 'amount_tax': amount_tax,
                 'amount_total': amount_total,
+                'importo_discount': importo_discount,
             })
 
     @api.depends('order_line.purchase_price','order_line.margin','select_acq_usage')

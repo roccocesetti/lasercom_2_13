@@ -154,11 +154,12 @@
 								Descrizione</th>
 							<th name="th_quantity" class="text-right">Quantità</th>
 							<th name="th_priceunit" class="text-right">Prezzo</th>
-							<th name="th_discount" t-if="display_discount"
+						<!--	<th name="th_discount" t-if="display_discount"
 								class="text-right"
 								groups="product.group_discount_per_so_line">
 								<span>Sc. %</span>
 							</th>
+							-->
 							<th name="th_taxes" class="text-right">Iva</th>
 							<th name="th_subtotal" class="text-right">
 								<t
@@ -185,7 +186,7 @@
 
 							<tr
 								t-att-class="'bg-200 font-weight-bold o_line_section' if line.display_type == 'line_section' else 'font-italic o_line_note' if line.display_type == 'line_note' else ''">
-								<t t-if="not line.display_type and not line.product_id.optional_product_ids">
+								<t t-if="not line.display_type">
 									<td name="td_name">
 										<span t-field="line.name" />
 									</td>
@@ -197,11 +198,13 @@
 									<td name="td_priceunit" class="text-right">
 										<span t-field="line.sale_string_price" />
 									</td>
+									<!--
 									<td t-if="display_discount"
 										class="text-right"
 										groups="product.group_discount_per_so_line">
 										<span t-field="line.discount" />
 									</td>
+									-->
 									<td name="td_taxes" class="text-right">
 										<span
 											t-esc="', '.join(map(lambda x: (x.description or x.name), line.tax_id))" />
@@ -295,7 +298,7 @@
 									</td>
 									<td name="td_amount_by_group"
 										class="text-right o_price_total">
-										<span t-field="doc.footer_discount" />
+										<span t-field="doc.importo_discount" />
 									</td>
 								</tr>
 								<tr class="border-black o_total">
@@ -431,7 +434,9 @@
 								Descrizione</th>
 							<th name="th_quantity" class="text-right">Quantità</th>
 							<th name="th_priceunit" class="text-right">Prezzo</th>
+							<!--
 							<th name="th_subtotal" class="text-right">Totale</th>
+							-->
 						</tr>
 					</thead>
 					<tbody class="sale_tbody">
@@ -461,6 +466,7 @@
 									<td name="td_priceunit" class="text-right">
 										<span t-field="line.sale_string_price" />
 									</td>
+								<!--	
 									<td name="td_subtotal"
 										class="text-right o_price_total">
 										<span t-field="line.sale_string_subtotal"
@@ -468,6 +474,7 @@
 										<span t-field="line.sale_string_total"
 											groups="account.group_show_line_subtotals_tax_included" />
 									</td>
+									-->
 								</t>
 								<t t-if="line.display_type == 'line_section'">
 									<td name="td_section_line" colspan="99">
@@ -516,8 +523,7 @@
 								<t t-foreach="doc.amount_by_group"
 									t-as="amount_by_group">
 									<tr style="">
-										<t
-											t-if="amount_by_group[5] == 1 and doc.amount_untaxed == amount_by_group[2]">
+										<t t-if="amount_by_group[5] == 1 and doc.amount_untaxed == amount_by_group[2]">
 											<td
 												name="td_amount_by_group_label_3">
 												<span t-esc="amount_by_group[0]" />
@@ -633,6 +639,48 @@
 				</div>
 				<div class="row mt32 mb32 custom-border"   id="pagamenti_nota_piede">
 					<p t-if="doc.finaziamento_direct_nota_piede" class="m-0" t-field="doc.finaziamento_direct_nota_piede" />
+					
+				</div>
+				<div class="row mt32 mb32"   id="id_usato">
+									<div class="col-3 mb-2 custom-border ">
+										<p><strong>Ritiro usato:&amp;nbsp;</strong>
+										<input type="checkbox" name="checkbox_ritiro_usato" t-att-checked="'checked'  if your_condition else None"/></p>
+									</div>
+									<div class="col-3 mb-2 custom-border ">
+										<p><strong>Modello:&amp;nbsp;</strong></p>
+											<span t-field="doc.sale_modello_usato" />
+									</div>
+									<div class="col-5 mb-2 custom-border ">
+										<p><strong>Prezzo:&amp;nbsp;</strong></p>
+											<span t-field="doc.sale_acq_usage" />
+									</div>
+					
+				</div>
+				<div class="row mt32 mb32 "   id="firma_nota_piede">
+									<div class="col-3 mb-2 custom-border">
+										<p><strong>Firma Agente:&amp;nbsp;</strong></p>
+										<p><span/></p>
+										<p><span/></p>
+									</div>
+									<div class="col-3  mb-2 custom-border">
+										<p><strong>Firma cliente:&amp;nbsp;</strong></p>
+										<p><span/></p>
+										<p><span/></p>
+									</div>
+									<div class="col-5  mb-2 custom-border">
+										<p><strong>Timbro:&amp;nbsp;</strong></p>
+										<div class="row mt32 mb32 "   id="firma_nota_piede">
+											<div class="col-auto  mb-2 ">
+												<p><span/></p>
+												<p><span/></p>
+												<p><span/></p>
+												<p><span/></p>
+												<p><span/></p>
+												<p><span/></p>
+												<p><span/></p>
+											</div>
+										</div>
+									</div>
 					
 				</div>
 
