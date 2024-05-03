@@ -19,3 +19,6 @@
     padding-left: 20px;  /* Aumenta lo spazio orizzontale a sinistra */    
     margin: 2px;
 }
+.avoid-page-break {
+    page-break-inside: avoid;
+}

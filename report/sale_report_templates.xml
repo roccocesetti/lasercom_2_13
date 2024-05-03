@@ -11,6 +11,7 @@
 								
 							</div>
 				            <div class="col-4 mb2" name="company_address">
+								<!--
 				 			        <div class="row" style="text-align:left;">
 							            <span t-field="company.name"/>
 							        </div>
@@ -22,7 +23,7 @@
 							            <span t-field="company.city"/>,
 							            <span t-if="company.state_id" t-field="company.state_id.code"/>
 							        </div>
-
+-->
 				            </div>
 				            <div class="col-3 mb2" name="company_address_2">
 				 			        <div class="row" style="text-align:right;">P.iva:<span t-field="company.vat"/>
@@ -572,7 +573,7 @@
 						</div>
 					</div>
 				</div>
-				<div class="row mt32 mb32 col-12  " id="pagamenti">
+				<div class="row mt32 mb32 col-12  avoid-page-break" id="pagamenti">
 					<div class="col-5  mb-2">
 							<div class="row">
 							<p>Annotazioni_______________________________</p>
@@ -582,7 +583,7 @@
 							<div class="row">
 							<p>_____________________________________________</p></div>
 					</div>
-					<div t-if="doc.payment_direct" class="col-7 mb-2 custom-border">
+					<div t-if="doc.payment_direct" class="col-7 mb-2 custom-border" style="page-break-inside: avoid;" >
 									<div class="row">
 									<p><strong>pagamento diretto:</strong>
 									<input type="checkbox" name="checkbox_diretto" t-att-checked="'checked' if your_condition else None"/></p>
@@ -600,8 +601,8 @@
 									<div class="row"><p t-if="doc.payment_direct" class="m-0" t-field="doc.payment_direct_nota" /></div>
 					</div>
 				</div>
-				<div class="row  mt32 mb32 col-12">
-						<div t-if="doc.leasing_direct" class="col-6 mb-2 custom-border">
+				<div class="row  mt32 mb32 col-12 avoid-page-break "  >
+						<div t-if="doc.leasing_direct" class="col-6 mb-2 custom-border" style="page-break-inside: avoid;">
 								<div class="row"><p><strong>Leasing:</strong>
 								<input type="checkbox" name="checkbox_diretto" t-att-checked="'checked' if your_condition else None"/></p>
 								</div>
@@ -620,7 +621,7 @@
 								<p class="m-0"  t-if="doc.leasing_direct_numero_mesi &gt;0" t-field="doc.leasing_direct_numero_mesi" /></div>
 								<div class="row"><p t-if="doc.leasing_direct" class="m-0" t-field="doc.leasing_direct_nota" /></div>
 					</div>
-						<div t-if="doc.finaziamento_direct" class="col-6 mb-2 custom-border">
+						<div t-if="doc.finaziamento_direct" class="col-6 mb-2 custom-border" style="page-break-inside: avoid;">
 									<div class="row"><p><strong>Finanziamento diretto:</strong><input type="checkbox" name="checkbox_finaziamento_direct" t-att-checked="'checked' if your_condition else None"/></p></div>
 									<div class="row"><strong>Costo del bene:</strong>
 									<p class="m-0"   t-if="doc.finaziamento_direct_costodelbene &gt;0" t-field="doc.finaziamento_direct_costodelbene" /></div>
@@ -637,37 +638,37 @@
 									<div class="row"><p t-if="doc.finaziamento_direct" class="m-0" t-field="doc.finaziamento_direct_nota" /></div>
 					</div>
 				</div>
-				<div class="row mt32 mb32 custom-border"   id="pagamenti_nota_piede">
+				<div class="row mt32 mb32 custom-border avoid-page-break"   id="pagamenti_nota_piede">
 					<p t-if="doc.finaziamento_direct_nota_piede" class="m-0" t-field="doc.finaziamento_direct_nota_piede" />
 					
 				</div>
-				<div class="row mt32 mb32"   id="id_usato">
-									<div class="col-3 mb-2 custom-border ">
+				<div class="row mt32 mb32 avoid-page-break custom-border"    id="id_usato">
+									<div class="col-3 mb-2 ">
 										<p><strong>Ritiro usato:&amp;nbsp;</strong>
 										<input type="checkbox" name="checkbox_ritiro_usato" t-att-checked="'checked'  if your_condition else None"/></p>
 									</div>
-									<div class="col-3 mb-2 custom-border ">
+									<div class="col-3 mb-2 ">
 										<p><strong>Modello:&amp;nbsp;</strong></p>
 											<span t-field="doc.sale_modello_usato" />
 									</div>
-									<div class="col-5 mb-2 custom-border ">
+									<div class="col-6 mb-2 ">
 										<p><strong>Prezzo:&amp;nbsp;</strong></p>
 											<span t-field="doc.sale_acq_usage" />
 									</div>
 					
 				</div>
-				<div class="row mt32 mb32 "   id="firma_nota_piede">
-									<div class="col-3 mb-2 custom-border">
+				<div class="row mt32 mb32 avoid-page-break  custom-border"   id="firma_nota_piede">
+									<div class="col-3 mb-2 ">
 										<p><strong>Firma Agente:&amp;nbsp;</strong></p>
 										<p><span/></p>
 										<p><span/></p>
 									</div>
-									<div class="col-3  mb-2 custom-border">
+									<div class="col-3  mb-2 ">
 										<p><strong>Firma cliente:&amp;nbsp;</strong></p>
 										<p><span/></p>
 										<p><span/></p>
 									</div>
-									<div class="col-5  mb-2 custom-border">
+									<div class="col-6  mb-2 ">
 										<p><strong>Timbro:&amp;nbsp;</strong></p>
 										<div class="row mt32 mb32 "   id="firma_nota_piede">
 											<div class="col-auto  mb-2 ">
