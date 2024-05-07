@@ -51,13 +51,6 @@
 
 	<template id="report_saleorder_document_laser">
 		<t t-call="web.external_layout">
-			<t t-set="address">
-				<div t-field="doc.partner_id"
-					t-options='{"widget": "contact", "fields": ["address", "name"], "no_marker": True}' />
-				<p t-if="doc.partner_id.vat"><t
-						t-esc="doc.company_id.country_id.vat_label or 'Tax ID'" />
-					: &gt;d="doc.partner_id.vat" /></p>
-			</t>
 			<t
 				t-if="doc.partner_shipping_id == doc.partner_invoice_id
                              and doc.partner_invoice_id != doc.partner_id
@@ -81,7 +74,6 @@
 
 			<div class="page">
 				<div class="oe_structure" />
-
 				<h2 class="mt16">
 					<t
 						t-if="not (env.context.get('proforma', False) or is_pro_forma)">
@@ -127,8 +119,15 @@
 						<strong>Venditore:</strong>
 						<p class="m-0" t-field="doc.user_id" />
 					</div>
+					<t t-set="address">
+						<div t-field="doc.partner_id"
+							t-options='{"widget": "contact", "fields": ["address", "name"], "no_marker": True}' />
+						<p t-if="doc.partner_id.vat"><t
+								t-esc="doc.company_id.country_id.vat_label or 'Tax ID'" />
+							: &gt;d="doc.partner_id.vat" /></p>
+					</t>
 				</div>
-				<div class="row mt32 mb32" id="informations">
+				<div class="row mt32 mb32" id="informations_2">
 					<t t-if="doc.order_line">
 							<span>Oggetto:</span><span t-field="doc.order_line[0].name" />
 							<span t-att-style="'color: red;'" >
@@ -137,32 +136,54 @@
                        </t>
 					
 				</div>
-				<div class="row mt32 mb32" id="informations">
+				<div class="row mt32 mb32   avoid-page-break" id="informations">
 						<t t-if="doc.order_line[0].product_id and doc.order_line[0].product_id.description">
 							<span t-field="doc.order_line[0].product_id.description" />
 						</t>
-					
 				</div>
 
 				<!-- Is there a discount on at least one line? -->
 				<t t-set="display_discount"
 					t-value="any([l.discount for l in doc.order_line])" />
+				<div class="oe_structure" />
+				<div class="row mt32 mb32   avoid-page-break" id="dettaglio">
 
-				<table class="table table-sm o_main_table">
-					<thead class="sale_tbody">
+					<table class="table table-sm o_main_table">
+						<thead class="sale_tbody">
 						<tr>
-							<th name="th_description" class="text-left">
+							<th name="th_description" class="text-left bordo-inferiore"></th>
+							<th name="th_quantity" class="text-right bordo-inferiore"></th>
+							<th name="th_priceunit" class="text-right bordo-inferiore"></th>
+							<th name="th_taxes" class="text-right bordo-inferiore"></th>
+							<th name="th_subtotal" class="text-right bordo-inferiore"></th>
+						</tr>
+						<tr>
+							<th name="th_description" class="text-left bordo-inferiore"></th>
+							<th name="th_quantity" class="text-right bordo-inferiore"></th>
+							<th name="th_priceunit" class="text-right bordo-inferiore"></th>
+							<th name="th_taxes" class="text-right bordo-inferiore"></th>
+							<th name="th_subtotal" class="text-right bordo-inferiore"></th>
+						</tr>
+						<tr>
+							<th name="th_description" class="text-left bordo-inferiore"></th>
+							<th name="th_quantity" class="text-right bordo-inferiore"></th>
+							<th name="th_priceunit" class="text-right bordo-inferiore"></th>
+							<th name="th_taxes" class="text-right bordo-inferiore"></th>
+							<th name="th_subtotal" class="text-right bordo-inferiore"></th>
+						</tr>
+						<tr>
+							<th name="th_description" class="text-left bordo-inferiore">
 								Descrizione</th>
-							<th name="th_quantity" class="text-right">Quantità</th>
-							<th name="th_priceunit" class="text-right">Prezzo</th>
+							<th name="th_quantity" class="text-right bordo-inferiore">Quantità</th>
+							<th name="th_priceunit" class="text-right bordo-inferiore">Prezzo</th>
 						<!--	<th name="th_discount" t-if="display_discount"
 								class="text-right"
 								groups="product.group_discount_per_so_line">
 								<span>Sc. %</span>
 							</th>
 							-->
-							<th name="th_taxes" class="text-right">Iva</th>
-							<th name="th_subtotal" class="text-right">
+							<th name="th_taxes" class="text-right bordo-inferiore">Iva</th>
+							<th name="th_subtotal" class="text-right bordo-inferiore">
 								<t
 									groups="account.group_show_line_subtotals_tax_excluded">
 									Imponibile</t>
@@ -171,6 +192,8 @@
 									</t>
 							</th>
 						</tr>
+
+
 					</thead>
 					<tbody class="sale_tbody">
 
@@ -184,6 +207,9 @@
 							<t t-set="current_subtotal"
 								t-value="current_subtotal + line.price_total"
 								groups="account.group_show_line_subtotals_tax_included" />
+
+
+
 
 							<tr
 								t-att-class="'bg-200 font-weight-bold o_line_section' if line.display_type == 'line_section' else 'font-italic o_line_note' if line.display_type == 'line_note' else ''">
@@ -247,11 +273,18 @@
 						</t>
 					</tbody>
 				</table>
-
+				</div>
 				<div class="clearfix" name="so_total_summary">
 					<div id="total" class="row" name="total">
+				 		<div  class=" mt32 ml10 mr4" name="annotazioni">
+											<p>Annotazioni</p>
+											<p>_______________________________________________________________________</p> 
+											<p>_______________________________________________________________________</p> 
+											<p>_______________________________________________________________________</p>
+
+						</div>
 						<div
-							t-attf-class="#{'col-6' if report_type != 'html' else 'col-sm-7 col-md-6'} ml-auto">
+							t-attf-class="#{'col-6' if report_type != 'html' else 'col-sm-7 col-md-6'} ml-60">
 							<table class="table table-sm">
 								<tr class="border-black o_subtotal" style="">
 									<td name="td_amount_untaxed_label">
@@ -293,7 +326,7 @@
 										</t>
 									</tr>
 								</t>
-								<tr class="border-black o_total">
+								<tr class="border-black o_total"   t-if="doc.importo_discount &gt;0">
 									<td name="td_amount_by_group_label">
 										<strong>Sconto</strong>
 									</td>
@@ -302,7 +335,7 @@
 										<span t-field="doc.importo_discount" />
 									</td>
 								</tr>
-								<tr class="border-black o_total">
+								<tr class="border-black o_total"  t-if="doc.sale_promotion &gt;0">
 									<td name="td_amount_by_group_label">
 										<strong>Promozione</strong>
 									</td>
@@ -311,7 +344,7 @@
 										<span t-field="doc.sale_promotion" />
 									</td>
 								</tr>
-								<tr class="border-black o_total">
+								<tr class="border-black o_total" t-if="doc.sale_acq_usage &gt;0">
 									<td name="td_amount_by_group_label"
 										class="text-righ o_price_totalt">
 										<span t-field="doc.select_acq_usage" />
@@ -349,11 +382,6 @@
 				</div>
 
 				<div class="oe_structure" />
-				<p>Annotazioni</p>
-
-				<p>_________________________________________________</p> 
-				<p>_________________________________________________</p> 
-				<p>_________________________________________________</p>
 				<div class="oe_structure" />
 
 				<p t-field="doc.note" />
@@ -388,26 +416,16 @@
 			   <link rel="stylesheet" type="text/css" href="/lasercom_2_13/static/src/css/custom.css"/>
     <t t-raw="0" />
 
-			<t t-set="address"><p>Spettabile </p>
-				<div t-field="doc.partner_id"
-					t-options='{"widget": "contact", "fields": ["address", "name"], "no_marker": True}' />
-				<p t-if="doc.partner_id.vat"><t
-						t-esc="doc.company_id.country_id.vat_label or 'Tax ID'" />
-					: <span t-field="doc.partner_id.vat" /></p>
-			</t>
-
 			<div class="page">
 				<div class="oe_structure" />
-
-				<h2 class="mt16">
-					<t
-						t-if="not (env.context.get('proforma', False) or is_pro_forma)">
-						<span >Contratto # </span>
-					</t>
-					<span t-field="doc.numero_contratto" />
-				</h2>
-
-				<div class="row mt32 mb32" id="informations">
+				<div class="row custom-mt12 mb32" id="informations">
+					<h2 class="mt16">
+						<t
+							t-if="not (env.context.get('proforma', False) or is_pro_forma)">
+							<span >Contratto # </span>
+						</t>
+						<span t-field="doc.numero_contratto" />
+					</h2>
 					<div
 						t-if="doc.data_contratto and doc.state"
 						class="col-auto mw-100 mb-2">
@@ -421,11 +439,19 @@
 					<div t-if="doc.user_id.name and doc.user_id.state_ids" class="col-auto mw-100 mb-2">
 						<strong>Zona:</strong>
 						<p class="m-0" style="white-space: nowrap;">
-							<t t-foreach="doc.user_id.state_ids" t-as="state">
-								<t t-esc="state.name" /><span/>
+							<t t-if="doc.partner_id.state_id">
+								<t t-esc="doc.partner_id.state_id.name" /><span/>
 							</t>
 						</p>
 					</div>
+					<t t-set="address"><p>Spettabile </p>
+						<div t-field="doc.partner_id"
+							t-options='{"widget": "contact", "fields": ["address", "name"], "no_marker": True}' />
+						<p t-if="doc.partner_id.vat"><t
+								t-esc="doc.company_id.country_id.vat_label or 'Tax ID'" />
+							: <span t-field="doc.partner_id.vat" /></p>
+					</t>
+
 				</div>
 
 				<table class="table table-sm o_main_table">
@@ -506,66 +532,80 @@
 						</t>
 					</tbody>
 				</table>
-
 				<div class="clearfix" name="so_total_summary">
 					<div id="total" class="row" name="total">
+				 		<!--
+				 		<div  class=" mt32 ml10 mr4" name="annotazioni">
+											<p>Annotazioni</p>
+											<p>_______________________________________________________________________</p> 
+											<p>_______________________________________________________________________</p> 
+											<p>_______________________________________________________________________</p>
+						</div>
+						-->
 						<div
-							t-attf-class="#{'col-6' if report_type != 'html' else 'col-sm-7 col-md-6'} ml-auto">
+							t-attf-class="#{'col-12' if report_type != 'html' else 'col-sm-12 col-md-12'} ml-1">
 							<table class="table table-sm">
-								<tr class="border-black o_subtotal" style="">
-									<td name="td_amount_untaxed_label">
+								<tr class="border-black o_subtotal tight-rows medium-font" >
+									<td name="td_annotazioni_label" class="col-2" >
+											<p>Annotazioni_______________________________:</p>
+									</td>
+									<td name="td_amount_untaxed_label" class="text-left col-4" >
 										<strong>Imponibile</strong>
 									</td>
-									<td name="td_amount_untaxed"
-										class="text-right">
+									<td name="td_amount_untaxed" class="text-right col-6">
 										<span t-field="doc.amount_untaxed" />
 									</td>
 								</tr>
 								<t t-foreach="doc.amount_by_group"
 									t-as="amount_by_group">
-									<tr style="">
+									<tr class="tight-rows medium-font">
+										<td name="td_annotazioni_label" class="text-white col-2" >
+											<p>_____________________________________________</p>
+										</td>
 										<t t-if="amount_by_group[5] == 1 and doc.amount_untaxed == amount_by_group[2]">
-											<td
-												name="td_amount_by_group_label_3">
-												<span t-esc="amount_by_group[0]" />
-												<span>&amp;nbsp;<span>su</span>
-													&amp;nbsp;<t
-														t-esc="amount_by_group[2]"
-														t-options='{"widget": "monetary", "display_currency": doc.pricelist_id.currency_id}' /></span>
+											<td name="td_amount_by_group_label_3" class="text-left col-4" style="white-space: nowrap;">
+												<span  t-esc="amount_by_group[0]" />
+												<span >&amp;nbsp;<span>su</span>
+													&amp;nbsp;
+													<t  t-esc="amount_by_group[2]" t-options='{"widget": "monetary", "display_currency": doc.pricelist_id.currency_id}' /></span>
 											</td>
-											<td name="td_amount_by_group_3"
-												class="text-right o_price_total">
+											<td name="td_amount_by_group_3" class="text-right o_price_total col-6 ">
 												<span t-esc="amount_by_group[1]"
 													t-options='{"widget": "monetary", "display_currency": doc.pricelist_id.currency_id}' />
 											</td>
 										</t>
 										<t t-else="">
-											<td name="td_amount_by_group_label">
-												<span t-esc="amount_by_group[0]" />
+											<td name="td_amount_by_group_label"  class="text-left col-4" >
+												<span t-esc="amount_by_group[0]" style="white-space: nowrap;" />
 											</td>
-											<td name="td_amount_by_group"
-												class="text-right o_price_total">
+											<td name="td_amount_by_group" class="text-right o_price_total col-6">
 												<span t-esc="amount_by_group[1]"
 													t-options='{"widget": "monetary", "display_currency": doc.pricelist_id.currency_id}' />
 											</td>
 										</t>
 									</tr>
 								</t>
-								<tr class="border-black o_total">
-									<td name="td_amount_total_label">
-										<strong>Totale Fornitura</strong>
+								<tr  class="tight-rows medium-font">
+									<td name="td_annotazioni_label" class="text-white col-2" >
+											<p>_____________________________________________</p>
+									</td>
+									<td name="td_amount_total_label" class="text-left  col-4" >
+										<strong style="white-space: nowrap;">Totale Fornitura</strong>
 									</td>
 									<td name="td_amount_total"
-										class="text-right">
+										class="text-right col-6">
 										<span t-field="doc.amount_total" />
 									</td>
 								</tr>
-								<tr class="border-black o_total">
-									<td name="td_amount_by_group_label">
-										<strong>Caparra</strong>
+								<tr  class="tight-rows medium-font">
+									<td name="td_annotazioni_label" class="text-white border-black o_total col-2" >
+											<p>_____________________________________________</p>
+									</td>
+									<td name="td_amount_by_group_label" class="text-left col-4">
+										<strong style="white-space: nowrap;">Caparra</strong>
 									</td>
 									<td name="td_amount_by_group"
-										class="text-right o_price_total">
+										class="text-right o_price_total col-6">
 										<span t-field="doc.sale_caparra" />
 									</td>
 								</tr>
@@ -573,17 +613,8 @@
 						</div>
 					</div>
 				</div>
-				<div class="row mt32 mb32 col-12  avoid-page-break" id="pagamenti">
-					<div class="col-5  mb-2">
-							<div class="row">
-							<p>Annotazioni_______________________________</p>
-							</div>
-							<div class="row">
-							<p>_____________________________________________</p></div> 
-							<div class="row">
-							<p>_____________________________________________</p></div>
-					</div>
-					<div t-if="doc.payment_direct" class="col-7 mb-2 custom-border" style="page-break-inside: avoid;" >
+				<div class="row custom-mt12 mb32 col-12  avoid-page-break  medium-font" id="pagamenti">
+					<div t-if="doc.payment_direct" class="col-4 mb-2 custom-border" style="page-break-inside: avoid;" >
 									<div class="row">
 									<p><strong>pagamento diretto:</strong>
 									<input type="checkbox" name="checkbox_diretto" t-att-checked="'checked' if your_condition else None"/></p>
@@ -597,12 +628,10 @@
 									<div class="row"><strong>numero titoli:</strong>
 									<p class="m-0"  t-if="doc.payment_direct_num_titoli &gt;0" t-field="doc.payment_direct_num_titoli" /></div>
 									<div class="row"><strong>importo titoli:</strong>
-									<p class="m-0"  t-if="doc.payment_direct_num_titoli &gt;0" t-field="doc.payment_direct_importo_titoli" /></div>
-									<div class="row"><p t-if="doc.payment_direct" class="m-0" t-field="doc.payment_direct_nota" /></div>
+									<p class="m-0"  t-if="doc.payment_direct_importo_titoli &gt;0" t-field="doc.payment_direct_importo_titoli" /></div>
+									<div class="row"><p t-if="doc.payment_direct" class="m-0 small-font" t-field="doc.payment_direct_nota" /></div>
 					</div>
-				</div>
-				<div class="row  mt32 mb32 col-12 avoid-page-break "  >
-						<div t-if="doc.leasing_direct" class="col-6 mb-2 custom-border" style="page-break-inside: avoid;">
+					<div t-if="doc.leasing_direct" class="col-4 mb-2 custom-border" style="page-break-inside: avoid;">
 								<div class="row"><p><strong>Leasing:</strong>
 								<input type="checkbox" name="checkbox_diretto" t-att-checked="'checked' if your_condition else None"/></p>
 								</div>
@@ -619,9 +648,9 @@
 								<p class="m-0"  t-if="doc.leasing_direct_importo_rate &gt;0" t-field="doc.leasing_direct_importo_rate" /></div>
 								<div class="row"><strong>Numer mesi:</strong>
 								<p class="m-0"  t-if="doc.leasing_direct_numero_mesi &gt;0" t-field="doc.leasing_direct_numero_mesi" /></div>
-								<div class="row"><p t-if="doc.leasing_direct" class="m-0" t-field="doc.leasing_direct_nota" /></div>
-					</div>
-						<div t-if="doc.finaziamento_direct" class="col-6 mb-2 custom-border" style="page-break-inside: avoid;">
+								<div class="row"><p t-if="doc.leasing_direct" class="m-0 small-font" t-field="doc.leasing_direct_nota" /></div>
+					    </div>
+					<div t-if="doc.finaziamento_direct" class="col-4 mb-2 custom-border" style="page-break-inside: avoid;">
 									<div class="row"><p><strong>Finanziamento diretto:</strong><input type="checkbox" name="checkbox_finaziamento_direct" t-att-checked="'checked' if your_condition else None"/></p></div>
 									<div class="row"><strong>Costo del bene:</strong>
 									<p class="m-0"   t-if="doc.finaziamento_direct_costodelbene &gt;0" t-field="doc.finaziamento_direct_costodelbene" /></div>
@@ -635,14 +664,14 @@
 									<p class="m-0"   t-if="doc.finaziamento_direct_numero_mesi &gt;0" t-field="doc.finaziamento_direct_numero_mesi" /></div>
 									<div class="row"><strong>Saldo da:</strong>
 									<p class="m-0"   t-if="doc.finaziamento_direct_saldo_titolo &gt;0" t-field="doc.finaziamento_direct_saldo_titolo" /></div>						
-									<div class="row"><p t-if="doc.finaziamento_direct" class="m-0" t-field="doc.finaziamento_direct_nota" /></div>
+									<div class="row"><p t-if="doc.finaziamento_direct" class="m-0 small-font" t-field="doc.finaziamento_direct_nota" /></div>
 					</div>
 				</div>
-				<div class="row mt32 mb32 custom-border avoid-page-break"   id="pagamenti_nota_piede">
+				<div class="row custom-mt12 mb32 custom-border avoid-page-break small-font"   id="pagamenti_nota_piede">
 					<p t-if="doc.finaziamento_direct_nota_piede" class="m-0" t-field="doc.finaziamento_direct_nota_piede" />
 					
 				</div>
-				<div class="row mt32 mb32 avoid-page-break custom-border"    id="id_usato">
+				<div class="row custom-mt12 mb32 avoid-page-break custom-border" t-if="doc.sale_acq_usage &gt;0"    id="id_usato">
 									<div class="col-3 mb-2 ">
 										<p><strong>Ritiro usato:&amp;nbsp;</strong>
 										<input type="checkbox" name="checkbox_ritiro_usato" t-att-checked="'checked'  if your_condition else None"/></p>
@@ -652,12 +681,12 @@
 											<span t-field="doc.sale_modello_usato" />
 									</div>
 									<div class="col-6 mb-2 ">
-										<p><strong>Prezzo:&amp;nbsp;</strong></p>
+										<p t-if="doc.sale_acq_usage &gt;0" ><strong>Prezzo:&amp;nbsp;</strong></p>
 											<span t-field="doc.sale_acq_usage" />
 									</div>
 					
 				</div>
-				<div class="row mt32 mb32 avoid-page-break  custom-border"   id="firma_nota_piede">
+				<div class="row custom-mt12 mb32 avoid-page-break  custom-border"   id="firma_nota_piede">
 									<div class="col-3 mb-2 ">
 										<p><strong>Firma Agente:&amp;nbsp;</strong></p>
 										<p><span/></p>

@@ -22,3 +22,19 @@
 .avoid-page-break {
     page-break-inside: avoid;
 }
+.small-font {
+    font-size: 10px; /* Imposta la dimensione del font che preferisci */
+}
+.medium-font {
+    font-size: 14px; /* Imposta la dimensione del font che preferisci */
+}
+.tight-rows {
+    padding-top: 2px; 
+    padding-bottom: 2px;
+}
+.custom-mt12 {
+    margin-top: 6px;  /* Usa il valore che desideri */
+}
+.bordo-inferiore {
+    border-bottom: 1px solid #333; /* Colore grigio chiaro */
+}

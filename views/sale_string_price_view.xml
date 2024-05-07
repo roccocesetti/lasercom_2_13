@@ -13,7 +13,7 @@
 
                    <field name="sale_string_price"  groups="base.group_user" />
                    <field name="sale_string_margin"  groups="base.group_user" />
-             
+				   <field name="attachment_url" widget="url" string="Download retro Contratto" />
              </xpath>
             <xpath expr="//group[@name='sale_total']" position="replace">
                       <group class="oe_subtotal_footer oe_right" colspan="2" name="sale_total_laser">

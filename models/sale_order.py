@@ -97,10 +97,10 @@ class SaleOrder(models.Model):
         ('quotation', 'Valutazione usato')],
         string="Acquisto",
         default="vendors")
-    sale_acq_usage = fields.Float(string='Valutazione usato', digits='Product Price', default=0.0)
+    sale_acq_usage = fields.Monetary(string='Valutazione usato', digits='Product Price', default=0.0)
     sale_ritiro_usato=fields.Boolean(string='Ritiro usato',default=False)
     sale_modello_usato = fields.Char(string='Modello usato', required=False, copy=False, readonly=False, default='')
-    sale_promotion = fields.Float(string='Promozione', digits='Product Price', default=0.0)
+    sale_promotion = fields.Monetary(string='Promozione', digits='Product Price', default=0.0)
 
     amount_untaxed = fields.Monetary(string='Untaxed Amount', store=True, readonly=True, compute='_amount_all', tracking=5)
     amount_by_group = fields.Binary(string="Tax amount by group", compute='_amount_by_group', help="type: [(name, amount, base, formated amount, formated base)]")
@@ -148,7 +148,13 @@ class SaleOrder(models.Model):
    
     finaziamento_direct_retro = fields.Text(string='Retro', required=False, copy=False, readonly=False, default="" \
 "")
-   
+    attachment_url = fields.Char(compute='_compute_attachment_url')
+
+    def _compute_attachment_url(self):
+        for record in self:
+            attachment = self.env['ir.attachment'].search([('res_model', '=', 'res.partner'), ('res_id', '=', 1)], limit=1)
+            if attachment:
+                record.attachment_url = '/web/content/%s?download=true' % attachment.id    
     @api.model
     def create(self, vals):
         if vals.get('numero_contratto', _('New')) == _('New'):
