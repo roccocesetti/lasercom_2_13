@@ -102,6 +102,7 @@ class SaleOrder(models.Model):
     sale_modello_usato = fields.Char(string='Modello usato', required=False, copy=False, readonly=False, default='')
     sale_promotion = fields.Monetary(string='Promozione', digits='Product Price', default=0.0)
 
+    amount_untaxed_nocalc = fields.Monetary(string='Imponibile lordo', store=True, readonly=True, compute='_amount_all', tracking=5)
     amount_untaxed = fields.Monetary(string='Untaxed Amount', store=True, readonly=True, compute='_amount_all', tracking=5)
     amount_by_group = fields.Binary(string="Tax amount by group", compute='_amount_by_group', help="type: [(name, amount, base, formated amount, formated base)]")
     amount_tax = fields.Monetary(string='Taxes', store=True, readonly=True, compute='_amount_all')
@@ -214,18 +215,21 @@ class SaleOrder(models.Model):
                 
                 amount_untaxed += line.price_subtotal
                 amount_tax += line.price_tax
-            amount_untaxed=amount_untaxed*(100-order.footer_discount)/100
-            importo_discount=amount_untaxed*(order.footer_discount)/100
-            amount_total=amount_untaxed + amount_tax    
-            amount_total=amount_total-order.sale_promotion
+            amount_untaxed_nocalc = amount_untaxed
+            amount_untaxed=amount_untaxed-order.sale_promotion
             if order.select_acq_usage=='vendors':
-                amount_total=amount_total+order.sale_acq_usage
+                amount_untaxed=amount_untaxed+order.sale_acq_usage
             elif order.select_acq_usage=='quotation':   
-                amount_total=amount_total-order.sale_acq_usage
+                amount_untaxed=amount_untaxed-order.sale_acq_usage
             else:
-                amount_total=amount_total+order.sale_acq_usage
-                
+                amount_untaxed=amount_untaxed+order.sale_acq_usage
+            importo_discount=amount_untaxed*(order.footer_discount)/100
+            amount_untaxed=amount_untaxed-importo_discount
+            amount_total=(amount_untaxed * 122)/100
+            amount_tax=(amount_untaxed * 22)/100
+               
             order.update({
+                'amount_untaxed_nocalc': amount_untaxed_nocalc,
                 'amount_untaxed': amount_untaxed,
                 'amount_tax': amount_tax,
                 'amount_total': amount_total,
