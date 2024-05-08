@@ -86,7 +86,7 @@
 					<span t-field="doc.name" />
 				</h2>
 
-				<div class="row mt32 mb32" id="informations">
+				<div class="row custom-mt12 mb32" id="informations">
 					<div t-if="doc.sale_string_price"
 						class="col-auto mw-100 mb-2" style="text-align:left; white-space: nowrap;">
 						<strong>protocollo di vendita:</strong>
@@ -127,7 +127,7 @@
 							: &gt;d="doc.partner_id.vat" /></p>
 					</t>
 				</div>
-				<div class="row mt32 mb32" id="informations_2">
+				<div class="row custom-mt12 mb32" id="informations_2">
 					<t t-if="doc.order_line">
 							<span>Oggetto:</span><span t-field="doc.order_line[0].name" />
 							<span t-att-style="'color: red;'" >
@@ -136,7 +136,7 @@
                        </t>
 					
 				</div>
-				<div class="row mt32 mb32   avoid-page-break" id="informations">
+				<div class="row custom-mt12 mb32   avoid-page-break" id="informations">
 						<t t-if="doc.order_line[0].product_id and doc.order_line[0].product_id.description">
 							<span t-field="doc.order_line[0].product_id.description" />
 						</t>
@@ -146,10 +146,11 @@
 				<t t-set="display_discount"
 					t-value="any([l.discount for l in doc.order_line])" />
 				<div class="oe_structure" />
-				<div class="row mt32 mb32   avoid-page-break" id="dettaglio">
+				<div class="row custom-mt12 mb32   avoid-page-break" id="dettaglio">
 
 					<table class="table table-sm o_main_table">
 						<thead class="sale_tbody">
+						<!--	
 						<tr>
 							<th name="th_description" class="text-left bordo-inferiore"></th>
 							<th name="th_quantity" class="text-right bordo-inferiore"></th>
@@ -171,6 +172,7 @@
 							<th name="th_taxes" class="text-right bordo-inferiore"></th>
 							<th name="th_subtotal" class="text-right bordo-inferiore"></th>
 						</tr>
+						-->
 						<tr>
 							<th name="th_description" class="text-left bordo-inferiore">
 								Descrizione</th>
@@ -276,7 +278,7 @@
 				</div>
 				<div class="clearfix" name="so_total_summary">
 					<div id="total" class="row" name="total">
-				 		<div  class=" mt32 ml10 mr4" name="annotazioni">
+				 		<div  class=" custom-mt12 ml10 mr4" name="annotazioni">
 											<p>Annotazioni</p>
 											<p>_______________________________________________________________________</p> 
 											<p>_______________________________________________________________________</p> 
@@ -368,7 +370,7 @@
 					</div>
 				</div>
 
-				<div t-if="doc.signature" class="mt32 ml64 mr4" name="signature">
+				<div t-if="doc.signature" class="custom-mt12 ml64 mr4" name="signature">
 					<div class="offset-8">
 						<strong>Signature</strong>
 					</div>
