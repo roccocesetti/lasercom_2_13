@@ -72,9 +72,9 @@
 				</t>
 			</t>
 
-			<div class="page">
+			<div class="page custom-mt12">
 				<div class="oe_structure" />
-				<h2 class="mt16">
+				<h2 class="custom-mt12">
 					<t
 						t-if="not (env.context.get('proforma', False) or is_pro_forma)">
 						<span t-if="doc.state not in ['draft','sent']">Order # </span>
@@ -136,7 +136,7 @@
                        </t>
 					
 				</div>
-				<div class="row custom-mt12 mb32  medium-font avoid-page-break" id="informations">
+				<div class="row custom-mt12 mb32  small-font avoid-page-break" id="informations">
 						<t t-if="doc.order_line[0].product_id and doc.order_line[0].product_id.description">
 							<span t-field="doc.order_line[0].product_id.description" />
 						</t>
