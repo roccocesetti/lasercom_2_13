@@ -34,6 +34,16 @@
 }
 .custom-mt12 {
     margin-top: 2px;  /* Usa il valore che desideri */
+    margin-bottom: 2px;  /* Usa il valore che desideri */
+    
+}
+.custom-mt4 {
+    margin-top: 4px;  /* Usa il valore che desideri */
+    margin-bottom: 4px;  /* Usa il valore che desideri */
+}
+.custom-mt6 {
+    margin-top: 6px;  /* Usa il valore che desideri */
+    margin-bottom: 6px;  /* Usa il valore che desideri */
 }
 .bordo-inferiore {
     border-bottom: 1px solid #333; /* Colore grigio chiaro */
