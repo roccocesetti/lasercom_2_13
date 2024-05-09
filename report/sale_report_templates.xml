@@ -294,9 +294,10 @@
 									</td>
 									<td name="td_amount_untaxed"
 										class="text-right">
-										<span t-field="doc.amount_untaxed" />
+										<span t-field="doc.amount_untaxed_nocalc" />
 									</td>
 								</tr>
+								<!--
 								<t t-foreach="doc.amount_by_group"
 									t-as="amount_by_group">
 									<tr style="">
@@ -328,15 +329,7 @@
 										</t>
 									</tr>
 								</t>
-								<tr class="border-black o_total"   t-if="doc.importo_discount &gt;0">
-									<td name="td_amount_by_group_label">
-										<strong>Sconto</strong>
-									</td>
-									<td name="td_amount_by_group"
-										class="text-right o_price_total">
-										<span t-field="doc.importo_discount" />
-									</td>
-								</tr>
+								-->
 								<tr class="border-black o_total"  t-if="doc.sale_promotion &gt;0">
 									<td name="td_amount_by_group_label">
 										<strong>Promozione</strong>
@@ -344,6 +337,15 @@
 									<td name="td_amount_by_group"
 										class="text-right o_price_total">
 										<span t-field="doc.sale_promotion" />
+									</td>
+								</tr>
+								<tr class="border-black o_total"   t-if="doc.importo_discount &gt;0">
+									<td name="td_amount_by_group_label">
+										<strong>Sconto</strong>
+									</td>
+									<td name="td_amount_by_group"
+										class="text-right o_price_total">
+										<span t-field="doc.importo_discount" />
 									</td>
 								</tr>
 								<tr class="border-black o_total" t-if="doc.sale_acq_usage &gt;0">
@@ -356,6 +358,16 @@
 										<span t-field="doc.sale_acq_usage" />
 									</td>
 								</tr>
+								<tr class="border-black o_subtotal" style="">
+									<td name="td_amount_untaxed_label">
+										<strong>Iva 22%</strong>
+									</td>
+									<td name="td_amount_untaxed"
+										class="text-right">
+										<span t-field="doc.amount_tax" />
+									</td>
+								</tr>
+								
 								<tr class="border-black o_total">
 									<td name="td_amount_total_label">
 										<strong>Totale</strong>
