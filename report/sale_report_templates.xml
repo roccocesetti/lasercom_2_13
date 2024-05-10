@@ -682,7 +682,7 @@
 										<span t-field="doc.importo_discount"/>
 									</td>
 								</tr>
-
+                                <!--
 								<tr class="border-black o_subtotal" style="">
 									<td name="td_amount_untaxed_label">
 										<strong>Iva 22%</strong>
@@ -691,13 +691,14 @@
 										<span t-field="doc.amount_tax"/>
 									</td>
 								</tr>
-								
+								-->
 								<tr class="border-black o_total">
 									<td name="td_amount_total_label">
 										<strong>Totale</strong>
 									</td>
 									<td name="td_amount_total" class="text-right">
-										<span t-field="doc.amount_total"/>
+										<!-- <span t-field="doc.amount_total"/> -->
+										<span t-field="doc.amount_untaxed"/>
 									</td>
 								</tr>
 							</table>

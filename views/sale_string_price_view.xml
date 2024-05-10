@@ -32,11 +32,11 @@
                                     <div class="oe_subtotal_footer_separator oe_inline o_td_label">
                                     </div>
                        <field name="amount_untaxed" widget='monetary' options="{'currency_field': 'currency_id'}"/>
-                       <field name="amount_tax" widget='monetary' options="{'currency_field': 'currency_id'}"/>
-                      <div class="oe_subtotal_footer_separator oe_inline o_td_label">
+                       <field name="amount_tax" widget='monetary' options="{'currency_field': 'currency_id'}" groups="lasercom.group_amministratore"/>
+                      <div class="oe_subtotal_footer_separator oe_inline o_td_label" groups="lasercom.group_amministratore">
                                         <label for="amount_total" />
                        </div>
-                       <field name="amount_total" nolabel="1" class="oe_subtotal_footer_separator" widget='monetary' options="{'currency_field': 'currency_id'}"/>
+                       <field name="amount_total" nolabel="1" class="oe_subtotal_footer_separator" widget='monetary' options="{'currency_field': 'currency_id'}" groups="lasercom.group_amministratore"/>
                    		<field name="total_purchase_price" groups="lasercom.group_amministratore"/>
                                 </group>
  
