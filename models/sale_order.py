@@ -39,7 +39,23 @@ def decode_protocollo(valore="0"):
     myvalore=myvalore.replace('.','VI').replace('.','PU')
         
     return myvalore
-    
+
+
+class productProduct(models.Model):
+    _inherit = "product.product"
+    def get_product_multiline_description_sale(self):
+        """ Compute a multiline description of this product, in the context of sales
+                (do not use for purchases or other display reasons that don't intend to use "description_sale").
+            It will often be used as the default description of a sale order line referencing this product.
+        """
+        name = super(productProduct, self).get_product_multiline_description_sale()
+        name = self.name
+        if self.description_sale:
+            name = self.description_sale
+
+        return name
+
+
 
 class SaleOrderLine(models.Model):
     _inherit = "sale.order.line"
@@ -95,12 +111,12 @@ class SaleOrder(models.Model):
     select_acq_usage = fields.Selection(
         [('vendors', 'Riacquisto'),
         ('quotation', 'Valutazione usato')],
-        string="Acquisto",
+        string="Tipo valutazione",
         default="vendors")
-    sale_acq_usage = fields.Monetary(string='Valutazione usato', digits='Product Price', default=0.0)
+    sale_acq_usage = fields.Monetary(string='valore', digits='Product Price', default=0.0)
     sale_ritiro_usato=fields.Boolean(string='Ritiro usato',default=False)
     sale_modello_usato = fields.Char(string='Modello usato', required=False, copy=False, readonly=False, default='')
-    sale_promotion = fields.Monetary(string='Promozione', digits='Product Price', default=0.0)
+    sale_promotion = fields.Monetary(string='-', digits='Product Price', default=0.0)
 
     amount_untaxed_nocalc = fields.Monetary(string='Imponibile lordo', store=True, readonly=True, compute='_amount_all', tracking=5)
     amount_untaxed = fields.Monetary(string='Untaxed Amount', store=True, readonly=True, compute='_amount_all', tracking=5)
@@ -115,6 +131,7 @@ class SaleOrder(models.Model):
     payment_direct=fields.Boolean(string='Pagamento Diretto',default=False)
     payment_direct_allordine = fields.Monetary(string="All'ordine", digits='Product Price', default=0.0,currency_field='currency_id',)
     payment_direct_allaconsegna = fields.Monetary(string='Alla consegna', digits='Product Price', default=0.0,currency_field='currency_id',)
+    payment_direct_saldo = fields.Monetary(string='Saldo', digits='Product Price', default=0.0,currency_field='currency_id',)
     payment_direct_num_titoli = fields.Integer(string='Numero Titoli', default=0)
     payment_direct_importo_titoli = fields.Monetary(string='Importo titoli', digits='Product Price', default=0.0,currency_field='currency_id',)
     payment_direct_nota = fields.Char(string='NOta', required=False, copy=False, readonly=False, default='a scadenza mensile a partire da 30 giorni data installazione')
@@ -150,6 +167,7 @@ class SaleOrder(models.Model):
     finaziamento_direct_retro = fields.Text(string='Retro', required=False, copy=False, readonly=False, default="" \
 "")
     attachment_url = fields.Char(compute='_compute_attachment_url')
+    annotazione = fields.Char(string='Annotazione', required=False, copy=False, readonly=False, default='')
 
     def _compute_attachment_url(self):
         for record in self:
@@ -168,7 +186,7 @@ class SaleOrder(models.Model):
                 else:
                     vals['numero_contratto'] = self.env['ir.sequence'].next_by_code('sale.order.contract', sequence_date=seq_date) or _('New')
     
-        vals.update({'note':'Prezzi iva esclusa, Trasporto, installazione, collaudo a nostro carico, Garanzia 24 mesi' })
+        vals.update({'note':'Prezzi iva esclusa, Trasporto, installazione, collaudo a nostro carico' })
         res=super(SaleOrder, self).create(vals)
         return res
 
