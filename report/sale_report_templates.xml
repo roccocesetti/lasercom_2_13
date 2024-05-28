@@ -1092,13 +1092,13 @@
 <!-- inizio -->
 
 <template id="report_saleorder_document_laser_contratto">
-		<t t-call="web.external_layout">
+<t t-call="web.external_layout">
 			   <link rel="stylesheet" type="text/css" href="/lasercom_2_13/static/src/css/custom.css"/>
     <t t-raw="0"/>
 
 			<div class="page">
 				<div class="oe_structure"/>
-				<div class="row m-0 mb32" id="informations">
+				<div class="row m-0 " id="informations">
 					<h2 class="mt16">
 						<t t-if="not (env.context.get('proforma', False) or is_pro_forma)">
 							<span>Contratto # </span>
@@ -1166,7 +1166,7 @@
 										<span t-field="line.sale_string_price"/>
 									</td>
 									-->
-								<!--	
+								<!--
 									<td name="td_subtotal"
 										class="text-right o_price_total">
 										<span t-field="line.sale_string_subtotal"
@@ -1206,8 +1206,8 @@
 				 		<!--
 				 		<div  class=" mt32 ml10 mr4" name="annotazioni">
 											<p>Annotazioni</p>
-											<p>_______________________________________________________________________</p> 
-											<p>_______________________________________________________________________</p> 
+											<p>_______________________________________________________________________</p>
+											<p>_______________________________________________________________________</p>
 											<p>_______________________________________________________________________</p>
 						</div>
 						-->
@@ -1216,7 +1216,7 @@
 								<tr class="border-black o_subtotal tight-rows medium-font">
 									<td name="td_annotazioni_label" class="col-2">
 								<p t-if="doc.annotazione">
-									<span t-field="doc.annotazione" />
+									<span t-field="doc.annotazione"/>
 								</p>
 						</td>
 									<td name="td_amount_untaxed_label" class="text-left col-4">
@@ -1275,83 +1275,71 @@
 						</div>
 					</div>
 				</div>
-				<div class="row m-0 mb-2 col-12  avoid-page-break  medium-font" id="pagamenti">
-					<div t-if="doc.payment_direct" class="col-12 mb-2 custom-border" style="page-break-inside: avoid;">
+				<div class="row m-0  col-13  avoid-page-break  medium-font" id="pagamenti">
+					<div t-if="doc.payment_direct" class="row m-0 col-13  custom-border" style="page-break-inside: avoid;">
 									<div class="row mb-1">
 									<p><strong class="mr-2 ml-2">pagamento diretto:</strong>
 									<input type="checkbox" name="checkbox_diretto" t-att-checked="'checked' if your_condition else None"/></p>
 									<strong class="mr-2 ml-2">all'ordine:</strong>
-									<p  t-if="doc.payment_direct_allordine &gt;0" t-field="doc.payment_direct_allordine"></p>
-									</div>
-									<div class="row mb-1">
-										<strong class="mr-2 ml-2" >alla consegna:</strong>
-									<p  t-if="doc.payment_direct_allaconsegna &gt;0" t-field="doc.payment_direct_allaconsegna"/>
-										<strong class="mr-2 ml-2" >Saldo:</strong>
-									<p  t-if="doc.payment_direct_saldo &gt;0" t-field="doc.payment_direct_saldo"/>
-									</div>
-									<div class="row mb-1">
-										<strong class="mr-2 ml-2" >numero titoli:</strong>
+									<p t-if="doc.payment_direct_allordine &gt;0" t-field="doc.payment_direct_allordine"/>
+
+										<strong class="mr-2 ml-2">alla consegna:</strong>
+									<p t-if="doc.payment_direct_allaconsegna &gt;0" t-field="doc.payment_direct_allaconsegna"/>
+										<strong class="mr-2 ml-2">Saldo:</strong>
+									<p t-if="doc.payment_direct_saldo &gt;0" t-field="doc.payment_direct_saldo"/>
+
+										<strong class="mr-2 ml-2">numero titoli:</strong>
 									<p t-if="doc.payment_direct_num_titoli &gt;0" t-field="doc.payment_direct_num_titoli"/>
-										<strong class="mr-2 ml-2" >importo titoli:</strong>
-									<p  t-if="doc.payment_direct_importo_titoli &gt;0" t-field="doc.payment_direct_importo_titoli"/>
-										<p t-if="doc.payment_direct" class="mr-2 ml-2 medium-font" t-field="doc.payment_direct_nota"/>
+										<strong class="mr-2 ml-2">importo titoli:</strong>
+									<p t-if="doc.payment_direct_importo_titoli &gt;0" t-field="doc.payment_direct_importo_titoli"/>
+
+										<p t-if="doc.payment_direct" class="mr-2 ml-2 small-font" t-field="doc.payment_direct_nota"/>
 									</div>
 					</div>
-					<div t-if="doc.leasing_direct" class="col-12 mb-4 custom-border" style="page-break-inside: avoid;">
-								<div class="row mb-2">
-									<p><strong class="mr-2 ml-2" >Leasing:</strong>
+					<div t-if="doc.leasing_direct" class="col-12 m-0 custom-border" style="page-break-inside: avoid;">
+								<div class="row mb-1">
+									<p><strong class="mr-2 ml-2">Leasing:</strong>
 								<input type="checkbox" name="checkbox_diretto" t-att-checked="'checked' if your_condition else None"/></p>
-										<strong class="mr-2 ml-2" >Importo:</strong>
+										<strong class="mr-2 ml-2">Importo:</strong>
 									<p class="m-0" t-if="doc.leasing_direct_importo &gt;0" t-field="doc.leasing_direct_importo"/>+iva
-								</div>
-								<div class="row mb-1">
-									<strong class="mr-2 ml-2" >Macrocanone:</strong>
+									<strong class="mr-2 ml-2">Macrocanone:</strong>
 								<p class="m-0" t-if="doc.leasing_direct_macrocanone &gt;0" t-field="doc.leasing_direct_macrocanone"/>+iva
-									<strong class="mr-2 ml-2" >Totale:</strong>
+									<strong class="mr-2 ml-2">Totale:</strong>
 								<p class="m-0" t-if="doc.leasing_direct_totale &gt;0" t-field="doc.leasing_direct_totale"/>
-								</div>
-								<div class="row mb-1">
-									<strong class="mr-2 ml-2" >Numero rate:</strong>
+									<strong class="mr-2 ml-2">Numero rate:</strong>
 								    <p class="m-0" t-if="doc.leasing_direct_numero_rate &gt;0" t-field="doc.leasing_direct_numero_rate"/>
-									<strong class="mr-2 ml-2" >Importo rate:</strong>
+									<strong class="mr-2 ml-2">Importo rate:</strong>
 								<p class="m-0" t-if="doc.leasing_direct_importo_rate &gt;0" t-field="doc.leasing_direct_importo_rate"/>+iva
-									<strong class="mr-2 ml-2" >Numer mesi:</strong>
+									<strong class="mr-2 ml-2">Numer mesi:</strong>
 								<p class="m-0" t-if="doc.leasing_direct_numero_mesi &gt;0" t-field="doc.leasing_direct_numero_mesi"/>
-								</div>
-								<div class="row mb-1">
 									<p t-if="doc.leasing_direct" class="mr-2 ml-2 medium-font" t-field="doc.leasing_direct_nota"/>
 								</div>
 					    </div>
-					<div t-if="doc.finaziamento_direct" class="col-12 mb-4 custom-border" style="page-break-inside: avoid;">
+					<div t-if="doc.finaziamento_direct" class="col-12 m-0 custom-border" style="page-break-inside: avoid;">
 									<div class="row mb-1">
-										<p><strong class="mr-2 ml-2" >Finanziamento diretto:</strong><input type="checkbox" name="checkbox_finaziamento_direct" t-att-checked="'checked' if your_condition else None"/></p>
-										<strong class="mr-2 ml-2" >Costo del bene:</strong>
+										<p><strong class="mr-2 ml-2">Finanziamento diretto:</strong><input type="checkbox" name="checkbox_finaziamento_direct" t-att-checked="'checked' if your_condition else None"/></p>
+										<strong class="mr-2 ml-2">Costo del bene:</strong>
 									<p class="m-0" t-if="doc.finaziamento_direct_costodelbene &gt;0" t-field="doc.finaziamento_direct_costodelbene"/>
-									</div>
-									<div class="row mb-1">
-										<strong class="mr-2 ml-2" >Finanziamento:</strong>
+										<strong class="mr-2 ml-2">Finanziamento:</strong>
 									<p class="m-0" t-if="doc.finaziamento_direct_finanziamento &gt;0" t-field="doc.finaziamento_direct_finanziamento"/>
-										<strong class="mr-2 ml-2" >Numero rate:</strong>
+										<strong class="mr-2 ml-2">Numero rate:</strong>
 									<p class="m-0" t-if="doc.finaziamento_direct_numero_rate &gt;0" t-field="doc.finaziamento_direct_numero_rate"/>
-										<strong class="mr-2 ml-2" >Importo Rate:</strong>
+										<strong class="mr-2 ml-2">Importo Rate:</strong>
 									<p class="m-0" t-if="doc.finaziamento_direct_importo_rate &gt;0" t-field="doc.finaziamento_direct_importo_rate"/>
-									</div>
-									<div class="row mb-1">
-										<strong class="mr-2 ml-2" >numero mesi:</strong>
+										<strong class="mr-2 ml-2">numero mesi:</strong>
 									<p class="m-0" t-if="doc.finaziamento_direct_numero_mesi &gt;0" t-field="doc.finaziamento_direct_numero_mesi"/>
-										<strong class="mr-2 ml-2" >Saldo da:</strong>
+										<strong class="mr-2 ml-2">Saldo da:</strong>
 									<p class="m-0" t-if="doc.finaziamento_direct_saldo_titolo &gt;0" t-field="doc.finaziamento_direct_saldo_titolo"/>
-									</div>
-									<div class="row mb-1">
+
 										<p t-if="doc.finaziamento_direct" class="mr-2 ml-2 medium-font" t-field="doc.finaziamento_direct_nota"/>
 									</div>
 					</div>
 				</div>
-				<div class="row m-0 mb32 custom-border avoid-page-break small-font" id="pagamenti_nota_piede">
+				<div class="row m-0  custom-border avoid-page-break small-font" id="pagamenti_nota_piede">
 					<p t-if="doc.finaziamento_direct_nota_piede" class="m-0" t-field="doc.finaziamento_direct_nota_piede"/>
-					
+
 				</div>
-				<div class="row m-0 mb32 avoid-page-break custom-border" t-if="doc.sale_acq_usage &gt;0" id="id_usato">
+				<div class="row m-0  avoid-page-break custom-border" t-if="doc.sale_acq_usage &gt;0" id="id_usato">
 									<div class="col-3 mb-2 ">
 										<p><strong>Ritiro usato:&amp;nbsp;</strong>
 										<input type="checkbox" name="checkbox_ritiro_usato" t-att-checked="'checked'  if your_condition else None"/></p>
@@ -1361,37 +1349,32 @@
 											<span t-field="doc.sale_modello_usato"/>
 									</div>
 									<div class="col-6 mb-2 ">
-										<p t-if="doc.sale_acq_usage &gt;0"><strong>Prezzo:&amp;nbsp;</strong></p>
-											<span t-field="doc.sale_acq_usage"/>
+										<p t-if="doc.sale_acq_usage &gt;0"  style="white-space: nowrap;"><strong>Prezzo:&amp;nbsp;</strong>
+											<span t-field="doc.sale_acq_usage"/></p>
 									</div>
-					
+
 				</div>
-				<div class="row m-0 mb32 avoid-page-break  custom-border" id="firma_nota_piede">
+				<div class="row m-0 avoid-page-break  custom-border" id="firma_nota_piede">
 									<div class="col-3 mb-2 ">
 										<p><strong>Firma Agente:&amp;nbsp;</strong></p>
-										<p><span/></p>
-										<p><span/></p>
+
+
 									</div>
 									<div class="col-3  mb-2 ">
 										<p><strong>Firma cliente:&amp;nbsp;</strong></p>
-										<p><span/></p>
-										<p><span/></p>
+
+
 									</div>
 									<div class="col-6  mb-2 ">
 										<p><strong>Timbro:&amp;nbsp;</strong></p>
 										<div class="row mt32 mb32 " id="firma_nota_piede">
 											<div class="col-auto  mb-2 ">
-												<p><span/></p>
-												<p><span/></p>
-												<p><span/></p>
-												<p><span/></p>
-												<p><span/></p>
-												<p><span/></p>
-												<p><span/></p>
+
+
 											</div>
 										</div>
 									</div>
-					
+
 				</div>
 
 			</div>

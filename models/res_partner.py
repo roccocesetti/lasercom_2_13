@@ -32,7 +32,8 @@ class ResPartner(models.Model):
                 ('venditore_ids', '=', False)  # E l'utente è il venditore
             ]
 
-        return super()._name_search(name, args=args, operator=operator, limit=limit, name_get_uid=name_get_uid)
+        return super(ResPartner, self.sudo())._name_search(name, args=args, operator=operator, limit=limit, name_get_uid=name_get_uid)
+        #return super().with_user(SUPERUSER_ID).with_context({'bypass_rule': True})._name_search(name, args=args, operator=operator, limit=limit, name_get_uid=name_get_uid)
 
 class ResCompany(models.Model):
     _inherit = "res.company"
