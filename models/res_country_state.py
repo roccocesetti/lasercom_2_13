@@ -3,6 +3,54 @@ from odoo import models, fields, api,SUPERUSER_ID
 class ResCountryState(models.Model):
     _inherit = 'res.country.state'
 
+    @api.model
+    def name_search(self, name='', args=None, operator='ilike', limit=100):
+        # Ottieni l'utente corrente
+        user = self.env.user
+        # Controlla se l'utente appartiene al gruppo 'group_venditore'
+        if not user.has_group('lasercom.group_telemarketing') and not user.has_group('lasercom.group_amministratore'):
+           if user.has_group('lasercom.group_venditore'):
+            if not args:
+                args = []
+            args += [
+                 ('venditore_ids', 'in', [user.id]),
+             ]
+
+        return super(ResCountryState,self.sudo()).name_search(name, args=args, operator=operator, limit=limit)
+    @api.model
+    @api.returns('self',
+        upgrade=lambda self, value, args, offset=0, limit=None, order=None, count=False: value if count else self.browse(value),
+        downgrade=lambda self, value, args, offset=0, limit=None, order=None, count=False: value if count else value.ids)
+    def search(self, args, offset=0, limit=None, order=None, count=False):
+        """ search(args[, offset=0][, limit=None][, order=None][, count=False])
+
+        Searches for records based on the ``args``
+        :ref:`search domain <reference/orm/domains>`.
+
+        :param args: :ref:`A search domain <reference/orm/domains>`. Use an empty
+                     list to match all records.
+        :param int offset: number of results to ignore (default: none)
+        :param int limit: maximum number of records to return (default: all)
+        :param str order: sort string
+        :param bool count: if True, only counts and returns the number of matching records (default: False)
+        :returns: at most ``limit`` records matching the search criteria
+
+        :raise AccessError: * if user tries to bypass access rules for read on the requested object.
+        """
+        user = self.env.user
+        # Controlla se l'utente appartiene al gruppo 'group_venditore'
+        if not user.has_group('lasercom.group_telemarketing') and not user.has_group('lasercom.group_amministratore'):
+           if user.has_group('lasercom.group_venditore'):
+            if not args:
+                args = []
+            args += [
+                 ('venditore_ids', 'in', [user.id]),
+             ]
+
+        res = super(ResCountryState,self.sudo()).search(args, offset=offset, limit=limit, order=order, count=count)
+        return res
+
+
 #    @api.model
 #    def _name_search(self, name, args=None, operator='ilike', limit=100, name_get_uid=None):
 #        if operator == 'ilike':
