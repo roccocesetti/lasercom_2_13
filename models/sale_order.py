@@ -113,10 +113,11 @@ class SaleOrder(models.Model):
         ('quotation', 'Valutazione usato')],
         string="Tipo valutazione",
         default="vendors")
-    sale_acq_usage = fields.Monetary(string='valore', digits='Product Price', default=0.0)
+    sale_acq_usage = fields.Monetary(string='Riacquisto usato', digits='Product Price', default=0.0)
+    sale_val_usage = fields.Monetary(string='valutazione usato', digits='Product Price', default=0.0)
     sale_ritiro_usato=fields.Boolean(string='Ritiro usato',default=False)
     sale_modello_usato = fields.Char(string='Modello usato', required=False, copy=False, readonly=False, default='')
-    sale_promotion = fields.Monetary(string='-', digits='Product Price', default=0.0)
+    sale_promotion = fields.Monetary(string='Promozione', digits='Product Price', default=0.0)
 
     amount_untaxed_nocalc = fields.Monetary(string='Imponibile lordo', store=True, readonly=True, compute='_amount_all', tracking=5)
     amount_untaxed = fields.Monetary(string='Untaxed Amount', store=True, readonly=True, compute='_amount_all', tracking=5)
@@ -187,9 +188,18 @@ class SaleOrder(models.Model):
                     vals['numero_contratto'] = self.env['ir.sequence'].next_by_code('sale.order.contract', sequence_date=seq_date) or _('New')
     
         vals.update({'note':'Prezzi iva esclusa, Trasporto, installazione, collaudo a nostro carico' })
-        res=super(SaleOrder, self).create(vals)
-        return res
 
+        res=super(SaleOrder, self).create(vals)
+        if len(res.order_line)>18:
+            raise UserError(_('Superato il limite di righe da immettere: 18 invece di %s' % str(len(res.order_line)) ))
+
+        return res
+    def write(self, vals):
+        res = super(SaleOrder, self).write(vals)
+        for order in self:
+            if len(order.order_line) > 18:
+                raise UserError(_('Superato il limite di righe da immettere: 18 invece di %s ' % str(len(order.order_line))))
+        return res
     def _write(self, vals):
         """ Override of private write method in order to generate activities
         based in the invoice status. As the invoice status is a computed field
@@ -208,7 +218,8 @@ class SaleOrder(models.Model):
                     else:
                        numero_contratto= self.env['ir.sequence'].next_by_code('sale.order.contract', sequence_date=seq_date) or  _('New')
                        mutable_vals.update({'numero_contratto':numero_contratto})
-        return super(SaleOrder, self)._write(mutable_vals)
+        res= super(SaleOrder, self)._write(mutable_vals)
+        return res
          
     @api.depends('leasing_direct_importo','leasing_direct_macrocanone')
     def _amount_leasing(self):
@@ -221,7 +232,7 @@ class SaleOrder(models.Model):
                 'leasing_direct_totale': leasing_direct_totale,
             })
 
-    @api.depends('order_line.price_total','sale_acq_usage','sale_promotion','footer_discount','select_acq_usage')
+    @api.depends('order_line.price_total','sale_acq_usage','sale_val_usage','sale_promotion','footer_discount','select_acq_usage')
     def _amount_all(self):
         """
         Compute the total amounts of the SO.
@@ -235,14 +246,10 @@ class SaleOrder(models.Model):
                 amount_tax += line.price_tax
             amount_untaxed_nocalc = amount_untaxed
             amount_untaxed=amount_untaxed-order.sale_promotion
-            if order.select_acq_usage=='vendors':
-                amount_untaxed=amount_untaxed+order.sale_acq_usage
-            elif order.select_acq_usage=='quotation':   
-                amount_untaxed=amount_untaxed-order.sale_acq_usage
-            else:
-                amount_untaxed=amount_untaxed+order.sale_acq_usage
+            amount_untaxed=amount_untaxed-order.sale_val_usage
             importo_discount=amount_untaxed*(order.footer_discount)/100
             amount_untaxed=amount_untaxed-importo_discount
+            amount_untaxed = amount_untaxed + order.sale_acq_usage
             amount_total=(amount_untaxed * 122)/100
             amount_tax=(amount_untaxed * 22)/100
                
@@ -254,11 +261,13 @@ class SaleOrder(models.Model):
                 'importo_discount': importo_discount,
             })
 
-    @api.depends('order_line.purchase_price','order_line.margin','select_acq_usage')
+    @api.depends('order_line.purchase_price','order_line.margin','sale_acq_usage','sale_val_usage','amount_untaxed')
     def _product_purchase_price(self):
         if not all(self._ids):
             for order in self:
                 order.total_purchase_price = sum(order.order_line.filtered(lambda r: r.state != 'cancel').mapped('purchase_price'))
+            order.total_purchase_price = order.total_purchase_price + order.sale_acq_usage
+            order.sale_string_margin = order.amount_untaxed + order.total_purchase_price
         else:
             self.env["sale.order.line"].flush(['margin', 'state'])
             # On batch records recomputation (e.g. at install), compute the margins
@@ -273,15 +282,17 @@ class SaleOrder(models.Model):
             mapped_data = {m['order_id'][0]: m['purchase_price'] for m in grouped_order_lines_data}
             for order in self:
                 order.total_purchase_price = mapped_data.get(order.id, 0.0)
-        if order.select_acq_usage=='vendors':
-                order.total_purchase_price=order.total_purchase_price+order.sale_acq_usage
+            order.total_purchase_price=order.total_purchase_price+order.sale_acq_usage
+            order.sale_string_margin=order.amount_untaxed+order.total_purchase_price
 
         sale_string_price=   "{:.2f}".format(order.total_purchase_price) if order.total_purchase_price>0 else '999999999'  
         sale_string_margin=   "{:.2f}".format(order.margin) if order.margin>0 else '999999999'  
         order.sale_string_price=decode_protocollo(sale_string_price)
         order.sale_string_margin=decode_protocollo(sale_string_margin)                
         order.update({
-                'sale_string_price': order.sale_string_price,
-                'sale_string_margin': order.sale_string_margin,
+            'total_purchase_price': order.total_purchase_price,
+            'sale_string_margin': order.sale_string_margin,
+            'sale_string_price': order.sale_string_price,
+            'sale_string_margin': order.sale_string_margin,
             })
         

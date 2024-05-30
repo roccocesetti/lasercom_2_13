@@ -8,6 +8,7 @@
         <field name="arch" type="xml">
             <xpath expr="//field[@name='vat']" position="after">
                 <field name="numero_verde" />
+
             </xpath>
         </field>
     </record>

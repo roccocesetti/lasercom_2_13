@@ -10,7 +10,8 @@ class ResPartner(models.Model):
     _inherit = 'res.partner'
 
     codice_sdi = fields.Char(string='Codice sdi')    
-#    numero_verde = fields.Char(string='Numero verde')
+    #numero_verde = fields.Char(string='Numero verde')
+    #numero_righe = fields.Integer(string='Numero Righe')
 
     @api.model
     def name_search(self, name='', args=None, operator='ilike', limit=100):
@@ -109,4 +110,3 @@ class ResCompany(models.Model):
     _inherit = "res.company"
 
     numero_verde = fields.Char(string='Numero verde')
-    
