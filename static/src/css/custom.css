@@ -25,6 +25,15 @@
 .small-font {
     font-size: 10px; /* Imposta la dimensione del font che preferisci */
 }
+.small6-font {
+    font-size: 6px; /* Imposta la dimensione del font che preferisci */
+}
+.small8-font {
+    font-size: 8px; /* Imposta la dimensione del font che preferisci */
+}
+.small9-font {
+    font-size: 9px; /* Imposta la dimensione del font che preferisci */
+}
 .medium-font {
     font-size: 14px; /* Imposta la dimensione del font che preferisci */
 }
@@ -47,4 +56,12 @@
 }
 .bordo-inferiore {
     border-bottom: 1px solid #333; /* Colore grigio chiaro */
+}
+@media print {
+    .thead-repeat {
+        display: table-header-group;
+    }
+    .sale_tbody {
+        page-break-inside: avoid;
+    }
 }

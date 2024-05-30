@@ -501,7 +501,7 @@
 					
 
 				</div>
-				<div class="row m-0 mb32 small-font avoid-page-break" id="informations">
+				<div class="row m-0  small-font avoid-page-break" id="informations">
     					<t t-if="doc.order_line">
     							<span>Oggetto:</span><span t-field="doc.order_line[0].name"/>
     						<!--
@@ -518,33 +518,18 @@
 				<!-- Is there a discount on at least one line? -->
 				<t t-set="display_discount" t-value="any([l.discount for l in doc.order_line])"/>
 				<div class="oe_structure"/>
-				<div class="row m-0 mb32   avoid-page-break" id="dettaglio">
+				  <div class="row m-0 mb32 " id="dettaglio">
+					  <p class="m-0" style="white-space: nowrap;">
+
+				  <span></span>
+					  </p>
+				  </div>
+				<!-- <div class="row m-0 mb32   avoid-page-break" id="dettaglio"> -->
+		         <div class="row m-0 mb32 " id="dettaglio">
 
 					<table class="table table-sm o_main_table">
-						<thead class="sale_tbody">
-						<!--	
-						<tr>
-							<th name="th_description" class="text-left bordo-inferiore"></th>
-							<th name="th_quantity" class="text-right bordo-inferiore"></th>
-							<th name="th_priceunit" class="text-right bordo-inferiore"></th>
-							<th name="th_taxes" class="text-right bordo-inferiore"></th>
-							<th name="th_subtotal" class="text-right bordo-inferiore"></th>
-						</tr>
-						<tr>
-							<th name="th_description" class="text-left bordo-inferiore"></th>
-							<th name="th_quantity" class="text-right bordo-inferiore"></th>
-							<th name="th_priceunit" class="text-right bordo-inferiore"></th>
-							<th name="th_taxes" class="text-right bordo-inferiore"></th>
-							<th name="th_subtotal" class="text-right bordo-inferiore"></th>
-						</tr>
-						<tr>
-							<th name="th_description" class="text-left bordo-inferiore"></th>
-							<th name="th_quantity" class="text-right bordo-inferiore"></th>
-							<th name="th_priceunit" class="text-right bordo-inferiore"></th>
-							<th name="th_taxes" class="text-right bordo-inferiore"></th>
-							<th name="th_subtotal" class="text-right bordo-inferiore"></th>
-						</tr>
-						-->
+						<tbody t-attf-class="#{'sale_tbody thead-repeat' if report_type != 'html' else 'sale_tbody'}">
+
 						<tr>
 							<th name="th_description" class="text-left bordo-inferiore">
 								Descrizione</th>
@@ -566,7 +551,7 @@
 						</tr>
 
 
-					</thead>
+					</tbody>
 					<tbody class="sale_tbody">
 
 						<t t-set="current_subtotal" t-value="0"/>
@@ -634,9 +619,12 @@
 				</div>
 				<div class="clearfix" name="so_total_summary">
 					<div id="total" class="row" name="total">
-				 		<div class=" custom-mt12 ml10 mr4" name="annotazioni">
+				 		<div class="col-6 custom-mt12 ml10 mr4" name="annotazioni">
 								<p t-if="doc.annotazione">
 									<span t-field="doc.annotazione" />
+								</p>
+								<p t-if="not doc.annotazione">
+									<span>Annotazione</span>
 								</p>
 
 						</div>
@@ -1203,20 +1191,18 @@
 				</table>
 				<div class="clearfix m-0" name="so_total_summary">
 					<div id="total" class="row m-0" name="total">
-				 		<!--
 				 		<div  class=" mt32 ml10 mr4" name="annotazioni">
-											<p>Annotazioni</p>
-											<p>_______________________________________________________________________</p>
-											<p>_______________________________________________________________________</p>
-											<p>_______________________________________________________________________</p>
 						</div>
-						-->
+
 						<div t-attf-class="#{'col-12' if report_type != 'html' else 'col-sm-12 col-md-12'} ml-1">
 							<table class="table table-sm">
 								<tr class="border-black o_subtotal tight-rows medium-font">
 									<td name="td_annotazioni_label" class="col-2">
 								<p t-if="doc.annotazione">
 									<span t-field="doc.annotazione"/>
+								</p>
+								<p t-if="not doc.annotazione">
+									<span >Annotazione</span>
 								</p>
 						</td>
 									<td name="td_amount_untaxed_label" class="text-left col-4">
@@ -1275,8 +1261,7 @@
 						</div>
 					</div>
 				</div>
-				<div class="row m-0  col-13  avoid-page-break  medium-font" id="pagamenti">
-					<div t-if="doc.payment_direct" class="row m-0 col-13  custom-border" style="page-break-inside: avoid;">
+					<div t-if="doc.payment_direct" class="row m-0  custom-border avoid-page-break" style="page-break-inside: avoid;">
 									<div class="row mb-1">
 									<p><strong class="mr-2 ml-2">pagamento diretto:</strong>
 									<input type="checkbox" name="checkbox_diretto" t-att-checked="'checked' if your_condition else None"/></p>
@@ -1292,11 +1277,12 @@
 									<p t-if="doc.payment_direct_num_titoli &gt;0" t-field="doc.payment_direct_num_titoli"/>
 										<strong class="mr-2 ml-2">importo titoli:</strong>
 									<p t-if="doc.payment_direct_importo_titoli &gt;0" t-field="doc.payment_direct_importo_titoli"/>
-
-										<p t-if="doc.payment_direct" class="mr-2 ml-2 small-font" t-field="doc.payment_direct_nota"/>
 									</div>
+											<div class="row m-0">
+												<p t-if="doc.payment_direct" class="mr-2 ml-2 small9-font" t-field="doc.payment_direct_nota" style="white-space: pre-line;"/>
+											</div>
 					</div>
-					<div t-if="doc.leasing_direct" class="col-12 m-0 custom-border" style="page-break-inside: avoid;">
+					<div t-if="doc.leasing_direct" class="row m-0  custom-border avoid-page-breakr" style="page-break-inside: avoid;">
 								<div class="row mb-1">
 									<p><strong class="mr-2 ml-2">Leasing:</strong>
 								<input type="checkbox" name="checkbox_diretto" t-att-checked="'checked' if your_condition else None"/></p>
@@ -1312,10 +1298,11 @@
 								<p class="m-0" t-if="doc.leasing_direct_importo_rate &gt;0" t-field="doc.leasing_direct_importo_rate"/>+iva
 									<strong class="mr-2 ml-2">Numer mesi:</strong>
 								<p class="m-0" t-if="doc.leasing_direct_numero_mesi &gt;0" t-field="doc.leasing_direct_numero_mesi"/>
-									<p t-if="doc.leasing_direct" class="mr-2 ml-2 medium-font" t-field="doc.leasing_direct_nota"/>
+									<br/>
+									<p t-if="doc.leasing_direct" class="mr-2 ml-2 small9-font" t-field="doc.leasing_direct_nota" style="white-space: pre-line;"/>
 								</div>
 					    </div>
-					<div t-if="doc.finaziamento_direct" class="col-12 m-0 custom-border" style="page-break-inside: avoid;">
+					<div t-if="doc.finaziamento_direct" class="row m-0  custom-border avoid-page-break" style="page-break-inside: avoid;">
 									<div class="row mb-1">
 										<p><strong class="mr-2 ml-2">Finanziamento diretto:</strong><input type="checkbox" name="checkbox_finaziamento_direct" t-att-checked="'checked' if your_condition else None"/></p>
 										<strong class="mr-2 ml-2">Costo del bene:</strong>
@@ -1330,11 +1317,11 @@
 									<p class="m-0" t-if="doc.finaziamento_direct_numero_mesi &gt;0" t-field="doc.finaziamento_direct_numero_mesi"/>
 										<strong class="mr-2 ml-2">Saldo da:</strong>
 									<p class="m-0" t-if="doc.finaziamento_direct_saldo_titolo &gt;0" t-field="doc.finaziamento_direct_saldo_titolo"/>
-
-										<p t-if="doc.finaziamento_direct" class="mr-2 ml-2 medium-font" t-field="doc.finaziamento_direct_nota"/>
+										<br/>
+										<p t-if="doc.finaziamento_direct" class="mr-2 ml-2 small9-font" t-field="doc.finaziamento_direct_nota" style="white-space: pre-line;"/>
 									</div>
 					</div>
-				</div>
+
 				<div class="row m-0  custom-border avoid-page-break small-font" id="pagamenti_nota_piede">
 					<p t-if="doc.finaziamento_direct_nota_piede" class="m-0" t-field="doc.finaziamento_direct_nota_piede"/>
 
