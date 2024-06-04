@@ -2,6 +2,7 @@
 <odoo>
  <template id="new_external_layout" inherit_id="web.external_layout_standard">
  		    <xpath expr="//div[@t-attf-class='header o_company_#{company.id}_layout']" position="replace">
+				    <!--
 			        <div t-attf-class="header o_company_#{company.id}_layout" t-att-style="report_header_style">
 			            <div class="row col-12 mb2 mw-100">
 			                <div class="col-3 mb2">
@@ -11,19 +12,6 @@
 								
 							</div>
 				            <div class="col-4 mb2" name="company_address">
-								<!--
-				 			        <div class="row" style="text-align:left;">
-							            <span t-field="company.name"/>
-							        </div>
-				 			        <div class="row" style="text-align:left; white-space: nowrap;">
-							            <span t-field="company.street"/> 
-							        </div>
-				 			        <div class="row" style="text-align:left; white-space: nowrap;">
-							            <span t-field="company.zip"/>, 
-							            <span t-field="company.city"/>,
-							            <span t-if="company.state_id" t-field="company.state_id.code"/>
-							        </div>
--->
 				            </div>
 				            <div class="col-3 mb2" name="company_address_2">
 				 			        <div class="row" style="text-align:right;">P.iva:<span t-field="company.vat"/>
@@ -43,7 +31,7 @@
 				                </div>
 				            </div>
 			        </div>
-
+					-->
 		    </xpath>
 		    <xpath expr="//div[@t-attf-class='footer o_standard_footer o_company_#{company.id}_layout']" position="replace">
 
@@ -71,6 +59,61 @@
 
 
     </template>
+
+
+	<template id="new_address_layout" inherit_id="web.address_layout">
+ 		    <xpath expr="//div[@class='address row']" position="replace">
+
+				<div class="row col-12 mb2 mw-100">
+			                <div class="col-3 mb2">
+			                    <img t-if="company.logo" t-att-src="image_data_uri(company.logo)" style="max-height: 45px;" alt="Logo"/>
+			                </div>
+							<div class="col-1">
+							</div>
+				            <div class="col-3 mb1" name="company_address_2">
+				 			        <div class="row" style="text-align:right;">P.iva:<span t-field="company.vat"/>
+							        </div>
+							        <div class="row"  t-att-style="'color: green;'"  style="text-align:right;">Numero verde:<span t-field="company.numero_verde"/>
+							        </div>
+							        <div class="row" style="text-align:right;">email:<span  t-if="company.email" t-field="company.email"/>
+							        </div>
+
+				            </div>
+							<div class="col-1 mb1" style="white-space: nowrap;text-align:right;">
+								<strong>Spett.le:</strong>
+							</div>
+				            <div class="col-5 mb2" >
+				 			        <div class="row col-5 mb2" style="white-space: nowrap;text-align:right;">
+										Spett.le:<span t-field="doc.partner_invoice_id.name"/>
+							        </div>
+							        <div class="row col-5 mb2"   style="white-space: nowrap;text-align:right;">
+										<span t-field="doc.partner_invoice_id.street"/>
+							        </div>
+						  	        <div class="row col-5 mb2"   style="white-space: nowrap;text-align:right;">
+										<span t-if="doc.partner_invoice_id.street2"  t-field="doc.partner_invoice_id.street2"/>
+							        </div>
+						        <div class="row col-5 mb2"   style="white-space: nowrap;text-align:right;">
+										<span class="col-0"  t-if="doc.partner_invoice_id.zip"   t-field="doc.partner_invoice_id.zip"/>
+										<span class="col-3"  t-if="doc.partner_invoice_id.city"  t-field="doc.partner_invoice_id.city"/>
+										<span class="col-1"  t-if="doc.partner_invoice_id.state_id"  t-field="doc.partner_invoice_id.state_id.code"/>
+							        </div>
+							        <div class="row" style="text-align:right;">
+										<span  t-if="doc.partner_invoice_id.vat" t-field="doc.partner_invoice_id.vat"/>
+							        </div>
+				                    <div class="row" style="text-align:right;">
+										<span  t-if="doc.partner_invoice_id.l10n_it_codice_fiscale" t-field="doc.partner_invoice_id.l10n_it_codice_fiscale"/>
+							        </div>
+
+				            </div>
+					</div>
+
+
+			</xpath>
+
+
+    </template>
+
+
 
 
 	<template id="report_saleorder_document_laser_2">
@@ -439,29 +482,15 @@
 
 	<template id="report_saleorder_document_laser">
 		<t t-call="web.external_layout">
-			<t t-if="doc.partner_shipping_id == doc.partner_invoice_id                              and doc.partner_invoice_id != doc.partner_id                              or doc.partner_shipping_id != doc.partner_invoice_id">
-				<t t-set="information_block">
-					<strong t-if="doc.partner_shipping_id == doc.partner_invoice_id">Indirizzo di Fatturazione e spedizione
-						and :</strong>
-					<strong t-if="doc.partner_shipping_id != doc.partner_invoice_id">Indirizzo di fatturazione
-						:</strong>
 
-					<div t-field="doc.partner_invoice_id" t-options="{&quot;widget&quot;: &quot;contact&quot;, &quot;fields&quot;: [&quot;address&quot;, &quot;name&quot;, &quot;phone&quot;], &quot;no_marker&quot;: True, &quot;phone_icons&quot;: True}"/>
-					<t t-if="doc.partner_shipping_id != doc.partner_invoice_id">
-						<strong>Indirizzo di spedizione:</strong>
-						<div t-field="doc.partner_shipping_id" t-options="{&quot;widget&quot;: &quot;contact&quot;, &quot;fields&quot;: [&quot;address&quot;, &quot;name&quot;, &quot;phone&quot;], &quot;no_marker&quot;: True, &quot;phone_icons&quot;: True}"/>
-					</t>
-				</t>
-			</t>
-
-			<div class="page custom-mt12">
+                <ul class="bordo-inferiore"></ul>
+				<div class="page custom-mt12">
 				<div class="oe_structure"/>
-
-				<div class="row m-0 mb32" id="informations">
+ 				<div class="row m-0 mb32" id="informations">
     				<div class="col-auto mw-100 mb-2" style="text-align:left; white-space: nowrap;">
     					<t t-if="not (env.context.get('proforma', False) or is_pro_forma)">
-    						<span t-if="doc.state not in ['draft','sent']">Order # </span>
-    						<span t-if="doc.state in ['draft','sent']">Preventivo:</span>
+    						<span t-if="doc.state not in ['draft','sent']"><strong>Order # </strong></span>
+    						<span t-if="doc.state in ['draft','sent']"><strong>Preventivo:</strong></span>
     					</t>
     					<t t-if="env.context.get('proforma', False) or is_pro_forma">
     						<span>Fattura proforma # </span>
@@ -1080,9 +1109,51 @@
 <!-- inizio -->
 
 <template id="report_saleorder_document_laser_contratto">
-<t t-call="web.external_layout">
+		<t t-call="web.external_layout">
 			   <link rel="stylesheet" type="text/css" href="/lasercom_2_13/static/src/css/custom.css"/>
-    <t t-raw="0"/>
+    			<t t-raw="0"/>
+			<div class="row col-12 mb2 mw-100">
+			                <div class="col-3 mb2">
+			                    <img t-if="company.logo" t-att-src="image_data_uri(company.logo)" style="max-height: 45px;" alt="Logo"/>
+			                </div>
+							<div class="col-1">
+							</div>
+				            <div class="col-3 mb1" name="company_address_2">
+				 			        <div class="row" style="text-align:right;">P.iva:<span t-field="company.vat"/>
+							        </div>
+							        <div class="row"  t-att-style="'color: green;'"  style="text-align:right;">Numero verde:<span t-field="company.numero_verde"/>
+							        </div>
+							        <div class="row" style="text-align:right;">email:<span  t-if="company.email" t-field="company.email"/>
+							        </div>
+
+				            </div>
+							<div class="col-1 mb1" style="white-space: nowrap;text-align:right;">
+								<strong>Spett.le:</strong>
+							</div>
+				            <div class="col-5 mb2" >
+				 			        <div class="row col-5 mb2" style="white-space: nowrap;text-align:right;">
+										Spett.le:<span t-field="doc.partner_invoice_id.name"/>
+							        </div>
+							        <div class="row col-5 mb2"   style="white-space: nowrap;text-align:right;">
+										<span t-field="doc.partner_invoice_id.street"/>
+							        </div>
+						  	        <div class="row col-5 mb2"   style="white-space: nowrap;text-align:right;">
+										<span t-if="doc.partner_invoice_id.street2"  t-field="doc.partner_invoice_id.street2"/>
+							        </div>
+						        <div class="row col-5 mb2"   style="white-space: nowrap;text-align:right;">
+										<span class="col-0"  t-if="doc.partner_invoice_id.zip"   t-field="doc.partner_invoice_id.zip"/>
+										<span class="col-3"  t-if="doc.partner_invoice_id.city"  t-field="doc.partner_invoice_id.city"/>
+										<span class="col-1"  t-if="doc.partner_invoice_id.state_id"  t-field="doc.partner_invoice_id.state_id.code"/>
+							        </div>
+							        <div class="row" style="text-align:right;">
+										<span  t-if="doc.partner_invoice_id.vat" t-field="doc.partner_invoice_id.vat"/>
+							        </div>
+				                    <div class="row" style="text-align:right;">
+										<span  t-if="doc.partner_invoice_id.l10n_it_codice_fiscale" t-field="doc.partner_invoice_id.l10n_it_codice_fiscale"/>
+							        </div>
+
+				            </div>
+					</div>
 
 			<div class="page">
 				<div class="oe_structure"/>
@@ -1109,11 +1180,6 @@
 							</t>
 						</p>
 					</div>
-					<t t-set="address">
-						<div t-field="doc.partner_id" t-options="{&quot;widget&quot;: &quot;contact&quot;, &quot;fields&quot;: [&quot;address&quot;, &quot;name&quot;], &quot;no_marker&quot;: True}"/>
-						<p t-if="doc.partner_id.vat"><t t-esc="doc.company_id.country_id.vat_label or 'Tax ID'"/>
-							: <span t-field="doc.partner_id.vat"/></p>
-					</t>
 
 				</div>
 
@@ -1368,7 +1434,7 @@
 
 		</t>
 
-	</template>
+</template>
 
 	
 
@@ -1382,7 +1448,7 @@
 					t-lang="doc.partner_id.lang" >
 					<t t-set="company" t-value="doc.company_id" />
 					</t>
-					
+
 
 			</t>
 		</t>
