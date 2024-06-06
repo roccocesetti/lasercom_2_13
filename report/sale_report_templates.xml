@@ -714,6 +714,16 @@
 									</tr>
 								</t>
 								-->
+								<tr class="border-black o_total" t-if="doc.sale_val_usage &gt;0">
+									<td name="td_amount_by_group_label" class="text-righ o_price_totalt">
+										<strong>Valutazione usato</strong>
+									</td>
+									<td name="td_sale_acq_usage" class="text-right o_price_total">
+										                <span t-raw="doc.get_formatted_sale_val_usage()"/>
+
+								</td>
+								</tr>
+
 								<tr class="border-black o_total" t-if="doc.sale_promotion &gt;0">
 									<td name="td_amount_by_group_label">
 										<strong>Promozione</strong>
@@ -724,7 +734,7 @@
 								</tr>
 								<tr class="border-black o_total" t-if="doc.sale_acq_usage &gt;0">
 									<td name="td_amount_by_group_label" class="text-righ o_price_totalt">
-										<span t-field="doc.select_acq_usage"/>
+										<strong>Riacquisto usato</strong>
 									</td>
 									<td name="td_sale_acq_usage" class="text-right o_price_total">
 										<span t-field="doc.sale_acq_usage"/>
@@ -1191,10 +1201,14 @@
 					<div t-if="doc.user_id.name and doc.user_id.state_ids" class="col-auto mw-100 mb-2">
 						<strong>Zona:</strong>
 						<p class="m-0" style="white-space: nowrap;">
+							<t t-if="doc.partner_id.city">
+								<t t-esc="doc.partner_id.city"/><span/>,
+							</t>
 							<t t-if="doc.partner_id.state_id">
 								<t t-esc="doc.partner_id.state_id.name"/><span/>
 							</t>
 						</p>
+
 					</div>
 
 				</div>
@@ -1343,7 +1357,7 @@
 						</div>
 					</div>
 				</div>
-					<div t-if="doc.payment_direct" class="row m-0  custom-border avoid-page-break" style="page-break-inside: avoid;">
+					<div t-if="doc.payment_direct" class="row m-0  custom-border avoid-page-break medium-font" style="page-break-inside: avoid;">
 						           <div class="row m-1">
 									<p><strong class="mr-2 ml-2">pagamento diretto:</strong>
 									<input type="checkbox" name="checkbox_diretto" t-att-checked="'checked' if your_condition else None"/></p>
@@ -1362,9 +1376,9 @@
 									</div>
 					</div>
 				    <div t-if="doc.payment_direct" class="row m-1">
-									   <p t-if="doc.payment_direct" class="mr-2 ml-2 small-font" t-field="doc.payment_direct_nota" style="white-space: pre-line;"/>
+									   <p t-if="doc.payment_direct" class="mr-2 ml-2 medium-font" t-field="doc.payment_direct_nota" style="white-space: pre-line;"/>
 					</div>
-						<div t-if="doc.leasing_direct" class="row m-0  custom-border avoid-page-breakr" style="page-break-inside: avoid;">
+						<div t-if="doc.leasing_direct" class="row m-0  custom-border avoid-page-breakr medium-font" style="page-break-inside: avoid;">
 								<div class="row mb-1">
 									<p><strong class="mr-2 ml-2">Leasing:</strong>
 								<input type="checkbox" name="checkbox_diretto" t-att-checked="'checked' if your_condition else None"/></p>
@@ -1384,9 +1398,9 @@
 
 					    </div>
 							<div t-if="doc.leasing_direct" class="row m-1">
-											<p t-if="doc.leasing_direct" class="mr-2 ml-2 small-font" t-field="doc.leasing_direct_nota" style="white-space: pre-line;"/>
+											<p t-if="doc.leasing_direct" class="mr-2 ml-2 medium-font" t-field="doc.leasing_direct_nota" style="white-space: pre-line;"/>
 							</div>
-					<div t-if="doc.finaziamento_direct" class="row m-0  custom-border avoid-page-break" style="page-break-inside: avoid;">
+					<div t-if="doc.finaziamento_direct" class="row m-0  custom-border avoid-page-break medium-font" style="page-break-inside: avoid;">
 									<div class="row mb-1">
 											<p><strong class="mr-2 ml-2">Finanziamento diretto:</strong><input type="checkbox" name="checkbox_finaziamento_direct" t-att-checked="'checked' if your_condition else None"/></p>
 											<strong class="mr-2 ml-2">Costo del bene:</strong>
@@ -1413,16 +1427,29 @@
 				</div>
 				<div class="row m-0  avoid-page-break custom-border" t-if="doc.sale_acq_usage &gt;0" id="id_usato">
 									<div class="col-3 mb-2 ">
-										<p><strong>Ritiro usato:&amp;nbsp;</strong>
-										<input type="checkbox" name="checkbox_ritiro_usato" t-att-checked="'checked'  if your_condition else None"/></p>
+										<p><strong>Ritiro usato:&amp;nbsp;</strong></p>
 									</div>
 									<div class="col-3 mb-2 ">
-										<p><strong>Modello:&amp;nbsp;</strong></p>
-											<span t-field="doc.sale_modello_usato"/>
+										<p style="white-space: nowrap;"><strong>Modello:&amp;nbsp;</strong>
+											<span t-field="doc.sale_modello_usato"/></p>
 									</div>
 									<div class="col-6 mb-2 ">
 										<p t-if="doc.sale_acq_usage &gt;0" style="white-space: nowrap;"><strong>Prezzo:&amp;nbsp;</strong>
 											<span t-field="doc.sale_acq_usage"/></p>
+									</div>
+
+				</div>
+				<div class="row m-0  avoid-page-break custom-border" t-if="doc.sale_val_usage &gt;0" id="id_valutazione">
+									<div class="col-3 mb-2 ">
+										<p><strong>Valutazione usato:&amp;nbsp;</strong></p>
+									</div>
+									<div class="col-3 mb-2 ">
+										<p style="white-space: nowrap;"><strong>Modello:&amp;nbsp;</strong>
+											<span t-field="doc.sale_modello_valutazione"/></p>
+									</div>
+									<div class="col-6 mb-2 ">
+										<p t-if="doc.sale_val_usage &gt;0" style="white-space: nowrap;"><strong>Prezzo:&amp;nbsp;</strong>
+											<span t-field="doc.sale_val_usage"/></p>
 									</div>
 
 				</div>

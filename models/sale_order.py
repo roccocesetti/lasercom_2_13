@@ -118,6 +118,7 @@ class SaleOrder(models.Model):
     sale_ritiro_usato=fields.Boolean(string='Ritiro usato',default=False)
     sale_modello_usato = fields.Char(string='Modello usato', required=False, copy=False, readonly=False, default='')
     sale_promotion = fields.Monetary(string='Promozione', digits='Product Price', default=0.0)
+    sale_modello_valutazione = fields.Char(string='Modello valutato', required=False, copy=False, readonly=False, states={'draft': [('readonly', False)]}, )
 
     amount_untaxed_nocalc = fields.Monetary(string='Imponibile lordo', store=True, readonly=True, compute='_amount_all', tracking=5)
     amount_untaxed = fields.Monetary(string='Untaxed Amount', store=True, readonly=True, compute='_amount_all', tracking=5)
@@ -190,14 +191,14 @@ class SaleOrder(models.Model):
         vals.update({'note':'Prezzi iva esclusa, Trasporto, installazione, collaudo a nostro carico' })
 
         res=super(SaleOrder, self).create(vals)
-        if len(res.order_line)>18:
+        if len(res.order_line)>16:
             raise UserError(_('Superato il limite di righe da immettere: 18 invece di %s' % str(len(res.order_line)) ))
 
         return res
     def write(self, vals):
         res = super(SaleOrder, self).write(vals)
         for order in self:
-            if len(order.order_line) > 18:
+            if len(order.order_line) > 16:
                 raise UserError(_('Superato il limite di righe da immettere: 18 invece di %s ' % str(len(order.order_line))))
         return res
     def _write(self, vals):
@@ -267,7 +268,7 @@ class SaleOrder(models.Model):
             for order in self:
                 order.total_purchase_price = sum(order.order_line.filtered(lambda r: r.state != 'cancel').mapped('purchase_price'))
             order.total_purchase_price = order.total_purchase_price + order.sale_acq_usage
-            order.sale_string_margin = order.amount_untaxed + order.total_purchase_price
+            #order.sale_string_margin = order.amount_untaxed - order.total_purchase_price
         else:
             self.env["sale.order.line"].flush(['margin', 'state'])
             # On batch records recomputation (e.g. at install), compute the margins
@@ -283,10 +284,10 @@ class SaleOrder(models.Model):
             for order in self:
                 order.total_purchase_price = mapped_data.get(order.id, 0.0)
             order.total_purchase_price=order.total_purchase_price+order.sale_acq_usage
-            order.sale_string_margin=order.amount_untaxed+order.total_purchase_price
+            #order.sale_string_margin=order.amount_untaxed-order.total_purchase_price
 
         sale_string_price=   "{:.2f}".format(order.total_purchase_price) if order.total_purchase_price>0 else '999999999'  
-        sale_string_margin=   "{:.2f}".format(order.margin) if order.margin>0 else '999999999'  
+        sale_string_margin=   "{:.2f}".format(order.amount_untaxed-order.total_purchase_price) if order.amount_untaxed-order.total_purchase_price>0 else '999999999'
         order.sale_string_price=decode_protocollo(sale_string_price)
         order.sale_string_margin=decode_protocollo(sale_string_margin)                
         order.update({
@@ -295,4 +296,10 @@ class SaleOrder(models.Model):
             'sale_string_price': order.sale_string_price,
             'sale_string_margin': order.sale_string_margin,
             })
-        
+
+
+    def get_formatted_sale_val_usage(self):
+        self.ensure_one()
+        return self.env['ir.qweb.field.monetary'].value_to_html(
+            -1 * self.sale_val_usage, {'display_currency': self.currency_id}
+        )

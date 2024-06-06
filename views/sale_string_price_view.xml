@@ -21,6 +21,8 @@
                        <!--
                        <field name="amount_tax" widget='monetary' options="{'currency_field': 'currency_id'}"/>-->
                            <field name="sale_val_usage"  groups="base.group_user" />
+                          <field name="sale_modello_valutazione" attrs="{'invisible': [('sale_val_usage', '&lt;=', 0)]}"  groups="base.group_user" />
+
                           <div class="oe_inline" colspan="8" >
                               <label for="sale_promotion"  String='Promozione' attrs="{'invisible': [('sale_promotion', '&lt;=', 0)]}"/>
                               <field name="sale_promotion" nolabel="1" groups="base.group_user" />
@@ -32,11 +34,11 @@
                           <div class="oe_subtotal_footer_separator oe_inline o_td_label">
                                     </div>
                             -->
-                        <div class="oe_inline" colspan="8" >
-                         <label for="sale_acq_usage" string="Riacquisto usato" attrs="{'invisible': [('sale_acq_usage', '&lt;=', 0)]}"/>
-                          <field name="sale_acq_usage" nolabel="1"  groups="base.group_user" />
+                            <label for="sale_acq_usage" string="Riacquisto usato" attrs="{'invisible': [('sale_acq_usage', '&lt;=', 0)]}"/>
+                            <field name="sale_acq_usage" nolabel="1"  groups="base.group_user" />
 
-                        </div>
+                          <label for="sale_modello_usato" string="Modello usato" attrs="{'invisible': [('sale_acq_usage', '&lt;=', 0)]}"/>
+                          <field name="sale_modello_usato" nolabel="1"  attrs="{'invisible': [('sale_acq_usage', '&lt;=', 0)]}"  groups="base.group_user" />
 
                        <field name="amount_untaxed" widget='monetary' options="{'currency_field': 'currency_id'}"/>
                        <field name="amount_tax" widget='monetary' options="{'currency_field': 'currency_id'}" groups="lasercom.group_amministratore"/>
