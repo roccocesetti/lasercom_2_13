@@ -199,7 +199,7 @@ class SaleOrder(models.Model):
         res = super(SaleOrder, self).write(vals)
         for order in self:
             if len(order.order_line) > 16:
-                raise UserError(_('Superato il limite di righe da immettere: 18 invece di %s ' % str(len(order.order_line))))
+                raise UserError(_('Superato il limite di righe da immettere: 16 invece di %s ' % str(len(order.order_line))))
         return res
     def _write(self, vals):
         """ Override of private write method in order to generate activities
@@ -265,24 +265,37 @@ class SaleOrder(models.Model):
     @api.depends('order_line.purchase_price','order_line.margin','sale_acq_usage','sale_val_usage','amount_untaxed')
     def _product_purchase_price(self):
         if not all(self._ids):
+
             for order in self:
-                order.total_purchase_price = sum(order.order_line.filtered(lambda r: r.state != 'cancel').mapped('purchase_price'))
+                order.total_purchase_price=0.00
+                order.total_purchase_price = sum(order.order_line.filtered(lambda r: r.state != 'cancel').mapped(lambda r: r.purchase_price * r.product_uom_qty))
             order.total_purchase_price = order.total_purchase_price + order.sale_acq_usage
             #order.sale_string_margin = order.amount_untaxed - order.total_purchase_price
         else:
-            self.env["sale.order.line"].flush(['margin', 'state'])
+            self.env["sale.order.line"].flush(['margin', 'state','purchase_price','product_uom_qty'])
             # On batch records recomputation (e.g. at install), compute the margins
             # with a single read_group query for better performance.
             # This isn't done in an onchange environment because (part of) the data
             # may not be stored in database (new records or unsaved modifications).
-            grouped_order_lines_data = self.env['sale.order.line'].read_group(
+
+            # Read the order lines for the relevant orders
+            order_lines = self.env['sale.order.line'].search(
                 [
                     ('order_id', 'in', self.ids),
                     ('state', '!=', 'cancel'),
-                ], ['purchase_price', 'order_id'], ['order_id'])
-            mapped_data = {m['order_id'][0]: m['purchase_price'] for m in grouped_order_lines_data}
+                ]
+            )
+
+            # Create a dictionary to store the total purchase price for each order
+            order_totals = {}
+            for line in order_lines:
+                if line.order_id.id not in order_totals:
+                    order_totals[line.order_id.id] = 0.0
+                order_totals[line.order_id.id] += line.purchase_price * line.product_uom_qty
+
+            # Assign the computed total purchase price to each order
             for order in self:
-                order.total_purchase_price = mapped_data.get(order.id, 0.0)
+                order.total_purchase_price = order_totals.get(order.id, 0.0)
             order.total_purchase_price=order.total_purchase_price+order.sale_acq_usage
             #order.sale_string_margin=order.amount_untaxed-order.total_purchase_price
 
