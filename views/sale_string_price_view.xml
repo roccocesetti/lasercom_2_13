@@ -25,6 +25,7 @@
 
                           <div class="oe_inline" colspan="8" >
                               <label for="sale_promotion"  String='Promozione' attrs="{'invisible': [('sale_promotion', '&lt;=', 0)]}"/>
+                              <field name="sale_promotion_note" nolabel="1" groups="base.group_user" />
                               <field name="sale_promotion" nolabel="1" groups="base.group_user" />
                           </div>
 

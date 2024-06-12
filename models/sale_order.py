@@ -118,6 +118,8 @@ class SaleOrder(models.Model):
     sale_ritiro_usato=fields.Boolean(string='Ritiro usato',default=False)
     sale_modello_usato = fields.Char(string='Modello usato', required=False, copy=False, readonly=False, default='')
     sale_promotion = fields.Monetary(string='Promozione', digits='Product Price', default=0.0)
+    sale_promotion_note = fields.Char(string='Nota promozione', required=False, copy=False, readonly=False, default='')
+
     sale_modello_valutazione = fields.Char(string='Modello valutato', required=False, copy=False, readonly=False, states={'draft': [('readonly', False)]}, )
 
     amount_untaxed_nocalc = fields.Monetary(string='Imponibile lordo', store=True, readonly=True, compute='_amount_all', tracking=5)
