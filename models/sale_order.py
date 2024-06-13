@@ -67,13 +67,13 @@ class SaleOrderLine(models.Model):
         return super()._auto_init()
     #purchase_price = fields.Float(string='Cost', digits='Product Price')
     sale_string_price = fields.Char(compute='_compute_sale_string_price', store=True, precompute=True,string='Prezzo' )
-    sale_string_subtotal = fields.Char(compute='_compute_sale_string_price', store=True, precompute=True,string='Prezzo' )
-    sale_string_total = fields.Char(compute='_compute_sale_string_price', store=True, precompute=True,string='Prezzo' )
+    sale_string_subtotal = fields.Char(compute='_compute_sale_string_price', store=True, precompute=True,string='Sub totale riga' )
+    sale_string_total = fields.Char(compute='_compute_sale_string_price', store=True, precompute=True,string='Totale riga' )
 
     @api.depends('product_id', 'purchase_price', 'product_uom_qty', 'price_unit', 'price_subtotal')
     def _compute_sale_string_price(self):
         for line in self:
-            sale_string_price = "{:.2f}".format(line.price_unit) if line.purchase_price>0 else 'INCLUSO'
+            sale_string_price = "{:.2f}".format(line.price_unit) #if line.purchase_price>0 else 'INCLUSO'
             sale_string_subtotal = "{:.2f}".format(line.price_subtotal) if line.purchase_price>0 else 'INCLUSO'
             sale_string_total = "{:.2f}".format(line.price_total) if line.purchase_price>0 else 'INCLUSO'
             #sale_string_price=decode_protocollo(sale_string_price)
@@ -87,6 +87,8 @@ class SaleOrderLine(models.Model):
         if not self.order_id.pricelist_id or not self.product_id or not self.product_uom or not self.price_unit:
             return
         self.sale_string_price = self._compute_sale_string_price
+        self.sale_string_subtotal = self._compute_sale_string_price
+        self.sale_string_total = self._compute_sale_string_price
 
     @api.onchange('product_id')
     def product_id_change(self):
@@ -115,7 +117,7 @@ class SaleOrder(models.Model):
         default="vendors")
     sale_acq_usage = fields.Monetary(string='Riacquisto usato', digits='Product Price', default=0.0)
     sale_val_usage = fields.Monetary(string='valutazione usato', digits='Product Price', default=0.0)
-    sale_ritiro_usato=fields.Boolean(string='Ritiro usato',default=False)
+    sale_ritiro_usato=fields.Boolean(string='Riacquisto usato',default=False)
     sale_modello_usato = fields.Char(string='Modello usato', required=False, copy=False, readonly=False, default='')
     sale_promotion = fields.Monetary(string='Promozione', digits='Product Price', default=0.0)
     sale_promotion_note = fields.Char(string='Nota promozione', required=False, copy=False, readonly=False, default='')
@@ -135,9 +137,9 @@ class SaleOrder(models.Model):
     payment_direct=fields.Boolean(string='Pagamento Diretto',default=False)
     payment_direct_allordine = fields.Monetary(string="All'ordine", digits='Product Price', default=0.0,currency_field='currency_id',)
     payment_direct_allaconsegna = fields.Monetary(string='Alla consegna', digits='Product Price', default=0.0,currency_field='currency_id',)
-    payment_direct_saldo = fields.Monetary(string='Saldo', digits='Product Price', default=0.0,currency_field='currency_id',)
+    payment_direct_saldo = fields.Monetary(string='Saldo', digits='Product Price', compute='_amount_diretto', default=0.0,currency_field='currency_id',)
     payment_direct_num_titoli = fields.Integer(string='Numero Titoli', default=0)
-    payment_direct_importo_titoli = fields.Monetary(string='Importo titoli', digits='Product Price', default=0.0,currency_field='currency_id',)
+    payment_direct_importo_titoli = fields.Monetary(string='Importo titoli', compute='_amount_diretto', digits='Product Price', default=0.0,currency_field='currency_id',)
     payment_direct_nota = fields.Char(string='NOta', required=False, copy=False, readonly=False, default='a scadenza mensile a partire da 30 giorni data installazione')
 
     
@@ -172,6 +174,7 @@ class SaleOrder(models.Model):
 "")
     attachment_url = fields.Char(compute='_compute_attachment_url')
     annotazione = fields.Char(string='Annotazione', required=False, copy=False, readonly=False, default='')
+    tag_iva = fields.Char(string='+iva', required=False, copy=False, readonly=True, default='+iva')
 
     def _compute_attachment_url(self):
         for record in self:
@@ -194,7 +197,7 @@ class SaleOrder(models.Model):
 
         res=super(SaleOrder, self).create(vals)
         if len(res.order_line)>16:
-            raise UserError(_('Superato il limite di righe da immettere: 18 invece di %s' % str(len(res.order_line)) ))
+            raise UserError(_('Superato il limite di righe da immettere: 16 invece di %s' % str(len(res.order_line)) ))
 
         return res
     def write(self, vals):
@@ -223,17 +226,32 @@ class SaleOrder(models.Model):
                        mutable_vals.update({'numero_contratto':numero_contratto})
         res= super(SaleOrder, self)._write(mutable_vals)
         return res
-         
+    @api.depends('amount_untaxed','amount_total','payment_direct_allordine','payment_direct_allaconsegna','payment_direct_num_titoli')
+    def _amount_diretto(self):
+        """
+        Compute the total amounts of the SO.
+        """
+        for order in self:
+            payment_direct_saldo = order.amount_untaxed - order.payment_direct_allordine-order.payment_direct_allaconsegna
+            if order.payment_direct_num_titoli>0:
+                payment_direct_importo_titoli=payment_direct_saldo/order.payment_direct_num_titoli
+            else:
+                payment_direct_importo_titoli=0
+            order.update({
+                'payment_direct_saldo': payment_direct_saldo,
+                'payment_direct_importo_titoli':payment_direct_importo_titoli
+            })
+
     @api.depends('leasing_direct_importo','leasing_direct_macrocanone')
     def _amount_leasing(self):
         """
         Compute the total amounts of the SO.
         """
-        for order in self:
-            leasing_direct_totale = order.leasing_direct_importo + order.leasing_direct_macrocanone
-            order.update({
-                'leasing_direct_totale': leasing_direct_totale,
-            })
+        #for order in self:
+        #    leasing_direct_totale = order.leasing_direct_importo + order.leasing_direct_macrocanone
+        #    order.update({
+        #        'leasing_direct_totale': leasing_direct_totale,
+        #    })
 
     @api.depends('order_line.price_total','sale_acq_usage','sale_val_usage','sale_promotion','footer_discount','select_acq_usage')
     def _amount_all(self):
@@ -244,9 +262,9 @@ class SaleOrder(models.Model):
             amount_untaxed = amount_tax = 0.0
             for line in order.order_line:
                 #line.write({'discount':order.footer_discount})
-                
-                amount_untaxed += line.price_subtotal
-                amount_tax += line.price_tax
+                if line.sale_string_subtotal!='INCLUSO':
+                    amount_untaxed += line.price_subtotal
+                    amount_tax += line.price_tax
             amount_untaxed_nocalc = amount_untaxed
             amount_untaxed=amount_untaxed-order.sale_promotion
             amount_untaxed=amount_untaxed-order.sale_val_usage

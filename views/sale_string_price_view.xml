@@ -6,6 +6,21 @@
         <field name="model">sale.order</field>
         <field name="inherit_id" ref="sale.view_order_form"/>
         <field name="arch" type="xml">
+                    <xpath expr="." position="inside">
+            <style>
+                .o_inline_group {
+                    display: flex;
+                    align-items: center;
+                }
+                .o_inline_group label {
+                    margin-right: 10px;
+                }
+                .o_inline_field {
+                    margin-right: 10px;
+                }
+            </style>
+        </xpath>
+
              <xpath expr="//field[@name='partner_id']" position="after">
                     <field name="data_contratto" groups="base.group_user" />
                    <field name="numero_contratto"  groups="base.group_user" />
@@ -72,13 +87,26 @@
                                    <field name="payment_direct_importo_titoli"/>
                                    <field name="payment_direct_nota"/>
                                 </group>
-                                <group name="leasing_direct_group" string="Leasing" attrs="{'invisible': [('leasing_direct', '=', False)]}">
-                                   <field name="leasing_direct_importo"/>
-                                   <field name="leasing_direct_macrocanone"/>
-                                   <field name="leasing_direct_totale"/>
+                                <group  class="o_group" name="leasing_direct_group" string="Leasing" attrs="{'invisible': [('leasing_direct', '=', False)]}">
+                                   <div class="o_inline_group">
+                                        <label for="leasing_direct_importo" string="Importo"/>
+                                        <field nolabel="1" name="leasing_direct_importo" class="o_inline_field" widget='monetary' options="{'currency_field': 'currency_id'}"/>
+                                        <field string="+IVA" name="tag_iva" class="o_inline_field"/>
+                             </div>
+                                    <div class="o_inline_group">
+                                        <label for="leasing_direct_macrocanone"  String='Macro canone' />
+                                         <field nolabel='1'  name="leasing_direct_macrocanone" class="o_inline_field" widget='monetary' options="{'currency_field': 'currency_id'}"/>
+                                         <field string="+iva" name="tag_iva" class="o_inline_field"/>
+                                    </div>
+                                      <div class="o_inline_group">
+                                            <label for="leasing_direct_importo_rate"  String='Importo rate' />
+                                            <field nolabel='1'  name="leasing_direct_importo_rate" class="o_inline_field" widget='monetary' options="{'currency_field': 'currency_id'}"/>
+                                        <field string="+iva" name="tag_iva" class="o_inline_field"/>
+                                    </div>
+                                    <!-- <field name="leasing_direct_totale"/>-->
                                    <field name="leasing_direct_numero_rate"/>
                                    <field name="leasing_direct_numero_mesi"/>
-                                   <field name="leasing_direct_importo_rate"/>
+
                                    <field name="leasing_direct_nota"/>
                                 </group>
                                 <group name="finaziamento_direct_group" string="Finanziamento diretto" attrs="{'invisible': [('finaziamento_direct', '=', False)]}">
@@ -111,6 +139,7 @@
         <field name="arch" type="xml">
             <xpath expr="//field[@name='order_line']/form//field[@name='price_unit']" position="after">
                 <field name="sale_string_price" groups="base.group_user"/>
+                <field name="sale_string_subtotal" groups="base.group_user"/>
             </xpath>
         </field>
     </record>
@@ -120,10 +149,15 @@
         <field name="model">sale.order</field>
         <field name="inherit_id" ref="sale.view_order_form"/>
         <field name="arch" type="xml">
-           <xpath expr="//field[@name='order_line']/tree//field[@name='price_unit']" position="after">
-                <field name="sale_string_price" optional="show" groups="base.group_user"/>
+           <xpath expr="//field[@name='order_line']/tree//field[@name='price_unit']" position="replace">
+                <field name="price_unit" optional="hide" groups="base.group_user"/>
+               <field name="sale_string_price" optional="show" groups="base.group_user"/>
+               <field name="sale_string_subtotal" optional="show" groups="base.group_user"/>
             </xpath>
            <xpath expr="//field[@name='order_line']/tree//field[@name='price_unit']" position="attributes">
+                <attribute name='optional'>hide</attribute>
+            </xpath>
+           <xpath expr="//field[@name='order_line']/tree//field[@name='price_subtotal']" position="attributes">
                 <attribute name='optional'>hide</attribute>
             </xpath>
         </field>

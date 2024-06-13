@@ -51,7 +51,7 @@
 						</div>
 
 						<div t-if="report_type == 'pdf'" class="text-muted">
-							Page: <span class="page"/> / <span class="topage"/>
+							Page: <span class="page"/> /2<span /><!--<span class="topage"/>-->
 						</div>
 					</div>
 				</div>
@@ -221,8 +221,9 @@
 								groups="product.group_discount_per_so_line">
 								<span>Sc. %</span>
 							</th>
-							-->
+
 							<th name="th_taxes" class="text-right bordo-inferiore">Iva</th>
+						-->
 							<th name="th_subtotal" class="text-right bordo-inferiore">
 								<t groups="account.group_show_line_subtotals_tax_excluded">
 									Imponibile</t>
@@ -263,10 +264,11 @@
 										groups="product.group_discount_per_so_line">
 										<span t-field="line.discount" />
 									</td>
-									-->
+
 									<td name="td_taxes" class="text-right">
 										<span t-esc="', '.join(map(lambda x: (x.description or x.name), line.tax_id))"/>
 									</td>
+									-->
 									<td name="td_subtotal" class="text-right o_price_total">
 										<span t-field="line.sale_string_subtotal" groups="account.group_show_line_subtotals_tax_excluded"/>
 										<span t-field="line.sale_string_total" groups="account.group_show_line_subtotals_tax_included"/>
@@ -301,10 +303,12 @@
 				<div class="clearfix" name="so_total_summary">
 					<div id="total" class="row" name="total">
 				 		<div class="col-6 custom-mt12 ml10 mr4" name="annotazioni">
-								<p t-if="doc.annotazione">
+								<!--
+							    <p t-if="doc.annotazione">
 									<span t-field="doc.annotazione"/>
 								</p>
-								<p t-if="not doc.annotazione">
+								-->
+								<p>
 									<span>Annotazione</span>
 								</p>
 
@@ -732,7 +736,7 @@
 							</div>
 					<div t-if="doc.finaziamento_direct" class="row m-0  custom-border avoid-page-break medium-font" style="page-break-inside: avoid;">
 									<div class="row mb-1">
-											<p><strong class="mr-2 ml-2">Finanziamento diretto:</strong><input type="checkbox" name="checkbox_finaziamento_direct" t-att-checked="'checked' if your_condition else None"/></p>
+											<p><strong class="mr-2 ml-2">Finanziamento:</strong><input type="checkbox" name="checkbox_finaziamento_direct" t-att-checked="'checked' if your_condition else None"/></p>
 											<strong class="mr-2 ml-2">Costo del bene:</strong>
 										<p class="m-0" t-if="doc.finaziamento_direct_costodelbene &gt;0" t-field="doc.finaziamento_direct_costodelbene"/>
 											<strong class="mr-2 ml-2">Finanziamento:</strong>
@@ -757,7 +761,7 @@
 				</div>
 				<div class="row m-0  avoid-page-break custom-border" t-if="doc.sale_acq_usage &gt;0" id="id_usato">
 									<div class="col-3 mb-2 ">
-										<p><strong>Ritiro usato:&amp;nbsp;</strong></p>
+										<p><strong>Riacquisto usato:&amp;nbsp;</strong></p>
 									</div>
 									<div class="col-3 mb-2 ">
 										<p style="white-space: nowrap;"><strong>Modello:&amp;nbsp;</strong>
@@ -769,7 +773,7 @@
 									</div>
 
 				</div>
-				<div class="row m-0  avoid-page-break custom-border" t-if="doc.sale_val_usage &gt;0" id="id_valutazione">
+				<div class="row m-0  avoid-page-break custom-border" t-if="doc.sale_val_usage &lt;-99999" id="id_valutazione">
 									<div class="col-3 mb-2 ">
 										<p><strong>Valutazione usato:&amp;nbsp;</strong></p>
 									</div>

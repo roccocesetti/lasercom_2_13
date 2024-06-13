@@ -65,3 +65,7 @@
         page-break-inside: avoid;
     }
 }
+.o_inline_per {
+    display: inline-block;
+    vertical-align: middle;
+}
