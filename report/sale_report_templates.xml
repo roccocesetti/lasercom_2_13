@@ -84,7 +84,7 @@
 							</div>
 				            <div class="col-5 mb2" >
 				 			        <div class="row col-5 mb2" style="white-space: nowrap;text-align:right;">
-										Spett.le:<span t-field="doc.partner_invoice_id.name"/>
+										<span t-field="doc.partner_invoice_id.name"/>
 							        </div>
 							        <div class="row col-5 mb2"   style="white-space: nowrap;text-align:right;">
 										<span t-field="doc.partner_invoice_id.street"/>
@@ -485,7 +485,7 @@
 							</div>
 				            <div class="col-5 mb2">
 				 			        <div class="row col-5 mb2" style="white-space: nowrap;text-align:right;">
-										Spett.le:<span t-field="doc.partner_invoice_id.name"/>
+										<span t-field="doc.partner_invoice_id.name"/>
 							        </div>
 							        <div class="row col-5 mb2" style="white-space: nowrap;text-align:right;">
 										<span t-field="doc.partner_invoice_id.street"/>
