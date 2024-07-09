@@ -111,13 +111,13 @@ class SaleOrder(models.Model):
     importo_discount = fields.Monetary(string='Sconto', digits='Product Price', compute='_amount_all', tracking=4,default=0.0)
     sale_string_margin = fields.Char(compute='_product_purchase_price', store=True, precompute=True,string='Numero protocollo contabile ' )
     select_acq_usage = fields.Selection(
-        [('vendors', 'Riacquisto'),
+        [('vendors', 'Acquisto'),
         ('quotation', 'Valutazione usato')],
         string="Tipo valutazione",
         default="vendors")
-    sale_acq_usage = fields.Monetary(string='Riacquisto usato', digits='Product Price', default=0.0)
+    sale_acq_usage = fields.Monetary(string='Acquisto usato', digits='Product Price', default=0.0)
     sale_val_usage = fields.Monetary(string='valutazione usato', digits='Product Price', default=0.0)
-    sale_ritiro_usato=fields.Boolean(string='Riacquisto usato',default=False)
+    sale_ritiro_usato=fields.Boolean(string='Acquisto usato',default=False)
     sale_modello_usato = fields.Char(string='Modello usato', required=False, copy=False, readonly=False, default='')
     sale_promotion = fields.Monetary(string='Promozione', digits='Product Price', default=0.0)
     sale_promotion_note = fields.Char(string='Nota promozione', required=False, copy=False, readonly=False, default='')
@@ -173,6 +173,8 @@ class SaleOrder(models.Model):
     finaziamento_direct_retro = fields.Text(string='Retro', required=False, copy=False, readonly=False, default="" \
 "")
     attachment_url = fields.Char(compute='_compute_attachment_url')
+    attachment_link = fields.Char('Retro contratto', readonly=True)
+
     annotazione = fields.Char(string='Annotazione', required=False, copy=False, readonly=False, default='')
     tag_iva = fields.Char(string='+iva', required=False, copy=False, readonly=True, default='+iva')
 
@@ -180,7 +182,10 @@ class SaleOrder(models.Model):
         for record in self:
             attachment = self.env['ir.attachment'].search([('res_model', '=', 'res.partner'), ('res_id', '=', 1)], limit=1)
             if attachment:
-                record.attachment_url = '/web/content/%s?download=true' % attachment.id    
+                record.attachment_url = '/web/content/%s?download=true' % attachment.id
+                record.attachment_link = '<a href="%s" download>Download retro Contratto</a>' % record.attachment_url
+
+                record.file_name='retro_contratto.pdf'
     @api.model
     def create(self, vals):
         if vals.get('numero_contratto', _('New')) == _('New'):

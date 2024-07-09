@@ -397,7 +397,7 @@
 								</tr>
   								<tr class="border-black o_total" t-if="doc.sale_acq_usage &gt;0">
 									<td name="td_amount_by_group_label" class="text-righ o_price_totalt">
-										<strong>Riacquisto usato</strong>
+										<strong>Acquisto usato</strong>
 									</td>
 									<td name="td_amount_by_group_label" class="text-righ o_price_totalt">
 										  <span t-field="doc.sale_modello_usato"/>
@@ -755,13 +755,13 @@
 						<p t-if="doc.finaziamento_direct" class="mr-2 ml-2 small9-font" t-field="doc.finaziamento_direct_nota" style="white-space: pre-line;"/>
 					</div>
 
-				<div class="row m-0  custom-border avoid-page-break small-font" id="pagamenti_nota_piede">
+				<div class="row m-0  custom-border avoid-page-break medium-font" id="pagamenti_nota_piede">
 					<p t-if="doc.finaziamento_direct_nota_piede" class="m-0" t-field="doc.finaziamento_direct_nota_piede"/>
 
 				</div>
 				<div class="row m-0  avoid-page-break custom-border" t-if="doc.sale_acq_usage &gt;0" id="id_usato">
 									<div class="col-3 mb-2 ">
-										<p><strong>Riacquisto usato:&amp;nbsp;</strong></p>
+										<p><strong>Acquisto usato:&amp;nbsp;</strong></p>
 									</div>
 									<div class="col-3 mb-2 ">
 										<p style="white-space: nowrap;"><strong>Modello:&amp;nbsp;</strong>

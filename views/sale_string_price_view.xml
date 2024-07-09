@@ -28,8 +28,10 @@
 
                    <field name="sale_string_price"  groups="base.group_user" />
                    <field name="sale_string_margin"  groups="base.group_user" />
-				   <field name="attachment_url" widget="url" string="Download retro Contratto" />
-             </xpath>
+				   <field name="attachment_url" invisible="1" readonly="1" widget="url" string="Download retro Contratto" />
+                    <field name="attachment_link" readonly="1" widget="html"/>
+
+              </xpath>
             <xpath expr="//group[@name='sale_total']" position="replace">
                       <group class="oe_subtotal_footer oe_right" colspan="6" name="sale_total_laser">
                        <field name="amount_untaxed_nocalc" widget='monetary' options="{'currency_field': 'currency_id'}"/>
@@ -50,7 +52,7 @@
                           <div class="oe_subtotal_footer_separator oe_inline o_td_label">
                                     </div>
                             -->
-                            <label for="sale_acq_usage" string="Riacquisto usato" attrs="{'invisible': [('sale_acq_usage', '&lt;=', 0)]}"/>
+                            <label for="sale_acq_usage" string="Acquisto usato" attrs="{'invisible': [('sale_acq_usage', '&lt;=', 0)]}"/>
                             <field name="sale_acq_usage" nolabel="1"  groups="base.group_user" />
 
                           <label for="sale_modello_usato" string="Modello usato" attrs="{'invisible': [('sale_acq_usage', '&lt;=', 0)]}"/>
@@ -67,8 +69,9 @@
  
             </xpath>
              <xpath expr="//sheet/notebook/page[@name='other_information']" position="after">
-                        <page string="Annotazioni" name="Annotazioni">
-                            <group name="Annotazioni" string="Annotazioni">
+                        <page string="Note Contratto" name="Annotazioni" >
+
+                            <group name="Annotazioni" string="Note contratto">
                                     <field name="annotazione"/>
 							</group>
                         </page>
@@ -121,7 +124,7 @@
                             </group>
                          </page>
 
-                       <page string="Nota piede contratto" name="finaziamento_direct_nota_piede">
+                       <page string="Nota piede contratto" name="finaziamento_direct_nota_piede" groups="lasercom.group_amministratore">
                             <group name="Nota piede contratto" string="gruppo_finaziamento_nota_piede">
                                     <field name="finaziamento_direct_nota_piede"/>
 							</group>
@@ -143,6 +146,21 @@
             </xpath>
         </field>
     </record>
+
+
+    <record model="ir.ui.view" id="sale_order_line_opzional_invisible">
+        <field name="name">sale.order.opzional.view.form.invisible</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_order_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//page[@name='other_information']" position="attributes">
+            <attribute name="groups">lasercom.group_amministratore</attribute>
+            </xpath>
+        </field>
+    </record>
+
+
+
 
     <record model="ir.ui.view" id="sale_string_price_sale_order_line_form">
         <field name="name">sale.order.line.tree.string_price.view.form</field>
