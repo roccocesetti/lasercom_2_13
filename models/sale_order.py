@@ -73,9 +73,13 @@ class SaleOrderLine(models.Model):
     @api.depends('product_id', 'purchase_price', 'product_uom_qty', 'price_unit', 'price_subtotal')
     def _compute_sale_string_price(self):
         for line in self:
-            sale_string_price = "{:.2f}".format(line.price_unit) #if line.purchase_price>0 else 'INCLUSO'
-            sale_string_subtotal = "{:.2f}".format(line.price_subtotal) if line.purchase_price>0 else 'INCLUSO'
-            sale_string_total = "{:.2f}".format(line.price_total) if line.purchase_price>0 else 'INCLUSO'
+            #sale_string_price = "{:.2f}".format(line.price_unit) #if line.purchase_price>0 else 'INCLUSO'
+            sale_string_price = "{:,.2f}".format(line.price_unit).replace(',', 'X').replace('.', ',').replace('X', '.')
+            #sale_string_subtotal = "{:.2f}".format(line.price_subtotal) if line.purchase_price>0 else 'INCLUSO'
+            sale_string_subtotal =  "{:,.2f}".format(line.price_subtotal).replace(',', 'X').replace('.', ',').replace('X', '.') if line.purchase_price>0 else 'INCLUSO'
+
+            #sale_string_total = "{:.2f}".format(line.price_total) if line.purchase_price>0 else 'INCLUSO'
+            sale_string_total = "{:,.2f}".format(line.price_total).replace(',', 'X').replace('.', ',').replace('X', '.') if line.purchase_price>0 else 'INCLUSO'
             #sale_string_price=decode_protocollo(sale_string_price)
             line.sale_string_price = sale_string_price
             line.sale_string_subtotal=sale_string_subtotal            
@@ -86,9 +90,24 @@ class SaleOrderLine(models.Model):
     def product_id_change_sale_string_price(self):
         if not self.order_id.pricelist_id or not self.product_id or not self.product_uom or not self.price_unit:
             return
-        self.sale_string_price = self._compute_sale_string_price
-        self.sale_string_subtotal = self._compute_sale_string_price
-        self.sale_string_total = self._compute_sale_string_price
+        self._compute_sale_string_price
+        #self.sale_string_price = self._compute_sale_string_price
+        #self.sale_string_subtotal = self._compute_sale_string_price
+        #self.sale_string_total = self._compute_sale_string_price
+        print(f"Codice Prodotto: {self.product_id.default_code}")
+        print(f"Nome Prodotto: {self.product_id.name}")
+        print(f"Quantità: {self.product_uom}")
+        print(f"Prezzo Unitario: €{self.price_unit:,.2f}")
+
+        print(f"Prezzo unitario: €{self.sale_string_price}")
+        print(f"Prezzo sub Totale: €{self.sale_string_subtotal}")
+        print(f"Prezzo Totale: €{self.sale_string_total}")
+        self.update({
+            'sale_string_price': self.sale_string_price,
+            'sale_string_subtotal': self.sale_string_subtotal,
+            'sale_string_total': self.sale_string_total,
+
+        })
 
     @api.onchange('product_id')
     def product_id_change(self):

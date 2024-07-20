@@ -755,6 +755,7 @@
 						<p t-if="doc.finaziamento_direct" class="mr-2 ml-2 small9-font" t-field="doc.finaziamento_direct_nota" style="white-space: pre-line;"/>
 					</div>
 
+
 				<div class="row m-0  custom-border avoid-page-break medium-font" id="pagamenti_nota_piede">
 					<p t-if="doc.finaziamento_direct_nota_piede" class="m-0" t-field="doc.finaziamento_direct_nota_piede"/>
 
