@@ -141,8 +141,8 @@
         <field name="inherit_id" ref="sale.view_order_form"/>
         <field name="arch" type="xml">
             <xpath expr="//field[@name='order_line']/form//field[@name='price_unit']" position="after">
-                <field name="sale_string_price" groups="base.group_user"/>
-                <field name="sale_string_subtotal" groups="base.group_user"/>
+                <field name="sale_string_price" groups="base.group_user" class="text-right" />
+                <field name="sale_string_subtotal" groups="base.group_user" class="text-right"/>
             </xpath>
         </field>
     </record>

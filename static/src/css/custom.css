@@ -69,3 +69,10 @@
     display: inline-block;
     vertical-align: middle;
 }
+.break-line {
+        display: block;
+        margin-top: 5px; /* puoi regolare il margine in base alle tue esigenze */
+    }
+.custom-row-height {
+        height: 200px; /* Imposta l'altezza desiderata */
+    }

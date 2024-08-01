@@ -13,6 +13,15 @@ class ResPartner(models.Model):
     #numero_verde = fields.Char(string='Numero verde')
     #numero_righe = fields.Integer(string='Numero Righe')
 
+    def create(self, values):
+        result = super(ResPartner, self).create(values)
+        return result
+
+    def write(self, values):
+        return super(ResPartner, self).write(values)
+
+
+
     @api.model
     def name_search(self, name='', args=None, operator='ilike', limit=100):
         # Ottieni l'utente corrente
@@ -105,6 +114,16 @@ class ResPartner(models.Model):
 
         res = super(ResPartner,self.sudo()).search(args, offset=offset, limit=limit, order=order, count=count)
         return res
+
+    @api.depends_context('force_company')
+    def _credit_debit_get(self):
+        if hasattr(self.env, 'account.move.line'):
+            super(ResPartner, self.sudo())._credit_debit_get()
+        else:
+            treated = self.browse()
+            remaining = (self - treated)
+            remaining.debit = False
+            remaining.credit = False
 
 class ResCompany(models.Model):
     _inherit = "res.company"

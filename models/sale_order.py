@@ -75,11 +75,14 @@ class SaleOrderLine(models.Model):
         for line in self:
             #sale_string_price = "{:.2f}".format(line.price_unit) #if line.purchase_price>0 else 'INCLUSO'
             sale_string_price = "{:,.2f}".format(line.price_unit).replace(',', 'X').replace('.', ',').replace('X', '.')
+            sale_string_price = sale_string_price.rjust(len(sale_string_price) + 12-len(sale_string_price), ' ')
             #sale_string_subtotal = "{:.2f}".format(line.price_subtotal) if line.purchase_price>0 else 'INCLUSO'
             sale_string_subtotal =  "{:,.2f}".format(line.price_subtotal).replace(',', 'X').replace('.', ',').replace('X', '.') if line.purchase_price>0 else 'INCLUSO'
+            sale_string_subtotal = sale_string_subtotal.rjust(len(sale_string_subtotal) + 12-len(sale_string_subtotal), ' ')
 
             #sale_string_total = "{:.2f}".format(line.price_total) if line.purchase_price>0 else 'INCLUSO'
             sale_string_total = "{:,.2f}".format(line.price_total).replace(',', 'X').replace('.', ',').replace('X', '.') if line.purchase_price>0 else 'INCLUSO'
+            sale_string_total = sale_string_total.rjust(len(sale_string_total) + 12-len(sale_string_total), ' ')
             #sale_string_price=decode_protocollo(sale_string_price)
             line.sale_string_price = sale_string_price
             line.sale_string_subtotal=sale_string_subtotal            
@@ -205,11 +208,72 @@ class SaleOrder(models.Model):
                 record.attachment_link = '<a href="%s" download>Download retro Contratto</a>' % record.attachment_url
 
                 record.file_name='retro_contratto.pdf'
+    def partner_control(self):
+            errore=[]
+            if not self.partner_id.name:
+                errore.append('Ragione Sociale campo obbligatorio')
+            if not self.partner_id.rivendita:
+                errore.append('Rivendita campo obbligatorio')
+            if not self.partner_id.street:
+                errore.append('Via campo obbligatorio')
+            if not self.partner_id.zip:
+                errore.append('cap campo obbligatorio')
+            if not self.partner_id.city:
+                errore.append('località campo obbligatorio')
+            if not self.partner_id.state_id:
+                errore.append('provinvia campo obbligatorio')
+            if not self.partner_id.vat:
+                errore.append('P.iva campo obbligatorio')
+            if not self.partner_id.l10n_it_codice_fiscale:
+                errore.append('Codice Fiscale campo obbligatorio')
+            if not self.partner_id.phone:
+                errore.append('Telefono campo obbligatorio')
+            if not self.partner_id.mobile:
+                errore.append('Cellulare campo obbligatorio')
+            if not self.partner_id.email:
+                errore.append('Email campo obbligatorio')
+            if not self.partner_id.l10n_it_pec_email:
+                errore.append('Pec campo obbligatorio')
+            if not self.partner_id.codice_sdi:
+                errore.append('Codice SDI campo obbligatorio')
+            if not self.partner_shipping_id:
+                errore.append('Luogo di consegna campo obbligatorio')
+
+            if not self.partner_shipping_id.street:
+                errore.append('Via di consegna campo obbligatorio')
+            if not self.partner_shipping_id.zip:
+                errore.append('cap di consegna campo obbligatorio')
+            if not self.partner_shipping_id.city:
+                errore.append('località di consegna campo obbligatorio')
+            if not self.partner_shipping_id.state_id:
+                errore.append('provinvia di consegna campo obbligatorio')
+
+
+            if not self.payment_direct and not self.leasing_direct and  not self.finaziamento_direct :
+                errore.append('Inserire almeno un metodo di pagamento')
+
+
+            if  self.payment_direct:
+                if self.payment_direct_allordine<=0 and self.payment_direct_allaconsegna<=0:
+                        errore.append('inserire importi del pagamento')
+            if  self.finaziamento_direct:
+                if self.finaziamento_direct_costodelbene<=0 and self.finaziamento_direct_finanziamento<=0:
+                        errore.append('inserire importi del finaziamento')
+            if  self.leasing_direct:
+                if self.leasing_direct_importo<=0 and self.leasing_direct_macrocanone<=0:
+                        errore.append('inserire importi del leasing')
+            if errore:
+                raise ValidationError(errore)
+            return True
+
     @api.model
     def create(self, vals):
         if vals.get('numero_contratto', _('New')) == _('New'):
             seq_date = None
             if 'data_contratto' in vals and vals['data_contratto'] :
+                if not self.partner_control():
+                    raise UserError(_('DAti non validi'))
+
                 seq_date = fields.Datetime.context_timestamp(self, fields.Datetime.to_datetime(vals['data_contratto']))
                 if 'company_id' in vals:
                     vals['numero_contratto'] = self.env['ir.sequence'].with_context(force_company=vals['company_id']).next_by_code(
@@ -227,6 +291,7 @@ class SaleOrder(models.Model):
     def write(self, vals):
         res = super(SaleOrder, self).write(vals)
         for order in self:
+
             if len(order.order_line) > 16:
                 raise UserError(_('Superato il limite di righe da immettere: 16 invece di %s ' % str(len(order.order_line))))
         return res
@@ -238,7 +303,14 @@ class SaleOrder(models.Model):
         on the SO itself. We hence override the _write to catch the computation
         of invoice_status field. """
         mutable_vals = dict(vals)
+        if self.data_contratto:
+            if not self.partner_control():
+                raise UserError(_('DAti non validi'))
+
         if 'data_contratto' in mutable_vals and mutable_vals['data_contratto']:
+            if not self.partner_control():
+                raise UserError(_('DAti non validi'))
+
             if self.numero_contratto ==_('New'):
                     seq_date = fields.Datetime.context_timestamp(self, fields.Datetime.to_datetime(mutable_vals['data_contratto']))
                     if 'company_id' in vals:
@@ -248,6 +320,7 @@ class SaleOrder(models.Model):
                     else:
                        numero_contratto= self.env['ir.sequence'].next_by_code('sale.order.contract', sequence_date=seq_date) or  _('New')
                        mutable_vals.update({'numero_contratto':numero_contratto})
+
         res= super(SaleOrder, self)._write(mutable_vals)
         return res
     @api.depends('amount_untaxed','amount_total','payment_direct_allordine','payment_direct_allaconsegna','payment_direct_num_titoli')
@@ -360,3 +433,6 @@ class SaleOrder(models.Model):
         return self.env['ir.qweb.field.monetary'].value_to_html(
             -1 * self.sale_val_usage, {'display_currency': self.currency_id}
         )
+
+
+    #@api.depends('partner_id','partner_shipping_id','payment_direct','leasing_direct','finanziamento_direct')

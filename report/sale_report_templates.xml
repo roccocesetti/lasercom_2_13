@@ -497,19 +497,21 @@
 						  	        <div class="row col-5 mb2" style="white-space: nowrap;text-align:right;">
 										<span t-if="doc.partner_invoice_id.street2" t-field="doc.partner_invoice_id.street2"/>
 							        </div>
-						        <div class="row col-5 mb2" style="white-space: nowrap;text-align:right;">
+						        	<div class="row col-5 mb2" style="white-space: nowrap;text-align:right;">
 										<span class="col-0" t-if="doc.partner_invoice_id.zip" t-field="doc.partner_invoice_id.zip"/>
 										<span class="col-3" t-if="doc.partner_invoice_id.city" t-field="doc.partner_invoice_id.city"/>
 										<span class="col-1" t-if="doc.partner_invoice_id.state_id" t-field="doc.partner_invoice_id.state_id.code"/>
-							        </div>
-							        <div class="row" style="text-align:right;">
-										<span t-if="doc.partner_invoice_id.vat" t-field="doc.partner_invoice_id.vat"/>
-							        </div>
-				                    <div class="row" style="text-align:right;">
-										<span t-if="doc.partner_invoice_id.l10n_it_codice_fiscale" t-field="doc.partner_invoice_id.l10n_it_codice_fiscale"/>
-							        </div>
+									</div>
+									<div t-if="doc.partner_invoice_id.email or doc.partner_invoice_id.mobile" class="row col-5 mb2 medium-font" style="white-space: nowrap;text-align:left;">
+										<span  class="col-0" t-if="doc.partner_invoice_id.email" style="text-align:right;" >email:<p t-field="doc.partner_invoice_id.email"/></span>
+								        <span  class="col-0" t-if="doc.partner_invoice_id.mobile" style="text-align:left;"><![CDATA[-cell:]]><p t-field="doc.partner_invoice_id.mobile" style="text-align:left;"/></span>
+									</div>
+					        		<div  t-if="doc.partner_invoice_id.vat or  doc.partner_invoice_id.l10n_it_codice_fiscale" class="row col-5 mb2 medium-font" style="white-space: nowrap;text-align:left;">
+										<span class="col-0" t-if="doc.partner_invoice_id.vat" style="text-align:right;">P.iva:<p t-field="doc.partner_invoice_id.vat"/></span>
+										<span class="col-0" t-if="doc.partner_invoice_id.l10n_it_codice_fiscale" style="text-align:left;"><![CDATA[-C.fiscale:]]><p t-field="doc.partner_invoice_id.l10n_it_codice_fiscale" style="text-align:left;"/></span>
+									</div>
 
-				            </div>
+							</div>
 
 
 					</div>
@@ -542,6 +544,10 @@
 								<t t-esc="doc.partner_id.state_id.name"/><span/>
 							</t>
 						</p>
+
+					</div>
+					<div t-if="doc.partner_shipping_id == doc.partner_invoice_id " class="col-auto mw-100 mb-2">
+						<strong>Luogo di consegna: IDEM</strong>
 
 					</div>
 
@@ -691,28 +697,29 @@
 						</div>
 					</div>
 				</div>
-					<div t-if="doc.payment_direct" class="row m-0  custom-border avoid-page-break medium-font" style="page-break-inside: avoid;">
+					<div t-if="doc.payment_direct" class="row m-0 h-10  avoid-page-break medium-font" style="page-break-inside: avoid;">
 						           <div class="row m-1">
-									<p><strong class="mr-2 ml-2">pagamento diretto:</strong>
-									<input type="checkbox" name="checkbox_diretto" t-att-checked="'checked' if your_condition else None"/></p>
-									<strong class="mr-2 ml-2">all'ordine:</strong>
-									<p t-if="doc.payment_direct_allordine &gt;0" t-field="doc.payment_direct_allordine"/>
+										<p><strong class="mr-2 ml-2">pagamento diretto:</strong>
+										<input type="checkbox" name="checkbox_diretto" t-att-checked="'checked' if your_condition else None"/></p>
+										<strong class="mr-2 ml-2">all'ordine:</strong>
+										<p t-if="doc.payment_direct_allordine &gt;0" t-field="doc.payment_direct_allordine"/>
 
-										<strong class="mr-2 ml-2">alla consegna:</strong>
-									<p t-if="doc.payment_direct_allaconsegna &gt;0" t-field="doc.payment_direct_allaconsegna"/>
-										<strong class="mr-2 ml-2">Saldo:</strong>
-									<p t-if="doc.payment_direct_saldo &gt;0" t-field="doc.payment_direct_saldo"/>
+											<strong class="mr-2 ml-2">alla consegna:</strong>
+										<p t-if="doc.payment_direct_allaconsegna &gt;0" t-field="doc.payment_direct_allaconsegna"/>
+											<strong class="mr-2 ml-2">Saldo:</strong>
+										<p t-if="doc.payment_direct_saldo &gt;0" t-field="doc.payment_direct_saldo"/>
 
-										<strong class="mr-2 ml-2">numero titoli:</strong>
-									<p t-if="doc.payment_direct_num_titoli &gt;0" t-field="doc.payment_direct_num_titoli"/>
-										<strong class="mr-2 ml-2">importo titoli:</strong>
-									<p t-if="doc.payment_direct_importo_titoli &gt;0" t-field="doc.payment_direct_importo_titoli"/>
+											<strong class="mr-2 ml-2">numero titoli:</strong>
+										<p t-if="doc.payment_direct_num_titoli &gt;0" t-field="doc.payment_direct_num_titoli"/>
+											<strong class="mr-2 ml-2">importo titoli:</strong>
+										<p t-if="doc.payment_direct_importo_titoli &gt;0" t-field="doc.payment_direct_importo_titoli"/>
 									</div>
-					</div>
-				    <div t-if="doc.payment_direct" class="row m-1">
-									   <p t-if="doc.payment_direct" class="mr-2 ml-2 medium-font" t-field="doc.payment_direct_nota" style="white-space: pre-line;"/>
-					</div>
-						<div t-if="doc.leasing_direct" class="row m-0  custom-border avoid-page-breakr medium-font" style="page-break-inside: avoid;">
+						</div>
+
+							<div t-if="doc.payment_direct" class="row m-1 break-line">
+											   <p t-if="doc.payment_direct" class="mr-2 ml-2 medium-font break-line" t-field="doc.payment_direct_nota" style="white-space: pre-line;"/>
+							</div>
+						<div t-if="doc.leasing_direct" class="row m-0   avoid-page-breakr medium-font" style="page-break-inside: avoid;">
 								<div class="row mb-1">
 									<p><strong class="mr-2 ml-2">Leasing:</strong>
 								<input type="checkbox" name="checkbox_diretto" t-att-checked="'checked' if your_condition else None"/></p>
@@ -731,10 +738,10 @@
 								</div>
 
 					    </div>
-							<div t-if="doc.leasing_direct" class="row m-1">
+							<div t-if="doc.leasing_direct" class="row m-1  break-line">
 											<p t-if="doc.leasing_direct" class="mr-2 ml-2 medium-font" t-field="doc.leasing_direct_nota" style="white-space: pre-line;"/>
 							</div>
-					<div t-if="doc.finaziamento_direct" class="row m-0  custom-border avoid-page-break medium-font" style="page-break-inside: avoid;">
+					<div t-if="doc.finaziamento_direct" class="row m-0  avoid-page-break medium-font" style="page-break-inside: avoid;">
 									<div class="row mb-1">
 											<p><strong class="mr-2 ml-2">Finanziamento:</strong><input type="checkbox" name="checkbox_finaziamento_direct" t-att-checked="'checked' if your_condition else None"/></p>
 											<strong class="mr-2 ml-2">Costo del bene:</strong>
@@ -751,7 +758,7 @@
 										<p class="m-0" t-if="doc.finaziamento_direct_saldo_titolo &gt;0" t-field="doc.finaziamento_direct_saldo_titolo"/>
 									</div>
 					</div>
-				    <div t-if="doc.finaziamento_direct" class="row m-1">
+				    <div t-if="doc.finaziamento_direct" class="row m-1  break-line">
 						<p t-if="doc.finaziamento_direct" class="mr-2 ml-2 small9-font" t-field="doc.finaziamento_direct_nota" style="white-space: pre-line;"/>
 					</div>
 
