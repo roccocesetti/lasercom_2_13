@@ -210,58 +210,63 @@ class SaleOrder(models.Model):
                 record.file_name='retro_contratto.pdf'
     def partner_control(self):
             errore=[]
-            if not self.partner_id.name:
-                errore.append('Ragione Sociale campo obbligatorio')
-            if not self.partner_id.rivendita:
-                errore.append('Rivendita campo obbligatorio')
-            if not self.partner_id.street:
-                errore.append('Via campo obbligatorio')
-            if not self.partner_id.zip:
-                errore.append('cap campo obbligatorio')
-            if not self.partner_id.city:
-                errore.append('località campo obbligatorio')
-            if not self.partner_id.state_id:
-                errore.append('provinvia campo obbligatorio')
-            if not self.partner_id.vat:
-                errore.append('P.iva campo obbligatorio')
-            if not self.partner_id.l10n_it_codice_fiscale:
-                errore.append('Codice Fiscale campo obbligatorio')
-            if not self.partner_id.phone:
-                errore.append('Telefono campo obbligatorio')
-            if not self.partner_id.mobile:
-                errore.append('Cellulare campo obbligatorio')
-            if not self.partner_id.email:
-                errore.append('Email campo obbligatorio')
-            if not self.partner_id.l10n_it_pec_email:
-                errore.append('Pec campo obbligatorio')
-            if not self.partner_id.codice_sdi:
-                errore.append('Codice SDI campo obbligatorio')
-            if not self.partner_shipping_id:
-                errore.append('Luogo di consegna campo obbligatorio')
+            user = self.env.user
+            if not user.has_group('lasercom.group_telemarketing') and not user.has_group(
+                    'lasercom.group_amministratore'):
+                if user.has_group('lasercom.group_venditore'):
 
-            if not self.partner_shipping_id.street:
-                errore.append('Via di consegna campo obbligatorio')
-            if not self.partner_shipping_id.zip:
-                errore.append('cap di consegna campo obbligatorio')
-            if not self.partner_shipping_id.city:
-                errore.append('località di consegna campo obbligatorio')
-            if not self.partner_shipping_id.state_id:
-                errore.append('provinvia di consegna campo obbligatorio')
+                    if not self.partner_id.name:
+                        errore.append('Ragione Sociale campo obbligatorio')
+                    if not self.partner_id.rivendita:
+                        errore.append('Rivendita campo obbligatorio')
+                    if not self.partner_id.street:
+                        errore.append('Via campo obbligatorio')
+                    if not self.partner_id.zip:
+                        errore.append('cap campo obbligatorio')
+                    if not self.partner_id.city:
+                        errore.append('località campo obbligatorio')
+                    if not self.partner_id.state_id:
+                        errore.append('provinvia campo obbligatorio')
+                    if not self.partner_id.vat:
+                        errore.append('P.iva campo obbligatorio')
+                    if not self.partner_id.l10n_it_codice_fiscale:
+                        errore.append('Codice Fiscale campo obbligatorio')
+                    if not self.partner_id.phone:
+                        errore.append('Telefono campo obbligatorio')
+                    if not self.partner_id.mobile:
+                        errore.append('Cellulare campo obbligatorio')
+                    if not self.partner_id.email:
+                        errore.append('Email campo obbligatorio')
+                    if not self.partner_id.l10n_it_pec_email:
+                        errore.append('Pec campo obbligatorio')
+                    if not self.partner_id.codice_sdi:
+                        errore.append('Codice SDI campo obbligatorio')
+                    if not self.partner_shipping_id:
+                        errore.append('Luogo di consegna campo obbligatorio')
+
+                    if not self.partner_shipping_id.street:
+                        errore.append('Via di consegna campo obbligatorio')
+                    if not self.partner_shipping_id.zip:
+                        errore.append('cap di consegna campo obbligatorio')
+                    if not self.partner_shipping_id.city:
+                        errore.append('località di consegna campo obbligatorio')
+                    if not self.partner_shipping_id.state_id:
+                        errore.append('provinvia di consegna campo obbligatorio')
 
 
-            if not self.payment_direct and not self.leasing_direct and  not self.finaziamento_direct :
-                errore.append('Inserire almeno un metodo di pagamento')
+                    if not self.payment_direct and not self.leasing_direct and  not self.finaziamento_direct :
+                        errore.append('Inserire almeno un metodo di pagamento')
 
 
-            if  self.payment_direct:
-                if self.payment_direct_allordine<=0 and self.payment_direct_allaconsegna<=0:
-                        errore.append('inserire importi del pagamento')
-            if  self.finaziamento_direct:
-                if self.finaziamento_direct_costodelbene<=0 and self.finaziamento_direct_finanziamento<=0:
-                        errore.append('inserire importi del finaziamento')
-            if  self.leasing_direct:
-                if self.leasing_direct_importo<=0 and self.leasing_direct_macrocanone<=0:
-                        errore.append('inserire importi del leasing')
+                    if  self.payment_direct:
+                        if self.payment_direct_allordine<=0 and self.payment_direct_allaconsegna<=0:
+                                errore.append('inserire importi del pagamento')
+                    if  self.finaziamento_direct:
+                        if self.finaziamento_direct_costodelbene<=0 and self.finaziamento_direct_finanziamento<=0:
+                                errore.append('inserire importi del finaziamento')
+                    if  self.leasing_direct:
+                        if self.leasing_direct_importo<=0 and self.leasing_direct_macrocanone<=0:
+                                errore.append('inserire importi del leasing')
             if errore:
                 raise ValidationError(errore)
             return True
