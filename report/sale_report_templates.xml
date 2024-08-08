@@ -485,7 +485,8 @@
 							<div class="col-1">
 							</div>
 				            <div class="col-3 mb1" name="company_address_2">
-				 			        <div class="row" style="text-align:right;"<span/>
+				 			        <div class="row" style="text-align:right;">
+										<span/>
 							        </div>
 							        <div class="row" t-att-style="'color: green;'" style="text-align:right;">
 										<span/>
