@@ -84,6 +84,7 @@ class SaleOrderLine(models.Model):
             sale_string_total = "{:,.2f}".format(line.price_total).replace(',', 'X').replace('.', ',').replace('X', '.') if line.purchase_price>0 else 'INCLUSO'
             sale_string_total = sale_string_total.rjust(len(sale_string_total) + 12-len(sale_string_total), ' ')
             #sale_string_price=decode_protocollo(sale_string_price)
+            line.price_unit = line.price_unit if line.purchase_price>0 else 0.0
             line.sale_string_price = sale_string_price
             line.sale_string_subtotal=sale_string_subtotal            
             line.sale_string_total=sale_string_total            
@@ -155,6 +156,10 @@ class SaleOrder(models.Model):
     codice_sdi = fields.Char('res.partner', related='partner_id.codice_sdi',readonly=False)
     numero_contratto = fields.Char(string='Numero Contratto', required=False, copy=False, readonly=False, states={'draft': [('readonly', False)]},  default=lambda self: _('New'))
     sale_caparra = fields.Monetary(string='Caparra', digits='Product Price', default=0.0,currency_field='currency_id',)
+    amount_untaxed_arrotondamento = fields.Monetary(string='Arrotondamento', digits='Product Price', default=0.0,
+                                   currency_field='currency_id', )
+    amount_untaxed_arrotondato = fields.Monetary(string='Totale', store=True, readonly=True, compute='_amount_all',
+                                            tracking=5)
 
     payment_direct=fields.Boolean(string='Pagamento Diretto',default=False)
     payment_direct_allordine = fields.Monetary(string="All'ordine", digits='Product Price', default=0.0,currency_field='currency_id',)
@@ -197,7 +202,7 @@ class SaleOrder(models.Model):
     attachment_url = fields.Char(compute='_compute_attachment_url')
     attachment_link = fields.Char('Retro contratto', readonly=True)
 
-    annotazione = fields.Char(string='Annotazione', required=False, copy=False, readonly=False, default='')
+    annotazione = fields.Text(string='Annotazione', required=False, copy=False, readonly=False, default='')
     tag_iva = fields.Char(string='+iva', required=False, copy=False, readonly=True, default='+iva')
 
     def _compute_attachment_url(self):
@@ -364,7 +369,7 @@ class SaleOrder(models.Model):
             amount_untaxed = amount_tax = 0.0
             for line in order.order_line:
                 #line.write({'discount':order.footer_discount})
-                if line.sale_string_subtotal!='INCLUSO':
+                if 'incluso' not in line.sale_string_subtotal.lower():
                     amount_untaxed += line.price_subtotal
                     amount_tax += line.price_tax
             amount_untaxed_nocalc = amount_untaxed
@@ -373,9 +378,9 @@ class SaleOrder(models.Model):
             importo_discount=amount_untaxed*(order.footer_discount)/100
             amount_untaxed=amount_untaxed-importo_discount
             amount_untaxed = amount_untaxed + order.sale_acq_usage
-            amount_total=(amount_untaxed * 122)/100
-            amount_tax=(amount_untaxed * 22)/100
-               
+            amount_untaxed_arrotondato = amount_untaxed - amount_untaxed_arrotondamento
+            amount_total=(amount_untaxed_arrotondato * 122)/100
+            amount_tax=(amount_untaxed_arrotondato * 22)/100
             order.update({
                 'amount_untaxed_nocalc': amount_untaxed_nocalc,
                 'amount_untaxed': amount_untaxed,

@@ -76,3 +76,7 @@
 .custom-row-height {
         height: 200px; /* Imposta l'altezza desiderata */
     }
+
+.bold-text {
+        font-weight: bold;
+    }

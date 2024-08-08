@@ -472,26 +472,16 @@
     			<t t-raw="0"/>
 			<div class="row col-12 mb2 mw-100">
 			                <div class="col-3 mb2">
-									<div class="row" style="text-align:right;">
-			                    		<img t-if="company.logo" t-att-src="image_data_uri(company.logo)" style="max-height: 45px;" alt="Logo"/>
-									</div>
-										<div class="row" style="text-align:right;">P.iva:<span t-field="company.vat"/>
-							        </div>
-							        	<div class="row" t-att-style="'color: green;'" style="text-align:right;">Numero verde:<span t-field="company.numero_verde"/>
-							        </div>
-							        	<div class="row" style="text-align:right;">email:<span t-if="company.email" t-field="company.email"/>
-							        </div>
+			                    <img t-if="company.logo" t-att-src="image_data_uri(company.logo)" style="max-height: 45px;" alt="Logo"/>
 			                </div>
 							<div class="col-1">
 							</div>
 				            <div class="col-3 mb1" name="company_address_2">
-				 			        <div class="row" style="text-align:right;"<span/>
+				 			        <div class="row" style="text-align:right;">P.iva:<span t-field="company.vat"/>
 							        </div>
-							        <div class="row" t-att-style="'color: green;'" style="text-align:right;">
-										<span/>
+							        <div class="row" t-att-style="'color: green;'" style="text-align:right;">Numero verde:<span t-field="company.numero_verde"/>
 							        </div>
-							        <div class="row" style="text-align:right;">
-										<span/>
+							        <div class="row" style="text-align:right;">email:<span t-if="company.email" t-field="company.email"/>
 							        </div>
   			            </div>
 							<div class="col-1 mb1" style="white-space: nowrap;text-align:right;">
