@@ -359,7 +359,7 @@ class SaleOrder(models.Model):
         #        'leasing_direct_totale': leasing_direct_totale,
         #    })
 
-    @api.depends('order_line.price_total','sale_acq_usage','sale_val_usage','sale_promotion','footer_discount','select_acq_usage',amount_untaxed_arrotondamento)
+    @api.depends('order_line.price_total','sale_acq_usage','sale_val_usage','sale_promotion','footer_discount','select_acq_usage','amount_untaxed_arrotondamento')
     def _amount_all(self):
         """
         Compute the total amounts of the SO.
