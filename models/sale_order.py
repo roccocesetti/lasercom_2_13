@@ -156,11 +156,8 @@ class SaleOrder(models.Model):
     codice_sdi = fields.Char('res.partner', related='partner_id.codice_sdi',readonly=False)
     numero_contratto = fields.Char(string='Numero Contratto', required=False, copy=False, readonly=False, states={'draft': [('readonly', False)]},  default=lambda self: _('New'))
     sale_caparra = fields.Monetary(string='Caparra', digits='Product Price', default=0.0,currency_field='currency_id',)
-    amount_untaxed_arrotondamento = fields.Monetary(string='Arrotondamento', digits='Product Price', default=0.0,
-                                   currency_field='currency_id', )
-    amount_untaxed_arrotondato = fields.Monetary(string='Totale', store=True, readonly=True, compute='_amount_all',
-                                            tracking=5)
-
+    amount_untaxed_arrotondamento = fields.Monetary(string='Arrotondamento', store=True, readonly=True, compute='_amount_all',tracking=5)
+    amount_untaxed_arrotondato = fields.Monetary(string='Totale', store=True, readonly=True, compute='_amount_all',tracking=5)
     payment_direct=fields.Boolean(string='Pagamento Diretto',default=False)
     payment_direct_allordine = fields.Monetary(string="All'ordine", digits='Product Price', default=0.0,currency_field='currency_id',)
     payment_direct_allaconsegna = fields.Monetary(string='Alla consegna', digits='Product Price', default=0.0,currency_field='currency_id',)
@@ -378,7 +375,7 @@ class SaleOrder(models.Model):
             importo_discount=amount_untaxed*(order.footer_discount)/100
             amount_untaxed=amount_untaxed-importo_discount
             amount_untaxed = amount_untaxed + order.sale_acq_usage
-            amount_untaxed_arrotondato = amount_untaxed - amount_untaxed_arrotondamento
+            amount_untaxed_arrotondato = amount_untaxed - order.amount_untaxed_arrotondamento
             amount_total=(amount_untaxed_arrotondato * 122)/100
             amount_tax=(amount_untaxed_arrotondato * 22)/100
             order.update({
@@ -387,6 +384,7 @@ class SaleOrder(models.Model):
                 'amount_tax': amount_tax,
                 'amount_total': amount_total,
                 'importo_discount': importo_discount,
+                'amount_untaxed_arrotondato': amount_untaxed_arrotondato,
             })
 
     @api.depends('order_line.purchase_price','order_line.margin','sale_acq_usage','sale_val_usage','amount_untaxed')
