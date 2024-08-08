@@ -656,7 +656,7 @@
 										<strong>Imponibile</strong>
 									</td>
 									<td name="td_amount_untaxed" class="text-right col-6">
-										<span t-field="doc.amount_untaxed"/>
+										<span t-field="doc.amount_untaxed_arrotondato"/>
 									</td>
 								</tr>
 								<t t-foreach="doc.amount_by_group" t-as="amount_by_group">

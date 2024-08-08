@@ -164,7 +164,7 @@ class SaleOrder(models.Model):
     payment_direct_saldo = fields.Monetary(string='Saldo', digits='Product Price', compute='_amount_diretto', default=0.0,currency_field='currency_id',)
     payment_direct_num_titoli = fields.Integer(string='Numero Titoli', default=0)
     payment_direct_importo_titoli = fields.Monetary(string='Importo titoli', compute='_amount_diretto', digits='Product Price', default=0.0,currency_field='currency_id',)
-    payment_direct_nota = fields.Char(string='NOta', required=False, copy=False, readonly=False, default='a scadenza mensile a partire da 30 giorni data installazione')
+    payment_direct_nota = fields.Char(string='NOta', required=False, copy=False, readonly=False, default='A scadenza mensile a partire da 30 giorni data installazione')
 
     
     leasing_direct=fields.Boolean(string='Leasing',default=False)    
