@@ -310,23 +310,25 @@ class SaleOrder(models.Model):
         on the SO itself. We hence override the _write to catch the computation
         of invoice_status field. """
         mutable_vals = dict(vals)
-        if self.data_contratto:
-            if not self.partner_control():
-                raise UserError(_('DAti non validi'))
+        for order in self:
 
-        if 'data_contratto' in mutable_vals and mutable_vals['data_contratto']:
-            if not self.partner_control():
-                raise UserError(_('DAti non validi'))
+            if order.data_contratto:
+                if not order.partner_control():
+                    raise UserError(_('DAti non validi'))
 
-            if self.numero_contratto ==_('New'):
-                    seq_date = fields.Datetime.context_timestamp(self, fields.Datetime.to_datetime(mutable_vals['data_contratto']))
-                    if 'company_id' in vals:
-                        numero_contratto = self.env['ir.sequence'].with_context(force_company=vals['company_id']).next_by_code(
-                            'sale.order.contract', sequence_date=seq_date) or _('New')  
-                        mutable_vals.update({'numero_contratto':numero_contratto})
-                    else:
-                       numero_contratto= self.env['ir.sequence'].next_by_code('sale.order.contract', sequence_date=seq_date) or  _('New')
-                       mutable_vals.update({'numero_contratto':numero_contratto})
+            if 'data_contratto' in mutable_vals and mutable_vals['data_contratto']:
+                if not order.partner_control():
+                    raise UserError(_('DAti non validi'))
+
+                if order.numero_contratto ==_('New'):
+                        seq_date = fields.Datetime.context_timestamp(order, fields.Datetime.to_datetime(mutable_vals['data_contratto']))
+                        if 'company_id' in vals:
+                            numero_contratto = self.env['ir.sequence'].with_context(force_company=vals['company_id']).next_by_code(
+                                'sale.order.contract', sequence_date=seq_date) or _('New')
+                            mutable_vals.update({'numero_contratto':numero_contratto})
+                        else:
+                           numero_contratto= order.env['ir.sequence'].next_by_code('sale.order.contract', sequence_date=seq_date) or  _('New')
+                           mutable_vals.update({'numero_contratto':numero_contratto})
 
         res= super(SaleOrder, self)._write(mutable_vals)
         return res
