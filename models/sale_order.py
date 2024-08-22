@@ -444,5 +444,16 @@ class SaleOrder(models.Model):
             -1 * self.sale_val_usage, {'display_currency': self.currency_id}
         )
 
+    def get_formatted_sale_promotion(self):
+        self.ensure_one()
+        return self.env['ir.qweb.field.monetary'].value_to_html(
+            -1 * self.sale_promotion, {'display_currency': self.currency_id}
+        )
+
+    def get_formatted_importo_discount(self):
+        self.ensure_one()
+        return self.env['ir.qweb.field.monetary'].value_to_html(
+            -1 * self.importo_discount, {'display_currency': self.currency_id}
+        )
 
     #@api.depends('partner_id','partner_shipping_id','payment_direct','leasing_direct','finanziamento_direct')

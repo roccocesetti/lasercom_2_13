@@ -376,7 +376,7 @@
 										<p><span t-field="doc.sale_modello_valutazione"/></p>
 									</td>
 									<td name="td_sale_acq_usage" class="text-right o_price_total">
-										                <span t-raw="doc.get_formatted_sale_val_usage()"/>
+										                <span t-raw="doc.get_formatted_sale_val_usage()"/>+ iva
 
 								</td>
 								</tr>
@@ -389,7 +389,8 @@
 										  <span t-field="doc.sale_promotion_note"/>
 									</td>
 									<td name="td_amount_by_group" class="text-right o_price_total">
-										<span t-field="doc.sale_promotion"/>
+
+										<span t-raw="doc.get_formatted_sale_promotion()"/>
 									</td>
 								</tr>
 								<tr class="border-black o_total" t-if="doc.importo_discount &gt;0">
@@ -401,7 +402,8 @@
 									</td>
 
 									<td name="td_amount_by_group" class="text-right o_price_total">
-										<span t-field="doc.importo_discount"/>
+
+										<span t-raw="doc.get_formatted_importo_discount()"/>
 									</td>
 								</tr>
   								<tr class="border-black o_total" t-if="doc.sale_acq_usage &gt;0">
@@ -725,12 +727,12 @@
 
 											<strong class="mr-2 ml-2">alla consegna:</strong>
 										<p t-if="doc.payment_direct_allaconsegna &gt;0" t-field="doc.payment_direct_allaconsegna"/>
-											<strong class="mr-2 ml-2">Saldo:</strong>
+											<strong class="mr-2 ml-2">Rimanente a saldo:</strong>
 										<p t-if="doc.payment_direct_saldo &gt;0" t-field="doc.payment_direct_saldo"/>
 					</div>
 					<div t-if="doc.payment_direct" class="row m-0 h-10  avoid-page-break medium-font" style="page-break-inside: avoid;">
 
-											<strong class="mr-2 ml-2">numero titoli:</strong>
+											<strong class="mr-2 ml-2">Da pagare in numero titoli:</strong>
 										<p t-if="doc.payment_direct_num_titoli &gt;0" t-field="doc.payment_direct_num_titoli"/>
 											<strong class="mr-2 ml-2">importo titoli:</strong>
 										<p t-if="doc.payment_direct_importo_titoli &gt;0" t-field="doc.payment_direct_importo_titoli"/>
@@ -777,7 +779,7 @@
 					<div t-if="doc.finaziamento_direct" class="row m-0  avoid-page-break medium-font" style="page-break-inside: avoid;">
 										<strong class="mr-2 ml-2">numero mesi:</strong>
 										<p class="m-0" t-if="doc.finaziamento_direct_numero_mesi &gt;0" t-field="doc.finaziamento_direct_numero_mesi"/>
-											<strong class="mr-2 ml-2">Saldo da:</strong>
+											<strong class="mr-2 ml-2">Saldo con titolo:</strong>
 										<p class="m-0" t-if="doc.finaziamento_direct_saldo_titolo &gt;0" t-field="doc.finaziamento_direct_saldo_titolo"/>
 					</div>
 				    <div t-if="doc.finaziamento_direct" class="row m-1  break-line">
