@@ -376,7 +376,7 @@
 										<p><span t-field="doc.sale_modello_valutazione"/></p>
 									</td>
 									<td name="td_sale_acq_usage" class="text-right o_price_total">
-										                <span t-raw="doc.get_formatted_sale_val_usage()"/>+ iva
+										                <span t-raw="doc.get_formatted_sale_val_usage()"/>
 
 								</td>
 								</tr>
@@ -414,7 +414,7 @@
 										  <span t-field="doc.sale_modello_usato"/>
 									</td>
 									<td name="td_sale_acq_usage" class="text-right o_price_total">
-										<span t-field="doc.sale_acq_usage"/>
+										<span t-field="doc.sale_acq_usage"/>+ iva
 									</td>
 								</tr>
 								<tr class="border-black o_total">
