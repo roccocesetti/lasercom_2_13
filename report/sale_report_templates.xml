@@ -670,6 +670,9 @@
 
 							<table class="table table-sm">
 								<tr class="border-black o_subtotal tight-rows medium-font">
+									<td name="td_annotazioni_label" class="text-white col-2">
+									</td>
+
 									<td name="td_amount_untaxed_label" class="text-left col-2">
 										<strong>Imponibile</strong>
 									</td>
