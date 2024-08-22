@@ -338,7 +338,7 @@ class SaleOrder(models.Model):
         Compute the total amounts of the SO.
         """
         for order in self:
-            payment_direct_saldo = order.amount_untaxed - order.payment_direct_allordine-order.payment_direct_allaconsegna
+            payment_direct_saldo = order.amount_untaxed_arrotondato - order.payment_direct_allordine-order.payment_direct_allaconsegna
             if order.payment_direct_num_titoli>0:
                 payment_direct_importo_titoli=payment_direct_saldo/order.payment_direct_num_titoli
             else:
