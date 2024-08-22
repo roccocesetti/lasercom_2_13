@@ -651,11 +651,11 @@
 				 		<div class=" mt32 ml10 mr4" name="annotazioni">
 						</div>
 
-						<div t-attf-class="#{'col-12' if report_type != 'html' else 'col-sm-12 col-md-12'} ml-1">
+						<div t-attf-class="#{'col-6' if report_type != 'html' else 'col-sm-6 col-md-6'} ml-1">
 
 							<table class="table table-sm">
 								<tr class="border-black o_subtotal tight-rows medium-font">
-									<td name="td_annotazioni_label" class="col-2">
+									<td name="td_annotazioni_label" class="col-4">
 										<p t-if="doc.annotazione">
 											<span t-field="doc.annotazione"/>
 										</p>
@@ -665,6 +665,8 @@
 									</td>
 								</tr>
 							</table>
+						</div>
+						<div t-attf-class="#{'col-6' if report_type != 'html' else 'col-sm-6 col-md-6'} ml-1">
 
 							<table class="table table-sm">
 								<tr class="border-black o_subtotal tight-rows medium-font">
