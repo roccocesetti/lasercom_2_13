@@ -668,10 +668,10 @@
 
 							<table class="table table-sm">
 								<tr class="border-black o_subtotal tight-rows medium-font">
-									<td name="td_amount_untaxed_label" class="text-left col-4">
+									<td name="td_amount_untaxed_label" class="text-left col-2">
 										<strong>Imponibile</strong>
 									</td>
-									<td name="td_amount_untaxed" class="text-right col-6">
+									<td name="td_amount_untaxed" class="text-right col-2">
 										<span t-field="doc.amount_untaxed_arrotondato"/>
 									</td>
 								</tr>
@@ -681,21 +681,21 @@
 										<td name="td_annotazioni_label" class="text-white col-2">
 										</td>
 										<t t-if="amount_by_group[5] == 1 and doc.amount_untaxed == amount_by_group[2]">
-											<td name="td_amount_by_group_label_3" class="text-left col-4" style="white-space: nowrap;">
+											<td name="td_amount_by_group_label_3" class="text-left col-2" style="white-space: nowrap;">
 												<span t-esc="amount_by_group[0]"/>
 												<span>&amp;nbsp;<span>su</span>
 													&amp;nbsp;
 													<t t-esc="amount_by_group[2]" t-options="{&quot;widget&quot;: &quot;monetary&quot;, &quot;display_currency&quot;: doc.pricelist_id.currency_id}"/></span>
 											</td>
-											<td name="td_amount_by_group_3" class="text-right o_price_total col-6 ">
+											<td name="td_amount_by_group_3" class="text-right o_price_total col-2 ">
 												<span t-esc="amount_by_group[1]" t-options="{&quot;widget&quot;: &quot;monetary&quot;, &quot;display_currency&quot;: doc.pricelist_id.currency_id}"/>
 											</td>
 										</t>
 										<t t-else="">
-											<td name="td_amount_by_group_label" class="text-left col-4">
+											<td name="td_amount_by_group_label" class="text-left col-2">
 												<span t-esc="amount_by_group[0]" style="white-space: nowrap;"/>
 											</td>
-											<td name="td_amount_by_group" class="text-right o_price_total col-6">
+											<td name="td_amount_by_group" class="text-right o_price_total col-2">
 												<span t-esc="amount_by_group[1]" t-options="{&quot;widget&quot;: &quot;monetary&quot;, &quot;display_currency&quot;: doc.pricelist_id.currency_id}"/>
 											</td>
 										</t>
@@ -704,10 +704,10 @@
 								<tr class="tight-rows medium-font">
 									<td name="td_annotazioni_label" class="text-white col-2">
 									</td>
-									<td name="td_amount_total_label" class="text-left  col-4">
+									<td name="td_amount_total_label" class="text-left  col-2">
 										<strong style="white-space: nowrap;">Totale Fornitura</strong>
 									</td>
-									<td name="td_amount_total" class="text-right col-6">
+									<td name="td_amount_total" class="text-right col-2">
 										<span t-field="doc.amount_total"/>
 									</td>
 								</tr>
