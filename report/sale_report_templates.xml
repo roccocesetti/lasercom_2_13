@@ -655,13 +655,13 @@
 							<table class="table table-sm">
 								<tr class="border-black o_subtotal tight-rows medium-font">
 									<td name="td_annotazioni_label" class="col-2">
-								<p t-if="doc.annotazione">
-									<span t-field="doc.annotazione"/>
-								</p>
-								<p t-if="not doc.annotazione">
-									<span>Annotazione</span>
-								</p>
-						</td>
+										<p t-if="doc.annotazione">
+											<span t-field="doc.annotazione"/>
+										</p>
+										<p t-if="not doc.annotazione">
+											<span>Annotazione</span>
+										</p>
+									</td>
 									<td name="td_amount_untaxed_label" class="text-left col-4">
 										<strong>Imponibile</strong>
 									</td>
@@ -669,6 +669,8 @@
 										<span t-field="doc.amount_untaxed_arrotondato"/>
 									</td>
 								</tr>
+							</table>
+							<table class="table table-sm">
 								<t t-foreach="doc.amount_by_group" t-as="amount_by_group">
 									<tr class="tight-rows medium-font">
 										<td name="td_annotazioni_label" class="text-white col-2">
