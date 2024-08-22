@@ -84,7 +84,7 @@ class SaleOrderLine(models.Model):
             sale_string_total = "{:,.2f}".format(line.price_total).replace(',', 'X').replace('.', ',').replace('X', '.') if line.purchase_price>0 else 'INCLUSO'
             sale_string_total = sale_string_total.rjust(len(sale_string_total) + 12-len(sale_string_total), ' ')
             #sale_string_price=decode_protocollo(sale_string_price)
-            line.price_unit = line.price_unit if line.purchase_price>0 else 0.0
+            #line.price_unit = line.price_unit if line.purchase_price>0 else 0.0
             line.sale_string_price = sale_string_price
             line.sale_string_subtotal=sale_string_subtotal            
             line.sale_string_total=sale_string_total            
@@ -161,8 +161,8 @@ class SaleOrder(models.Model):
     payment_direct=fields.Boolean(string='Pagamento Diretto',default=False)
     payment_direct_allordine = fields.Monetary(string="All'ordine", digits='Product Price', default=0.0,currency_field='currency_id',)
     payment_direct_allaconsegna = fields.Monetary(string='Alla consegna', digits='Product Price', default=0.0,currency_field='currency_id',)
-    payment_direct_saldo = fields.Monetary(string='Saldo', digits='Product Price', compute='_amount_diretto', default=0.0,currency_field='currency_id',)
-    payment_direct_num_titoli = fields.Integer(string='Numero Titoli', default=0)
+    payment_direct_saldo = fields.Monetary(string='Rimanente a saldo', digits='Product Price', compute='_amount_diretto', default=0.0,currency_field='currency_id',)
+    payment_direct_num_titoli = fields.Integer(string='Da pagare in Numero Titoli', default=0)
     payment_direct_importo_titoli = fields.Monetary(string='Importo titoli', compute='_amount_diretto', digits='Product Price', default=0.0,currency_field='currency_id',)
     payment_direct_nota = fields.Char(string='NOta', required=False, copy=False, readonly=False, default='A scadenza mensile a partire da 30 giorni data installazione')
 
