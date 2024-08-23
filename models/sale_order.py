@@ -476,6 +476,7 @@ from odoo import models, fields, api
 from PyPDF2 import PdfFileWriter, PdfFileReader
 from reportlab.pdfgen import canvas
 import io
+import magic
 
 class DocumentPDFAnnotation(models.Model):
     _inherit = 'ir.attachment'
@@ -495,6 +496,15 @@ class DocumentPDFAnnotation(models.Model):
             new_pdf = PdfFileReader(packet)
 
             # Leggere il PDF originale
+
+
+            # Verifica che il contenuto sia un PDF
+            mime = magic.Magic(mime=True)
+            if mime.from_buffer(pdf_content.read()) == 'application/pdf':
+                pdf_content.seek(0)  # Riposiziona il cursore all'inizio del file
+                existing_pdf = PdfFileReader(pdf_content)
+            else:
+                raise ValueError("Il file non è un PDF valido")
             existing_pdf = PdfFileReader(pdf_content)
             output = PdfFileWriter()
 
