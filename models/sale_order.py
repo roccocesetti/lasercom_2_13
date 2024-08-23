@@ -510,7 +510,7 @@ class DocumentPDFAnnotation(models.Model):
 
                 # Solo se il PDF contiene pagine e il nuovo PDF non è vuoto
                 if new_pdf.numPages > 0:
-                    page.merge_page(new_pdf.getPage(0))
+                    page.mergePage(new_pdf.getPage(0))
 
                 pdf_writer.addPage(page)
 
