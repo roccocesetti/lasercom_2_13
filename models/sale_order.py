@@ -213,14 +213,14 @@ class SaleOrder(models.Model):
     def _recompute_attachment_url(self,numero_contratto=None):
         for record in self:
             attachment = self.env['ir.attachment'].search([('res_model', '=', 'res.partner'), ('res_id', '=', 1)], limit=1)
-            new_attach=attachment.add_text_and_save_to_partner(record.partner_id.id, numero_contratto if numero_contratto else record.numero_contratto, x=200, y=800)            # Uso del metodo
+            new_attach=attachment.add_text_and_save_to_partner(record.partner_id.id, numero_contratto if numero_contratto else record.numero_contratto, x=10, y=10)            # Uso del metodo
 
             if new_attach:
                 record.attachment_url = '/web/content/%s?download=true' % new_attach.id
                 record.attachment_link = '<a href="%s" download>Download retro Contratto</a>' % record.attachment_url
 
                 record.file_name='retro_contratto.pdf'
-
+                record.write({'attachment_url':record.attachment_url,'attachment_link':record.attachment_link})
 
     def partner_control(self):
             errore=[]
@@ -351,7 +351,7 @@ class SaleOrder(models.Model):
         Compute the total amounts of the SO.
         """
         for order in self:
-            payment_direct_saldo = order.amount_untaxed_arrotondato - order.payment_direct_allordine-order.payment_direct_allaconsegna
+            payment_direct_saldo = order.amount_total - order.payment_direct_allordine-order.payment_direct_allaconsegna
             if order.payment_direct_num_titoli>0:
                 payment_direct_importo_titoli=payment_direct_saldo/order.payment_direct_num_titoli
             else:
