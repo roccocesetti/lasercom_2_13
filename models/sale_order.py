@@ -482,9 +482,11 @@ class DocumentPDFAnnotation(models.Model):
 
 
     def add_text_and_save_to_partner(self,partner_id, text, x=200, y=800):
-        if self:
+        # Cerca l'allegato
+        attachment = self
+        if attachment:
             # Decodifica il contenuto base64 del campo datas
-            pdf_data = base64.b64decode(self.datas)
+            pdf_data = base64.b64decode(attachment.datas)
 
             # Leggi il PDF originale
             pdf_reader = PdfFileReader(BytesIO(pdf_data))
@@ -493,6 +495,7 @@ class DocumentPDFAnnotation(models.Model):
             # Crea un nuovo PDF con il testo aggiunto
             packet = BytesIO()
             can = canvas.Canvas(packet, pagesize=letter)
+            can.setFillColor(red)
             can.drawString(x, y, text)
             can.save()
 
@@ -503,7 +506,11 @@ class DocumentPDFAnnotation(models.Model):
             # Unisci il nuovo PDF con il PDF esistente
             for page_num in range(pdf_reader.getNumPages()):
                 page = pdf_reader.getPage(page_num)
-                page.mergePage(new_pdf.getPage(0))
+
+                # Solo se il PDF contiene pagine e il nuovo PDF non è vuoto
+                if new_pdf.numPages > 0:
+                    page.merge_page(new_pdf.getPage(0))
+
                 pdf_writer.addPage(page)
 
             # Scrivi il nuovo PDF in un buffer
@@ -515,13 +522,15 @@ class DocumentPDFAnnotation(models.Model):
 
             # Crea un nuovo allegato o aggiorna quello esistente
             new_attachment = self.env['ir.attachment'].create({
-                'name': self.name,
+                'name': attachment.name,
                 'datas': encoded_pdf,
                 'res_model': 'res.partner',
                 'res_id': partner_id,
                 'type': 'binary',
                 'mimetype': 'application/pdf'
             })
+            with open('/tmp/modified_pdf.pdf', 'wb') as f:
+                f.write(output.getvalue())
 
             return new_attachment
         else:
