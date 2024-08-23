@@ -515,7 +515,7 @@ class DocumentPDFAnnotation(models.Model):
 
             # Crea un nuovo allegato o aggiorna quello esistente
             new_attachment = self.env['ir.attachment'].create({
-                'name': attachment.name,
+                'name': self.name,
                 'datas': encoded_pdf,
                 'res_model': 'res.partner',
                 'res_id': partner_id,
