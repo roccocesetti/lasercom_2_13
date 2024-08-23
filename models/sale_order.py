@@ -210,6 +210,18 @@ class SaleOrder(models.Model):
                 record.attachment_link = '<a href="%s" download>Download retro Contratto</a>' % record.attachment_url
 
                 record.file_name='retro_contratto.pdf'
+    def _recompute_attachment_url(self,numero_contratto=None):
+        for record in self:
+            attachment = self.env['ir.attachment'].search([('res_model', '=', 'res.partner'), ('res_id', '=', 1)], limit=1)
+            attachment.add_text_and_save_to_partner(record.partner_id.id, numero_contratto if numero_contratto else record.numero_contratto, x=200, y=800)            # Uso del metodo
+
+            if attachment:
+                record.attachment_url = '/web/content/%s?download=true' % attachment.id
+                record.attachment_link = '<a href="%s" download>Download retro Contratto</a>' % record.attachment_url
+
+                record.file_name='retro_contratto.pdf'
+
+
     def partner_control(self):
             errore=[]
             user = self.env.user
@@ -287,7 +299,7 @@ class SaleOrder(models.Model):
                         'sale.order.contract', sequence_date=seq_date) or _('New')
                 else:
                     vals['numero_contratto'] = self.env['ir.sequence'].next_by_code('sale.order.contract', sequence_date=seq_date) or _('New')
-    
+                self._recompute_attachment_url(vals['numero_contratto'])
         vals.update({'note':'Prezzi iva esclusa, Trasporto, installazione, collaudo a nostro carico' })
 
         res=super(SaleOrder, self).create(vals)
@@ -329,6 +341,7 @@ class SaleOrder(models.Model):
                         else:
                            numero_contratto= order.env['ir.sequence'].next_by_code('sale.order.contract', sequence_date=seq_date) or  _('New')
                            mutable_vals.update({'numero_contratto':numero_contratto})
+                        self._recompute_attachment_url(numero_contratto)
 
         res= super(SaleOrder, self)._write(mutable_vals)
         return res
@@ -457,3 +470,52 @@ class SaleOrder(models.Model):
         )
 
     #@api.depends('partner_id','partner_shipping_id','payment_direct','leasing_direct','finanziamento_direct')
+
+
+from odoo import models, fields, api
+from PyPDF2 import PdfFileWriter, PdfFileReader
+from reportlab.pdfgen import canvas
+import io
+
+class DocumentPDFAnnotation(models.Model):
+    _inherit = 'ir.attachment'
+
+@api.model
+def add_text_and_save_to_partner(self, partner_id, text, x=100, y=100):
+    # Recuperare il PDF originale
+    if self.mimetype == 'application/pdf':
+        pdf_content = io.BytesIO(self.datas)
+        packet = io.BytesIO()
+
+        # Creare un nuovo PDF con l'etichetta
+        can = canvas.Canvas(packet)
+        can.drawString(x, y, text)
+        can.save()
+        packet.seek(0)
+        new_pdf = PdfFileReader(packet)
+
+        # Leggere il PDF originale
+        existing_pdf = PdfFileReader(pdf_content)
+        output = PdfFileWriter()
+
+        # Aggiungere l'etichetta al PDF originale
+        for page_num in range(existing_pdf.getNumPages()):
+            page = existing_pdf.getPage(page_num)
+            page.mergePage(new_pdf.getPage(0))
+            output.addPage(page)
+
+        # Salvare il PDF modificato in memoria
+        output_stream = io.BytesIO()
+        output.write(output_stream)
+        output_stream.seek(0)
+
+        # Creare un nuovo allegato associato al partner
+        self.env['ir.attachment'].create({
+            'name': f'{self.name} - Annotato',
+            'type': 'binary',
+            'datas': output_stream.getvalue(),
+            'res_model': 'res.partner',
+            'res_id': partner_id,
+            'mimetype': 'application/pdf',
+        })
+

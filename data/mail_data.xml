@@ -16,7 +16,7 @@
         <record id="email_template_edi_sale_laser" model="mail.template">
             <field name="name">Invio preventivo lasercom</field>
             <field name="model_id" ref="sale.model_sale_order"/>
-            <field name="subject">DISTRIBUTORI LASERVIDEO PREVENTIVO N. ${object.name or 'n/a' } del ${format_datetime(object.date_order ) or 'n/a' }</field>
+            <field name="subject">DISTRIBUTORI LASERVIDEO PREVENTIVO N. ${object.name or 'n/a' } del ${format_date(object.date_order ) or 'n/a' }</field>
             <field name="email_from">${(object.user_id.email_formatted or user.email_formatted) | safe}</field>
             <field name="partner_to">${object.partner_id.id}</field>
             <field name="body_html" type="html">
@@ -45,7 +45,7 @@ Cordiali Saluti
         <record id="email_template_edi_sale_laser_contratto" model="mail.template">
             <field name="name">Invio Contratto lasercom</field>
             <field name="model_id" ref="sale.model_sale_order"/>
-            <field name="subject">DISTRIBUTORI LASERVIDEO CONTRATTO N. ${object.numero_contratto or 'n/a' } del ${format_datetime(object.data_contratto ) or 'n/a' }</field>
+            <field name="subject">DISTRIBUTORI LASERVIDEO CONTRATTO N. ${object.numero_contratto or 'n/a' } del ${format_date(object.data_contratto ) or 'n/a' }</field>
             <field name="email_from">${(object.user_id.email_formatted or user.email_formatted) | safe}</field>
             <field name="partner_to">${object.partner_id.id}</field>
             <field name="body_html" type="html">
