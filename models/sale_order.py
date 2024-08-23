@@ -213,10 +213,10 @@ class SaleOrder(models.Model):
     def _recompute_attachment_url(self,numero_contratto=None):
         for record in self:
             attachment = self.env['ir.attachment'].search([('res_model', '=', 'res.partner'), ('res_id', '=', 1)], limit=1)
-            attachment.add_text_and_save_to_partner(record.partner_id.id, numero_contratto if numero_contratto else record.numero_contratto, x=200, y=800)            # Uso del metodo
+            new_attach=attachment.add_text_and_save_to_partner(record.partner_id.id, numero_contratto if numero_contratto else record.numero_contratto, x=200, y=800)            # Uso del metodo
 
-            if attachment:
-                record.attachment_url = '/web/content/%s?download=true' % attachment.id
+            if new_attach:
+                record.attachment_url = '/web/content/%s?download=true' % new_attach.id
                 record.attachment_link = '<a href="%s" download>Download retro Contratto</a>' % record.attachment_url
 
                 record.file_name='retro_contratto.pdf'
@@ -477,55 +477,57 @@ from PyPDF2 import PdfFileWriter, PdfFileReader
 from reportlab.pdfgen import canvas
 import io
 import magic
-
+import base64
 class DocumentPDFAnnotation(models.Model):
     _inherit = 'ir.attachment'
 
-    @api.model
-    def add_text_and_save_to_partner(self, partner_id, text, x=100, y=100):
-        # Recuperare il PDF originale
-        if self.mimetype == 'application/pdf':
-            pdf_content = io.BytesIO(self.datas)
-            packet = io.BytesIO()
 
-            # Creare un nuovo PDF con l'etichetta
-            can = canvas.Canvas(packet)
+    def add_text_and_save_to_partner(self,partner_id, text, x=200, y=800):
+        # Cerca l'allegato
+                                                      limit=1)
+
+        if self:
+            # Decodifica il contenuto base64 del campo datas
+            pdf_data = base64.b64decode(self.datas)
+
+            # Leggi il PDF originale
+            pdf_reader = PdfFileReader(BytesIO(pdf_data))
+            pdf_writer = PdfFileWriter()
+
+            # Crea un nuovo PDF con il testo aggiunto
+            packet = BytesIO()
+            can = canvas.Canvas(packet, pagesize=letter)
             can.drawString(x, y, text)
             can.save()
+
+            # Muovi il buffer alla posizione iniziale
             packet.seek(0)
             new_pdf = PdfFileReader(packet)
 
-            # Leggere il PDF originale
-
-
-            # Verifica che il contenuto sia un PDF
-            mime = magic.Magic(mime=True)
-            if mime.from_buffer(pdf_content.read()) == 'application/pdf':
-                pdf_content.seek(0)  # Riposiziona il cursore all'inizio del file
-                existing_pdf = PdfFileReader(pdf_content)
-            else:
-                raise ValueError("Il file non è un PDF valido")
-            existing_pdf = PdfFileReader(pdf_content)
-            output = PdfFileWriter()
-
-            # Aggiungere l'etichetta al PDF originale
-            for page_num in range(existing_pdf.getNumPages()):
-                page = existing_pdf.getPage(page_num)
+            # Unisci il nuovo PDF con il PDF esistente
+            for page_num in range(pdf_reader.getNumPages()):
+                page = pdf_reader.getPage(page_num)
                 page.mergePage(new_pdf.getPage(0))
-                output.addPage(page)
+                pdf_writer.addPage(page)
 
-            # Salvare il PDF modificato in memoria
-            output_stream = io.BytesIO()
-            output.write(output_stream)
-            output_stream.seek(0)
+            # Scrivi il nuovo PDF in un buffer
+            output = BytesIO()
+            pdf_writer.write(output)
 
-            # Creare un nuovo allegato associato al partner
-            self.env['ir.attachment'].create({
-                'name': f'{self.name} - Annotato',
-                'type': 'binary',
-                'datas': output_stream.getvalue(),
+            # Codifica in base64
+            encoded_pdf = base64.b64encode(output.getvalue())
+
+            # Crea un nuovo allegato o aggiorna quello esistente
+            new_attachment = self.env['ir.attachment'].create({
+                'name': attachment.name,
+                'datas': encoded_pdf,
                 'res_model': 'res.partner',
                 'res_id': partner_id,
-                'mimetype': 'application/pdf',
+                'type': 'binary',
+                'mimetype': 'application/pdf'
             })
+
+            return new_attachment
+        else:
+            raise ValueError("Nessun allegato trovato.")
 
