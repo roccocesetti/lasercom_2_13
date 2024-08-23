@@ -477,6 +477,7 @@ from io import BytesIO
 from PyPDF2 import PdfFileReader, PdfFileWriter
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
+from reportlab.lib.colors import red
 class DocumentPDFAnnotation(models.Model):
     _inherit = 'ir.attachment'
 
