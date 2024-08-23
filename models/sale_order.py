@@ -213,7 +213,7 @@ class SaleOrder(models.Model):
     def _recompute_attachment_url(self,numero_contratto=None):
         for record in self:
             attachment = self.env['ir.attachment'].search([('res_model', '=', 'res.partner'), ('res_id', '=', 1)], limit=1)
-            new_attach=attachment.add_text_and_save_to_partner(record.id, 'Contratto n. %s ' % numero_contratto if numero_contratto else record.numero_contratto, x=10, y=1600)            # Uso del metodo
+            new_attach=attachment.add_text_and_save_to_partner(record.id, 'Contratto n. %s ' % numero_contratto if numero_contratto else record.numero_contratto, x=10, y=800)            # Uso del metodo
 
             if new_attach:
                 record.attachment_url = '/web/content/%s?download=true' % new_attach.id
@@ -332,7 +332,7 @@ class SaleOrder(models.Model):
                 if not order.partner_control():
                     raise UserError(_('DAti non validi'))
 
-                if order.numero_contratto ==_('New'):
+                if order.numero_contratto ==_('New') or not order.numero_contratto  :
                         seq_date = fields.Datetime.context_timestamp(order, fields.Datetime.to_datetime(mutable_vals['data_contratto']))
                         if 'company_id' in vals:
                             numero_contratto = self.env['ir.sequence'].with_context(force_company=vals['company_id']).next_by_code(
