@@ -213,7 +213,7 @@ class SaleOrder(models.Model):
     def _recompute_attachment_url(self,numero_contratto=None):
         for record in self:
             attachment = self.env['ir.attachment'].search([('res_model', '=', 'res.partner'), ('res_id', '=', 1)], limit=1)
-            new_attach=attachment.add_text_and_save_to_partner(record.id, 'Contratto n. %s ' % numero_contratto if numero_contratto else record.numero_contratto, x=10, y=10)            # Uso del metodo
+            new_attach=attachment.add_text_and_save_to_partner(record.id, 'Contratto n. %s ' % numero_contratto if numero_contratto else record.numero_contratto, x=10, y=1600)            # Uso del metodo
 
             if new_attach:
                 record.attachment_url = '/web/content/%s?download=true' % new_attach.id
@@ -522,18 +522,22 @@ class DocumentPDFAnnotation(models.Model):
             encoded_pdf = base64.b64encode(output.getvalue())
 
             # Crea un nuovo allegato o aggiorna quello esistente
-            new_attachment = self.env['ir.attachment'].create({
-                'name': attachment.name,
-                'datas': encoded_pdf,
-                'res_model': 'sale.order',
-                'res_id': order_id,
-                'type': 'binary',
-                'mimetype': 'application/pdf'
-            })
+            contratto_attachment=self.env['ir.attachment'].search([('name','=',attachment.name)('res.model','=','sale.order'),('res_id','=',order_id)],limit=1)
+            if contratto_attachment:
+                contratto_attachment.write({'datas':encoded_pdf})
+            else:
+                contratto_attachment = self.env['ir.attachment'].create({
+                    'name': attachment.name,
+                    'datas': encoded_pdf,
+                    'res_model': 'sale.order',
+                    'res_id': order_id,
+                    'type': 'binary',
+                    'mimetype': 'application/pdf'
+                })
             with open('/tmp/modified_pdf.pdf', 'wb') as f:
                 f.write(output.getvalue())
 
-            return new_attachment
+            return contratto_attachment
         else:
             raise ValidationError("Nessun allegato trovato.")
 
