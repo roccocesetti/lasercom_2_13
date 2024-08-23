@@ -213,7 +213,7 @@ class SaleOrder(models.Model):
     def _recompute_attachment_url(self,numero_contratto=None):
         for record in self:
             attachment = self.env['ir.attachment'].search([('res_model', '=', 'res.partner'), ('res_id', '=', 1)], limit=1)
-            new_attach=attachment.add_text_and_save_to_partner(record.partner_id.id, numero_contratto if numero_contratto else record.numero_contratto, x=10, y=10)            # Uso del metodo
+            new_attach=attachment.add_text_and_save_to_partner(record.id, 'Contratto n. ' & numero_contratto if numero_contratto else record.numero_contratto, x=10, y=10)            # Uso del metodo
 
             if new_attach:
                 record.attachment_url = '/web/content/%s?download=true' % new_attach.id
@@ -482,7 +482,7 @@ class DocumentPDFAnnotation(models.Model):
     _inherit = 'ir.attachment'
 
 
-    def add_text_and_save_to_partner(self,partner_id, text, x=200, y=800):
+    def add_text_and_save_to_partner(self,order_id, text, x=200, y=800):
         # Cerca l'allegato
         attachment = self
         if attachment:
@@ -525,8 +525,8 @@ class DocumentPDFAnnotation(models.Model):
             new_attachment = self.env['ir.attachment'].create({
                 'name': attachment.name,
                 'datas': encoded_pdf,
-                'res_model': 'res.partner',
-                'res_id': partner_id,
+                'res_model': 'sale.order',
+                'res_id': order_id,
                 'type': 'binary',
                 'mimetype': 'application/pdf'
             })
