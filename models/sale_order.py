@@ -3,7 +3,7 @@
 
 from odoo import api, fields, models, SUPERUSER_ID, _
 from odoo.tools.sql import column_exists, create_column
-from odoo.exceptions import AccessError, UserError, ValidationError
+from odoo.exceptions import AccessError, UserError, ValidationError, ValueError
 from odoo.tools.misc import formatLang, get_lang
 from odoo.osv import expression
 from odoo.tools import float_is_zero, float_compare
@@ -483,9 +483,6 @@ class DocumentPDFAnnotation(models.Model):
 
 
     def add_text_and_save_to_partner(self,partner_id, text, x=200, y=800):
-        # Cerca l'allegato
-                                                      limit=1)
-
         if self:
             # Decodifica il contenuto base64 del campo datas
             pdf_data = base64.b64decode(self.datas)
