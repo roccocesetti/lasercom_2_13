@@ -522,11 +522,7 @@ class DocumentPDFAnnotation(models.Model):
             encoded_pdf = base64.b64encode(output.getvalue())
 
             # Crea un nuovo allegato o aggiorna quello esistente
-            contratto_attachment = self.env['ir.attachment'].search([
-                ('name', '=', attachment.name),
-                ('res.model', '=', 'sale.order'),
-                ('res_id', '=', order_id)
-            ], limit=1)
+            contratto_attachment = self.env['ir.attachment'].search([('name', '=', attachment.name),('res.model', '=', 'sale.order'),('res_id', '=', order_id)], limit=1)
             if contratto_attachment:
                 contratto_attachment.write({'datas':encoded_pdf})
             else:
