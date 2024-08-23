@@ -472,12 +472,11 @@ class SaleOrder(models.Model):
     #@api.depends('partner_id','partner_shipping_id','payment_direct','leasing_direct','finanziamento_direct')
 
 
-from odoo import models, fields, api
-from PyPDF2 import PdfFileWriter, PdfFileReader
-from reportlab.pdfgen import canvas
-import io
-import magic
 import base64
+from io import BytesIO
+from PyPDF2 import PdfFileReader, PdfFileWriter
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import letter
 class DocumentPDFAnnotation(models.Model):
     _inherit = 'ir.attachment'
 
