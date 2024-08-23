@@ -480,42 +480,42 @@ import io
 class DocumentPDFAnnotation(models.Model):
     _inherit = 'ir.attachment'
 
-@api.model
-def add_text_and_save_to_partner(self, partner_id, text, x=100, y=100):
-    # Recuperare il PDF originale
-    if self.mimetype == 'application/pdf':
-        pdf_content = io.BytesIO(self.datas)
-        packet = io.BytesIO()
+    @api.model
+    def add_text_and_save_to_partner(self, partner_id, text, x=100, y=100):
+        # Recuperare il PDF originale
+        if self.mimetype == 'application/pdf':
+            pdf_content = io.BytesIO(self.datas)
+            packet = io.BytesIO()
 
-        # Creare un nuovo PDF con l'etichetta
-        can = canvas.Canvas(packet)
-        can.drawString(x, y, text)
-        can.save()
-        packet.seek(0)
-        new_pdf = PdfFileReader(packet)
+            # Creare un nuovo PDF con l'etichetta
+            can = canvas.Canvas(packet)
+            can.drawString(x, y, text)
+            can.save()
+            packet.seek(0)
+            new_pdf = PdfFileReader(packet)
 
-        # Leggere il PDF originale
-        existing_pdf = PdfFileReader(pdf_content)
-        output = PdfFileWriter()
+            # Leggere il PDF originale
+            existing_pdf = PdfFileReader(pdf_content)
+            output = PdfFileWriter()
 
-        # Aggiungere l'etichetta al PDF originale
-        for page_num in range(existing_pdf.getNumPages()):
-            page = existing_pdf.getPage(page_num)
-            page.mergePage(new_pdf.getPage(0))
-            output.addPage(page)
+            # Aggiungere l'etichetta al PDF originale
+            for page_num in range(existing_pdf.getNumPages()):
+                page = existing_pdf.getPage(page_num)
+                page.mergePage(new_pdf.getPage(0))
+                output.addPage(page)
 
-        # Salvare il PDF modificato in memoria
-        output_stream = io.BytesIO()
-        output.write(output_stream)
-        output_stream.seek(0)
+            # Salvare il PDF modificato in memoria
+            output_stream = io.BytesIO()
+            output.write(output_stream)
+            output_stream.seek(0)
 
-        # Creare un nuovo allegato associato al partner
-        self.env['ir.attachment'].create({
-            'name': f'{self.name} - Annotato',
-            'type': 'binary',
-            'datas': output_stream.getvalue(),
-            'res_model': 'res.partner',
-            'res_id': partner_id,
-            'mimetype': 'application/pdf',
-        })
+            # Creare un nuovo allegato associato al partner
+            self.env['ir.attachment'].create({
+                'name': f'{self.name} - Annotato',
+                'type': 'binary',
+                'datas': output_stream.getvalue(),
+                'res_model': 'res.partner',
+                'res_id': partner_id,
+                'mimetype': 'application/pdf',
+            })
 
