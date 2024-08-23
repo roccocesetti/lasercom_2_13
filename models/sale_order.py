@@ -3,7 +3,7 @@
 
 from odoo import api, fields, models, SUPERUSER_ID, _
 from odoo.tools.sql import column_exists, create_column
-from odoo.exceptions import AccessError, UserError, ValidationError, ValueError
+from odoo.exceptions import AccessError, UserError, ValidationError
 from odoo.tools.misc import formatLang, get_lang
 from odoo.osv import expression
 from odoo.tools import float_is_zero, float_compare
@@ -526,5 +526,5 @@ class DocumentPDFAnnotation(models.Model):
 
             return new_attachment
         else:
-            raise ValueError("Nessun allegato trovato.")
+            raise ValidationError("Nessun allegato trovato.")
 
