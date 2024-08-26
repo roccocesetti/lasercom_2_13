@@ -565,12 +565,13 @@ class MailComposeMessage(models.TransientModel):
                     ('res_id', '=', order.id),
                     ('name', '=', 'retro_contratto.pdf')  # Sostituisci con il nome del file
                 ], limit=1)
+                if 'subject' in mail_values[res_id] and 'contratto' in mail_values[res_id]['subject'].lower():
 
-                if attachment:
-                    # Se esistono già allegati, aggiungi il nuovo ID dell'allegato
-                    if 'attachment_ids' in mail_values[res_id]:
-                        mail_values[res_id]['attachment_ids'].append(attachment.id)
-                    else:
-                        mail_values[res_id]['attachment_ids'] = [attachment.id]
+                    if attachment:
+                        # Se esistono già allegati, aggiungi il nuovo ID dell'allegato
+                        if 'attachment_ids' in mail_values[res_id]:
+                            mail_values[res_id]['attachment_ids'].append(attachment.id)
+                        else:
+                            mail_values[res_id]['attachment_ids'] = [attachment.id]
 
         return mail_values
