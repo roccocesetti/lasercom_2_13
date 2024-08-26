@@ -196,14 +196,14 @@ class SaleOrder(models.Model):
    
     finaziamento_direct_retro = fields.Text(string='Retro', required=False, copy=False, readonly=False, default="" \
 "")
-    attachment_url = fields.Char(compute='_compute_attachment_url')
+    attachment_url = fields.Char(default='/web/content/%s?download=true' % 6541,)
     attachment_link = fields.Char('Retro contratto', readonly=True)
 
     annotazione = fields.Text(string='Annotazione', required=False, copy=False, readonly=False, default='')
     tag_iva = fields.Char(string='+iva', required=False, copy=False, readonly=True, default='+iva')
 
-    def _compute_attachment_url(self):
-        self._recompute_attachment_url()
+    #def _compute_attachment_url(self):
+        #self._recompute_attachment_url()
         #for record in self:
         #    attachment = self.env['ir.attachment'].search([('res_model', '=', 'res.partner'), ('res_id', '=', 1)], limit=1)
         #    if attachment:
@@ -211,6 +211,7 @@ class SaleOrder(models.Model):
         #            record.attachment_url = '/web/content/%s?download=true' % attachment.id
         #            record.attachment_link = '<a href="%s" download>Download retro Contratto</a>' % record.attachment_url
         #            record.file_name='retro_contratto.pdf'
+
     def _recompute_attachment_url(self,numero_contratto=None):
         for record in self:
             attachment = self.env['ir.attachment'].search([('res_model', '=', 'res.partner'), ('res_id', '=', 1)], limit=1)
