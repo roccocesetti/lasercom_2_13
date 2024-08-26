@@ -567,11 +567,10 @@ class MailComposeMessage(models.TransientModel):
                 ], limit=1)
 
                 if attachment:
-                         # Se esistono già allegati, aggiungiamo il nuovo usando il formato corretto
-                        if 'attachment_ids' in mail_values[res_id]:
-                            mail_values[res_id]['attachment_ids'] = [(4, attachment.id)] + mail_values[res_id][
-                                'attachment_ids']
-                        else:
-                            mail_values[res_id]['attachment_ids'] = [(4, attachment.id)]
+                    # Se esistono già allegati, aggiungi il nuovo ID dell'allegato
+                    if 'attachment_ids' in mail_values[res_id]:
+                        mail_values[res_id]['attachment_ids'].append(attachment.id)
+                    else:
+                        mail_values[res_id]['attachment_ids'] = [attachment.id]
 
         return mail_values
