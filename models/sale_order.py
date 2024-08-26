@@ -240,7 +240,7 @@ class SaleOrder(models.Model):
 
     def _add_attachment(self):
         contratto_attachment = self.env['ir.attachment'].search(
-            [('res_model', '=', 'sale.order'), ('res_id', '=', self.id)], limit=1)
+            [('name','ilike','retro contratto'),('res_model', '=', 'sale.order'), ('res_id', '=', self.id)], limit=1)
         return contratto_attachment
 
     def partner_control(self):
@@ -548,7 +548,7 @@ class DocumentPDFAnnotation(models.Model):
                 contratto_attachment.write({'datas':encoded_pdf})
             else:
                 contratto_attachment = self.env['ir.attachment'].create({
-                    'name': attachment.name,
+                    'name': 'retro contratto',
                     'datas': encoded_pdf,
                     'res_model': 'sale.order',
                     'res_id': order_id,
