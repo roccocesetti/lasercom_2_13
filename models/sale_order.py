@@ -223,6 +223,36 @@ class SaleOrder(models.Model):
                 #record.file_name = 'retro_contratto.pdf'
                 record.write({'attachment_url': record.attachment_url, 'attachment_link': record.attachment_link})
 
+    def action_quotation_send(self):
+        # Eredita la chiamata al metodo originale
+        res = super(SaleOrder, self).action_quotation_send()
+
+        # Aggiungi logica per creare o ottenere l'allegato
+        attachment = self._create_dynamic_attachment()
+
+        if attachment:
+            # Aggiungi l'allegato ai valori di contesto dell'email
+            res['context'].update({
+                'default_attachment_ids': [(4, attachment.id)],
+            })
+
+        return res
+
+    def _create_dynamic_attachment(self):
+        contratto_attachment = self.env['ir.attachment'].search(
+            [('res_model', '=', 'sale.order'), ('res_id', '=', order_id)], limit=1)
+
+        # Logica per creare o ottenere l'allegato
+        attachment_values = {
+            'name': 'Retro contratto',
+            'type': 'binary',
+            'datas':contratto_attachment.datas,
+            'res_model': 'sale.order',
+            'res_id': self.id,
+        }
+        attachment = self.env['ir.attachment'].create(attachment_values)
+        return attachment
+
     def partner_control(self):
             errore=[]
             user = self.env.user
