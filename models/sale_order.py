@@ -235,19 +235,17 @@ class SaleOrder(models.Model):
             ('res_id', '=', self.id),
             ('name', '=', 'retro_contratto.pdf')  # Nome specifico dell'allegato
         ], limit=1)
-        _logger.debug("Attachment found: %s", attachment)
+        _logger.debug("ALLEGATO TROVATO: %s", attachment)
 
-        compose_message = self.env['mail.compose.message'].search([
-            ('res_id', '=', self.id),
-            ('model', '=', 'sale.order')
-        ], limit=1)
-        _logger.debug("Mail compose message found: %s", compose_message)
-
-        if compose_message.exists():
-            compose_message.write({
-                'attachment_ids': [(4, attachment.id)]
-            })
-            _logger.debug("Attachment added to mail: %s", attachment.id)
+        if attachment:
+            # Cerca il contesto dell'email appena creato
+            ctx = res.get('context')
+            if ctx and ctx.get('default_composition_mode'):
+                # Crea una nuova email utilizzando il contesto trovato
+                mail_compose = self.env['mail.compose.message'].with_context(ctx).create({
+                    'attachment_ids': [(4, attachment.id)]
+                })
+                mail_compose.send_mail()
 
         return res
 
