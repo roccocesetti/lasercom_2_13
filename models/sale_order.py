@@ -225,35 +225,6 @@ class SaleOrder(models.Model):
                 #record.file_name = 'retro_contratto.pdf'
                 record.write({'attachment_url': record.attachment_url, 'attachment_link': record.attachment_link})
 
-    def action_quotation_send(self):
-        # Eredita la chiamata al metodo originale
-        _logger.debug("Esecuzione di action_quotation_send§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§")
-        print("Debug message: ", 'action_quotation_send')
-
-        res = super(SaleOrder, self).action_quotation_send()
-
-        # Supponiamo che tu voglia aggiungere un allegato specifico esistente
-        attachment = self.env['ir.attachment'].search([
-            ('res_model', '=', 'sale.order'),
-            ('res_id', '=', self.id),
-            ('name', '=', 'retro_contratto.pdf')  # Nome specifico dell'allegato
-        ], limit=1)
-        _logger.debug("ALLEGATO TROVATO: %s", attachment)
-        print("ALLEGATO TROVATO: %s", attachment)
-
-        if attachment:
-            # Cerca il contesto dell'email appena creato
-            ctx = res.get('context')
-            if ctx and ctx.get('default_composition_mode'):
-                # Crea una nuova email utilizzando il contesto trovato
-                mail_compose = self.env['mail.compose.message'].with_context(ctx).create({
-                    'attachment_ids': [(4, attachment.id)]
-                })
-                print("mail_compose: %s", mail_compose)
-                mail_compose.send_mail()
-
-        return res
-
 
     def partner_control(self):
             errore=[]
@@ -574,3 +545,32 @@ class DocumentPDFAnnotation(models.Model):
         else:
             raise ValidationError("Nessun allegato trovato.")
 
+class MailComposeMessage(models.TransientModel):
+    _inherit = 'mail.compose.message'
+
+    @api.model
+    def get_mail_values(self, res_ids):
+        # Ottieni i valori originali dell'email
+        mail_values = super(MailComposeMessage, self).get_mail_values(res_ids)
+
+        for res_id in res_ids:
+            # Verifica se il modello di riferimento è `sale.order`
+            if self.model == 'sale.order':
+                # Trova il preventivo (sale.order)
+                order = self.env['sale.order'].browse(res_id)
+
+                # Cerca l'allegato specifico
+                attachment = self.env['ir.attachment'].search([
+                    ('res_model', '=', 'sale.order'),
+                    ('res_id', '=', order.id),
+                    ('name', '=', 'retro_contratto.pdf')  # Sostituisci con il nome del file
+                ], limit=1)
+
+                if attachment:
+                    # Aggiungi l'allegato ai valori dell'email
+                    if 'attachment_ids' in mail_values[res_id]:
+                        mail_values[res_id]['attachment_ids'].append((4, attachment.id))
+                    else:
+                        mail_values[res_id]['attachment_ids'] = [(4, attachment.id)]
+
+        return mail_values
