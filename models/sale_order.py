@@ -236,13 +236,14 @@ class SaleOrder(models.Model):
 
         if attachment:
             # Ottieni l'ID del record mail.compose.message
-            compose_id = res['context'].get('default_composition_mode', 'mass_mail')
-            if isinstance(compose_id, int):  # Verifica che l'ID sia un numero intero
-                mail_compose_message = self.env['mail.compose.message'].browse(compose_id)
+            compose_message = self.env['mail.compose.message'].search([
+                ('res_id', '=', self.id),
+                ('model', '=', 'sale.order')
+            ], limit=1)
 
-                if mail_compose_message.exists():
+            if compose_message.exists():
                     # Aggiungi l'allegato all'email
-                    mail_compose_message.write({
+                    compose_message.write({
                         'attachment_ids': [(4, attachment.id)]
                     })
 
