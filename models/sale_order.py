@@ -206,20 +206,20 @@ class SaleOrder(models.Model):
         for record in self:
             attachment = self.env['ir.attachment'].search([('res_model', '=', 'res.partner'), ('res_id', '=', 1)], limit=1)
             if attachment:
-                record.attachment_url = '/web/content/%s?download=true' % attachment.id
-                record.attachment_link = '<a href="%s" download>Download retro Contratto</a>' % record.attachment_url
-
-                record.file_name='retro_contratto.pdf'
+                if not record.numero_contratto:
+                    record.attachment_url = '/web/content/%s?download=true' % attachment.id
+                    record.attachment_link = '<a href="%s" download>Download retro Contratto</a>' % record.attachment_url
+                    record.file_name='retro_contratto.pdf'
     def _recompute_attachment_url(self,numero_contratto=None):
         for record in self:
             attachment = self.env['ir.attachment'].search([('res_model', '=', 'res.partner'), ('res_id', '=', 1)], limit=1)
             new_attach=attachment.add_text_and_save_to_partner(record.id, 'Contratto n. %s ' % numero_contratto if numero_contratto else record.numero_contratto, x=10, y=825)            # Uso del metodo
             print("Debug message: ", new_attach.name)
             if new_attach:
-                attachment_url = '/web/content/%s?download=true' % new_attach.id
-                attachment_link = '<a href="%s" download>Download retro Contratto</a>' % record.attachment_url
-                #record.write({'attachment_url': attachment_url, 'attachment_link': attachment_link})
-                record.write({'attachment_url': False, 'attachment_link': False})
+                record.attachment_url = '/web/content/%s?download=true' % new_attach.id
+                record.attachment_link = '<a href="%s" download>Download retro Contratto</a>' % record.attachment_url
+                record.file_name = 'retro_contratto.pdf'
+                record.write({'attachment_url': record.attachment_url, 'attachment_link': record.attachment_link,'file_name':record.file_name})
 
     def partner_control(self):
             errore=[]
