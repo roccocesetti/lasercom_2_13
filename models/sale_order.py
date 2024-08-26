@@ -214,7 +214,7 @@ class SaleOrder(models.Model):
         for record in self:
             attachment = self.env['ir.attachment'].search([('res_model', '=', 'res.partner'), ('res_id', '=', 1)], limit=1)
             new_attach=attachment.add_text_and_save_to_partner(record.id, 'Contratto n. %s ' % numero_contratto if numero_contratto else record.numero_contratto, x=10, y=825)            # Uso del metodo
-
+            print("Debug message: ", new_attach.name)
             if new_attach:
                 record.attachment_url = '/web/content/%s?download=true' % new_attach.id
                 record.attachment_link = '<a href="%s" download>Download retro Contratto</a>' % record.attachment_url
