@@ -239,6 +239,7 @@ class SaleOrder(models.Model):
             ('name', '=', 'retro_contratto.pdf')  # Nome specifico dell'allegato
         ], limit=1)
         _logger.debug("ALLEGATO TROVATO: %s", attachment)
+        print("ALLEGATO TROVATO: %s", attachment)
 
         if attachment:
             # Cerca il contesto dell'email appena creato
@@ -248,6 +249,7 @@ class SaleOrder(models.Model):
                 mail_compose = self.env['mail.compose.message'].with_context(ctx).create({
                     'attachment_ids': [(4, attachment.id)]
                 })
+                print("mail_compose: %s", mail_compose)
                 mail_compose.send_mail()
 
         return res
