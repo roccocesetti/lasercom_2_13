@@ -235,15 +235,16 @@ class SaleOrder(models.Model):
         ], limit=1)
 
         if attachment:
-            # Trova l'oggetto mail.compose.message
-            mail_compose_message = self.env['mail.compose.message'].browse(
-                res['context'].get('default_composition_mode', 'mass_mail'))
+            # Ottieni l'ID del record mail.compose.message
+            compose_id = res['context'].get('default_composition_mode', 'mass_mail')
+            if isinstance(compose_id, int):  # Verifica che l'ID sia un numero intero
+                mail_compose_message = self.env['mail.compose.message'].browse(compose_id)
 
-            # Aggiungi l'allegato all'email
-            if mail_compose_message:
-                mail_compose_message.write({
-                    'attachment_ids': [(4, attachment.id)]
-                })
+                if mail_compose_message.exists():
+                    # Aggiungi l'allegato all'email
+                    mail_compose_message.write({
+                        'attachment_ids': [(4, attachment.id)]
+                    })
 
         return res
 
