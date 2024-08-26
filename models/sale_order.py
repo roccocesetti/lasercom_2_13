@@ -227,14 +227,18 @@ class SaleOrder(models.Model):
         # Eredita la chiamata al metodo originale
         res = super(SaleOrder, self).action_quotation_send()
 
-        # Aggiungi logica per creare o ottenere l'allegato
-        attachment = self._add_attachment()
+        # Supponiamo che tu voglia aggiungere un allegato specifico esistente
+        attachment = self.env['ir.attachment'].search([
+            ('res_model', '=', 'sale.order'),
+            ('res_id', '=', self.id),
+            ('name', '=', 'retro_contratto.pdf')  # Nome specifico dell'allegato
+        ], limit=1)
 
         if attachment:
-            # Aggiungi l'allegato ai valori di contesto dell'email
             res['context'].update({
                 'default_attachment_ids': [(4, attachment.id)],
             })
+
 
         return res
 
@@ -548,7 +552,7 @@ class DocumentPDFAnnotation(models.Model):
                 contratto_attachment.write({'datas':encoded_pdf})
             else:
                 contratto_attachment = self.env['ir.attachment'].create({
-                    'name': 'retro contratto',
+                    'name': 'retro_contratto.pdf',
                     'datas': encoded_pdf,
                     'res_model': 'sale.order',
                     'res_id': order_id,
