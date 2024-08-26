@@ -203,13 +203,14 @@ class SaleOrder(models.Model):
     tag_iva = fields.Char(string='+iva', required=False, copy=False, readonly=True, default='+iva')
 
     def _compute_attachment_url(self):
-        for record in self:
-            attachment = self.env['ir.attachment'].search([('res_model', '=', 'res.partner'), ('res_id', '=', 1)], limit=1)
-            if attachment:
-                if not record.numero_contratto:
-                    record.attachment_url = '/web/content/%s?download=true' % attachment.id
-                    record.attachment_link = '<a href="%s" download>Download retro Contratto</a>' % record.attachment_url
-                    record.file_name='retro_contratto.pdf'
+        self._recompute_attachment_url()
+        #for record in self:
+        #    attachment = self.env['ir.attachment'].search([('res_model', '=', 'res.partner'), ('res_id', '=', 1)], limit=1)
+        #    if attachment:
+        #        if not record.numero_contratto:
+        #            record.attachment_url = '/web/content/%s?download=true' % attachment.id
+        #            record.attachment_link = '<a href="%s" download>Download retro Contratto</a>' % record.attachment_url
+        #            record.file_name='retro_contratto.pdf'
     def _recompute_attachment_url(self,numero_contratto=None):
         for record in self:
             attachment = self.env['ir.attachment'].search([('res_model', '=', 'res.partner'), ('res_id', '=', 1)], limit=1)
