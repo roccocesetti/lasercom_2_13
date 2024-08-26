@@ -203,7 +203,7 @@ class SaleOrder(models.Model):
     tag_iva = fields.Char(string='+iva', required=False, copy=False, readonly=True, default='+iva')
 
     def _compute_attachment_url(self):
-        self._recompute_attachment_url()
+        #self._recompute_attachment_url()
         #for record in self:
         #    attachment = self.env['ir.attachment'].search([('res_model', '=', 'res.partner'), ('res_id', '=', 1)], limit=1)
         #    if attachment:
