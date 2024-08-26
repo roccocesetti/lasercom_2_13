@@ -228,6 +228,7 @@ class SaleOrder(models.Model):
     def action_quotation_send(self):
         # Eredita la chiamata al metodo originale
         _logger.debug("Esecuzione di action_quotation_send§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§")
+        print("Debug message: ", 'action_quotation_send')
 
         res = super(SaleOrder, self).action_quotation_send()
 
