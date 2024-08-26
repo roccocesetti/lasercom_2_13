@@ -235,17 +235,18 @@ class SaleOrder(models.Model):
         ], limit=1)
 
         if attachment:
-            res['context'].update({
-                'default_attachment_ids': [(4, attachment.id)],
-            })
+            # Trova l'oggetto mail.compose.message
+            mail_compose_message = self.env['mail.compose.message'].browse(
+                res['context'].get('default_composition_mode', 'mass_mail'))
 
+            # Aggiungi l'allegato all'email
+            if mail_compose_message:
+                mail_compose_message.write({
+                    'attachment_ids': [(4, attachment.id)]
+                })
 
         return res
 
-    def _add_attachment(self):
-        contratto_attachment = self.env['ir.attachment'].search(
-            [('name','ilike','retro contratto'),('res_model', '=', 'sale.order'), ('res_id', '=', self.id)], limit=1)
-        return contratto_attachment
 
     def partner_control(self):
             errore=[]
@@ -547,7 +548,7 @@ class DocumentPDFAnnotation(models.Model):
             encoded_pdf = base64.b64encode(output.getvalue())
 
             # Crea un nuovo allegato o aggiorna quello esistente
-            contratto_attachment = self.env['ir.attachment'].search([('name', '=', attachment.name),('res_model', '=', 'sale.order'),('res_id', '=', order_id)], limit=1)
+            contratto_attachment = self.env['ir.attachment'].search([('name', '=', 'retro_contratto.pdf'),('res_model', '=', 'sale.order'),('res_id', '=', order_id)], limit=1)
             if contratto_attachment:
                 contratto_attachment.write({'datas':encoded_pdf})
             else:
