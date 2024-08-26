@@ -228,7 +228,7 @@ class SaleOrder(models.Model):
         res = super(SaleOrder, self).action_quotation_send()
 
         # Aggiungi logica per creare o ottenere l'allegato
-        attachment = self._create_dynamic_attachment()
+        attachment = self._add_attachment()
 
         if attachment:
             # Aggiungi l'allegato ai valori di contesto dell'email
@@ -238,20 +238,10 @@ class SaleOrder(models.Model):
 
         return res
 
-    def _create_dynamic_attachment(self):
+    def _add_attachment(self):
         contratto_attachment = self.env['ir.attachment'].search(
             [('res_model', '=', 'sale.order'), ('res_id', '=', self.id)], limit=1)
-
-        # Logica per creare o ottenere l'allegato
-        attachment_values = {
-            'name': 'Retro contratto',
-            'type': 'binary',
-            'datas':contratto_attachment.datas,
-            'res_model': 'sale.order',
-            'res_id': self.id,
-        }
-        attachment = self.env['ir.attachment'].create(attachment_values)
-        return attachment
+        return contratto_attachment
 
     def partner_control(self):
             errore=[]
