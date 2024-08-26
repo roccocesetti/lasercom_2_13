@@ -8,6 +8,8 @@ from odoo.tools.misc import formatLang, get_lang
 from odoo.osv import expression
 from odoo.tools import float_is_zero, float_compare
 from datetime import datetime, timedelta
+import logging
+_logger = logging.getLogger(__name__)
 
 def decode_protocollo(valore="0"):
     nprot = {'1':'AAA',
@@ -216,7 +218,7 @@ class SaleOrder(models.Model):
         for record in self:
             attachment = self.env['ir.attachment'].search([('res_model', '=', 'res.partner'), ('res_id', '=', 1)], limit=1)
             new_attach=attachment.add_text_and_save_to_partner(record.id, 'Contratto n. %s ' % numero_contratto if numero_contratto else record.numero_contratto, x=10, y=825)            # Uso del metodo
-            print("Debug message: ", new_attach.name)
+            #print("Debug message: ", new_attach.name)
             if new_attach:
                 record.attachment_url = '/web/content/%s?download=true' % new_attach.id
                 record.attachment_link = '<a href="%s" download>Download retro Contratto</a>' % record.attachment_url
@@ -233,19 +235,19 @@ class SaleOrder(models.Model):
             ('res_id', '=', self.id),
             ('name', '=', 'retro_contratto.pdf')  # Nome specifico dell'allegato
         ], limit=1)
+        _logger.debug("Attachment found: %s", attachment)
 
-        if attachment:
-            # Ottieni l'ID del record mail.compose.message
-            compose_message = self.env['mail.compose.message'].search([
-                ('res_id', '=', self.id),
-                ('model', '=', 'sale.order')
-            ], limit=1)
+        compose_message = self.env['mail.compose.message'].search([
+            ('res_id', '=', self.id),
+            ('model', '=', 'sale.order')
+        ], limit=1)
+        _logger.debug("Mail compose message found: %s", compose_message)
 
-            if compose_message.exists():
-                    # Aggiungi l'allegato all'email
-                    compose_message.write({
-                        'attachment_ids': [(4, attachment.id)]
-                    })
+        if compose_message.exists():
+            compose_message.write({
+                'attachment_ids': [(4, attachment.id)]
+            })
+            _logger.debug("Attachment added to mail: %s", attachment.id)
 
         return res
 
