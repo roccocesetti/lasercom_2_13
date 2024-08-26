@@ -218,8 +218,7 @@ class SaleOrder(models.Model):
             if new_attach:
                 attachment_url = '/web/content/%s?download=true' % new_attach.id
                 attachment_link = '<a href="%s" download>Download retro Contratto</a>' % record.attachment_url
-                file_name='retro_contratto.pdf'
-                record.write({'attachment_url':attachment_url,'attachment_link':attachment_link,'file_name':file_name})
+                record.write({'attachment_url':attachment_url,'attachment_link':attachment_link})
 
     def partner_control(self):
             errore=[]
