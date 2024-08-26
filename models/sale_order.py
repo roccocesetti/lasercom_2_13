@@ -240,7 +240,7 @@ class SaleOrder(models.Model):
 
     def _create_dynamic_attachment(self):
         contratto_attachment = self.env['ir.attachment'].search(
-            [('res_model', '=', 'sale.order'), ('res_id', '=', order_id)], limit=1)
+            [('res_model', '=', 'sale.order'), ('res_id', '=', self.id)], limit=1)
 
         # Logica per creare o ottenere l'allegato
         attachment_values = {
