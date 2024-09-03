@@ -414,7 +414,7 @@
 										  <span t-field="doc.sale_modello_usato"/>
 									</td>
 									<td name="td_sale_acq_usage" class="text-right o_price_total">
-										<span t-field="doc.sale_acq_usage"/>+ iva
+										<span t-field="doc.sale_acq_usage"/>
 									</td>
 								</tr>
 								<tr class="border-black o_total">
@@ -813,7 +813,7 @@
 									</div>
 									<div class="col-6 mb-2 ">
 										<p t-if="doc.sale_acq_usage &gt;0" style="white-space: nowrap;"><strong>Prezzo:&amp;nbsp;</strong>
-											<span t-field="doc.sale_acq_usage"/></p>
+											<span t-field="doc.sale_acq_usage"/>+iva</p>
 									</div>
 
 				</div>

@@ -444,7 +444,7 @@ class SaleOrder(models.Model):
             #order.sale_string_margin=order.amount_untaxed-order.total_purchase_price
 
         sale_string_price=   "{:.2f}".format(order.total_purchase_price) if order.total_purchase_price>0 else '999999999'  
-        sale_string_margin=   "{:.2f}".format(order.amount_untaxed-order.total_purchase_price) if order.amount_untaxed-order.total_purchase_price>0 else '999999999'
+        sale_string_margin=   "{:.2f}".format(order.amount_untaxed_arrotondato-order.total_purchase_price) if order.amount_untaxed_arrotondato-order.total_purchase_price>0 else '999999999'
         order.sale_string_price=decode_protocollo(sale_string_price)
         order.sale_string_margin=decode_protocollo(sale_string_margin)                
         order.update({
