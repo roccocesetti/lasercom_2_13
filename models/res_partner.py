@@ -13,12 +13,12 @@ class ResPartner(models.Model):
     #numero_verde = fields.Char(string='Numero verde')
     #numero_righe = fields.Integer(string='Numero Righe')
 
-    def create(self, values):
-        result = super(ResPartner, self).create(values)
-        return result
+    #def create(self, values):
+    #    result = super(ResPartner, self).create(values)
+    #    return result
 
-    def write(self, values):
-        return super(ResPartner, self).write(values)
+    #def write(self, values):
+    #    return super(ResPartner, self).write(values)
 
 
 
