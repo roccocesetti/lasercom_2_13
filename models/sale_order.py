@@ -204,6 +204,9 @@ class SaleOrder(models.Model):
     annotazione = fields.Text(string='Annotazione', required=False, copy=False, readonly=False, default='')
     tag_iva = fields.Char(string='+iva', required=False, copy=False, readonly=True, default='+iva')
 
+
+
+
     #def _compute_attachment_url(self):
         #self._recompute_attachment_url()
         #for record in self:
@@ -472,7 +475,30 @@ class SaleOrder(models.Model):
         return self.env['ir.qweb.field.monetary'].value_to_html(
             -1 * self.importo_discount, {'display_currency': self.currency_id}
         )
-
+    @api.onchange('partner_id')
+    def _onchange_partner_id(self):
+        """ Calcola il dominio per il campo partner_id in base alle province dell'utente corrente """
+        if self.env.user.state_ids:
+            province_ids = self.env.user.state_ids.ids
+            return {
+                'domain': {
+                    'partner_id': [
+                        ('company_id', '=', False),
+                        '|', ('company_id', '=', self.company_id.id),
+                        ('state_id', 'in', province_ids)
+                    ]
+                }
+            }
+        else:
+            # Se l'utente non ha province assegnate, non applicare alcun filtro sulle province
+            return {
+                'domain': {
+                    'partner_id': [
+                        ('company_id', '=', False),
+                        '|', ('company_id', '=', self.company_id.id)
+                    ]
+                }
+            }
     #@api.depends('partner_id','partner_shipping_id','payment_direct','leasing_direct','finanziamento_direct')
 
 
