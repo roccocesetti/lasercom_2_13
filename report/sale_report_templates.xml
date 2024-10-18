@@ -189,7 +189,7 @@
   							-->
               </t>
 						<t t-if="doc.order_line[0].product_id and doc.order_line[0].product_id.description">
-							<span class="medium-font" t-field="doc.order_line[0].product_id.description"/>
+							<br></br><span class="medium-font" t-field="doc.order_line[0].product_id.description"/>
 						</t>
 				</div>
 
