@@ -181,7 +181,7 @@
 				</div>
 				<div class="row m-0  avoid-page-break" id="informations">
     					<t t-if="doc.order_line">
-    							<span>Oggetto:</span><span t-field="doc.order_line[0].name"/>
+    							<span>Oggetto:</span><span t-field="doc.order_line[0].name"/><br></br>
     						<!--
 							<span t-att-style="'color: red;'">
     							Numero di selezioni:</span>
@@ -189,7 +189,7 @@
   							-->
               </t>
 						<t t-if="doc.order_line[0].product_id and doc.order_line[0].product_id.description">
-							<br></br><span class="medium-font" t-field="doc.order_line[0].product_id.description"/>
+							<span class="medium-font" t-field="doc.order_line[0].product_id.description"/>
 						</t>
 				</div>
 
@@ -687,21 +687,21 @@
 										</td>
 										<t t-if="amount_by_group[5] == 1 and doc.amount_untaxed == amount_by_group[2]">
 											<td name="td_amount_by_group_label_3" class="text-left col-2" style="white-space: nowrap;">
-												<span t-esc="amount_tax"/>
+												<span>Imposta al 22%</span>
 												<span>&amp;nbsp;<span>su</span>
 													&amp;nbsp;
-													<t t-esc="amount_tax" t-options="{&quot;widget&quot;: &quot;monetary&quot;, &quot;display_currency&quot;: doc.pricelist_id.currency_id}"/></span>
+													<t t-esc="doc.amount_tax" t-options="{&quot;widget&quot;: &quot;monetary&quot;, &quot;display_currency&quot;: doc.pricelist_id.currency_id}"/></span>
 											</td>
 											<td name="td_amount_by_group_3" class="text-right o_price_total col-2 ">
-												<span t-esc="amount_tax" t-options="{&quot;widget&quot;: &quot;monetary&quot;, &quot;display_currency&quot;: doc.pricelist_id.currency_id}"/>
+												<span t-esc="doc.amount_tax" t-options="{&quot;widget&quot;: &quot;monetary&quot;, &quot;display_currency&quot;: doc.pricelist_id.currency_id}"/>
 											</td>
 										</t>
 										<t t-else="">
 											<td name="td_amount_by_group_label" class="text-left col-2">
-												<span t-esc="amount_tax" style="white-space: nowrap;"/>
+												<span style="white-space: nowrap;">Imposta al 22%</span>
 											</td>
 											<td name="td_amount_by_group" class="text-right o_price_total col-2">
-												<span t-esc="amount_tax" t-options="{&quot;widget&quot;: &quot;monetary&quot;, &quot;display_currency&quot;: doc.pricelist_id.currency_id}"/>
+												<span t-esc="doc.amount_tax" t-options="{&quot;widget&quot;: &quot;monetary&quot;, &quot;display_currency&quot;: doc.pricelist_id.currency_id}"/>
 											</td>
 										</t>
 									</tr>
