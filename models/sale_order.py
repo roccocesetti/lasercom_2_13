@@ -42,9 +42,15 @@ def decode_protocollo(valore="0"):
         
     return myvalore
 
+class productProduct(models.Model):
+    _inherit = "product.template"
+    _order = "sequence,name,id"
+
 
 class productProduct(models.Model):
     _inherit = "product.product"
+    _order = "sequence,name,id"
+
     def get_product_multiline_description_sale(self):
         """ Compute a multiline description of this product, in the context of sales
                 (do not use for purchases or other display reasons that don't intend to use "description_sale").
@@ -388,7 +394,7 @@ class SaleOrder(models.Model):
             amount_untaxed = amount_tax = 0.0
             for line in order.order_line:
                 #line.write({'discount':order.footer_discount})
-                if 'incluso' not in line.sale_string_subtotal.lower():
+                if line.sale_string_subtotal and 'incluso' not in line.sale_string_subtotal.lower():
                     amount_untaxed += line.price_subtotal
                     amount_tax += line.price_tax
             amount_untaxed_nocalc = amount_untaxed
@@ -396,7 +402,7 @@ class SaleOrder(models.Model):
             amount_untaxed=amount_untaxed-order.sale_val_usage
             importo_discount=amount_untaxed*(order.footer_discount)/100
             amount_untaxed=amount_untaxed-importo_discount
-            amount_untaxed = amount_untaxed + order.sale_acq_usage
+            #amount_untaxed = amount_untaxed + order.sale_acq_usage
             amount_untaxed_arrotondato = amount_untaxed - order.amount_untaxed_arrotondamento
             amount_total=(amount_untaxed_arrotondato * 122)/100
             amount_tax=(amount_untaxed_arrotondato * 22)/100
@@ -416,7 +422,7 @@ class SaleOrder(models.Model):
             for order in self:
                 order.total_purchase_price=0.00
                 order.total_purchase_price = sum(order.order_line.filtered(lambda r: r.state != 'cancel').mapped(lambda r: r.purchase_price * r.product_uom_qty))
-            order.total_purchase_price = order.total_purchase_price + order.sale_acq_usage
+            #order.total_purchase_price = order.total_purchase_price + order.sale_acq_usage
             #order.sale_string_margin = order.amount_untaxed - order.total_purchase_price
         else:
             self.env["sale.order.line"].flush(['margin', 'state','purchase_price','product_uom_qty'])
@@ -443,7 +449,7 @@ class SaleOrder(models.Model):
             # Assign the computed total purchase price to each order
             for order in self:
                 order.total_purchase_price = order_totals.get(order.id, 0.0)
-            order.total_purchase_price=order.total_purchase_price+order.sale_acq_usage
+            #order.total_purchase_price=order.total_purchase_price+order.sale_acq_usage
             #order.sale_string_margin=order.amount_untaxed-order.total_purchase_price
 
         sale_string_price=   "{:.2f}".format(order.total_purchase_price) if order.total_purchase_price>0 else '999999999'  
