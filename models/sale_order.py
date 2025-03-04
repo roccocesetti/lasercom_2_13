@@ -42,7 +42,7 @@ def decode_protocollo(valore="0"):
         
     return myvalore
 
-class productProduct(models.Model):
+class productTemplate(models.Model):
     _inherit = "product.template"
     _order = "sequence,name,id"
 
