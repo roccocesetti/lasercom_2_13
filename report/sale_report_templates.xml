@@ -644,7 +644,21 @@
 								</tr>
 							</t>
 						</t>
-					</tbody>
+						<t t-set="line_count" t-value="doc.order_line and len(doc.order_line) or 0"/>
+
+
+						<t t-set="remaining" t-value="16 - line_count"/>
+						<t t-if="remaining &gt; 0">
+							<t t-foreach="range(remaining)" t-as="i">
+								<tr >
+									<td>&#160;</td>  <!-- Spazio vuoto senza errore XML -->
+
+									<td>&#160;</td>  <!-- Spazio vuoto senza errore XML -->
+                  						<td>&#160;</td>  <!-- Spazio vuoto senza errore XML -->
+
+								</tr>
+							</t>
+						</t>			</tbody>
 				</table>
 				<div class="clearfix m-0" name="so_total_summary">
 					<div id="total" class="row m-0" name="total">
