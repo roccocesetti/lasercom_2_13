@@ -313,7 +313,7 @@ class SaleOrder(models.Model):
                 else:
                     vals['numero_contratto'] = self.env['ir.sequence'].next_by_code('sale.order.contract', sequence_date=seq_date) or _('New')
                 self._recompute_attachment_url(vals['numero_contratto'])
-        vals.update({'note':'Prezzi iva esclusa, Trasporto, installazione, collaudo a nostro carico' })
+        vals.update({'note':'Prezzi iva esclusa' })
 
         res=super(SaleOrder, self).create(vals)
         if len(res.order_line)>16:
