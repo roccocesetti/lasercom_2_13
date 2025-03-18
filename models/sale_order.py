@@ -131,7 +131,25 @@ class SaleOrderLine(models.Model):
     @api.model
     def create(self, vals):
         vals.update(self._prepare_add_missing_fields(vals))
+        order_id = vals.get('order_id')
+
+        if order_id:
+            # Controlla se c'è già una sequenza precedente nel contesto
+            last_sequence = self.env.context.get('last_sequence', self.get_last_sequence(order_id))
+
+            # Incrementa la sequenza
+            vals['sequence'] = last_sequence + 10
+
+            # Aggiorna il contesto con la nuova sequenza
+            self = self.with_context(last_sequence=vals['sequence'])
         return super(SaleOrderLine, self).create(vals)
+
+
+    @api.model
+    def get_last_sequence(self, order_id):
+        """Restituisce l'ultimo numero di sequenza per un ordine specifico"""
+        last_line = self.search([('order_id', '=', order_id)], order='sequence desc', limit=1)
+        return last_line.sequence if last_line else 0
 
 class SaleOrder(models.Model):
     _inherit = "sale.order"
@@ -582,3 +600,84 @@ class MailComposeMessage(models.TransientModel):
                             mail_values[res_id]['attachment_ids'] = [attachment.id]
 
         return mail_values
+
+
+class SaleOrder_2(models.Model):
+    _inherit = "sale.order"
+
+    def action_send_contract_email(self):
+        """Genera il PDF del contratto, lo allega e apre il composer email"""
+
+        self.ensure_one()  # Assicura che venga eseguito su un solo record alla volta
+
+        # Trova il template email associato
+        mail_template = self.env['mail.template'].search([
+            ('name', 'ilike', 'Invio Contratto lasercom')  # Usa il nome esatto del template
+        ], limit=1)
+
+        if not mail_template:
+            raise ValueError("Template email 'Invio Contratto lasercom' non trovato. Controlla il nome esatto.")
+
+        # Trova il report da stampare (ID tecnico del report)
+        report = self.env.ref('lasercom_2_13.action_report_saleorder_laser_contratto')  # ID tecnico del report
+
+        if not report:
+            raise ValueError("Il report specificato non è stato trovato!")
+
+        # ✅ 3. GENERARE IL PDF
+        pdf_content, _ = report.render_qweb_pdf([self.id])  # Genera il PDF del contratto
+
+        attachment_2 = self.env['ir.attachment'].search([
+            ('res_model', '=', 'sale.order'),
+            ('res_id', '=', self.id),
+            ('name', '=', 'retro_contratto.pdf')  # Sostituisci con il nome del file
+        ], limit=1)
+
+        # Crea l'allegato
+        attachment_name = "{}_{}.pdf".format(report.name, self.name)
+        attachment = self.env['ir.attachment'].create({
+            'name': attachment_name,
+            'type': 'binary',
+            'datas': base64.b64encode(pdf_content),
+        'res_model': 'sale.order',
+            'res_id': self.id,
+            'mimetype': 'application/pdf'
+        })
+
+        attachment_ids = [(4, attachment.id)]  # Sempre includiamo il contratto generato
+        if attachment_2:
+            attachment_ids.append((4, attachment_2.id))  # Aggiungiamo retro_contratto.pdf se esiste
+
+        # Crea e apre il composer email con il template e l'allegato
+        composer = self.env['mail.compose.message'].with_context(
+            default_model='sale.order',
+            default_res_id=self.id,
+            default_use_template=True,
+            default_template_id=mail_template.id,
+            default_composition_mode="comment",
+            default_attachment_ids=[(4, attachment.id)]
+        ).create({
+            'subject': mail_template.subject,
+            'email_from': mail_template.email_from,
+            'partner_ids': [(4, self.partner_id.id)],
+            'model': 'sale.order',
+            'res_id': self.id,
+            'template_id': mail_template.id,
+            'attachment_ids':attachment_ids
+        })
+
+        return {
+            'name': 'Componi Email',
+            'type': 'ir.actions.act_window',
+            'res_model': 'mail.compose.message',
+            'view_mode': 'form',
+            'target': 'new',
+            'context': {
+                'default_model': 'sale.order',
+                'default_res_id': self.id,
+                'default_use_template': True,
+                'default_template_id': mail_template.id,
+                'default_composition_mode': 'comment',
+                'default_attachment_ids': [(4, attachment.id)],
+            }
+        }
