@@ -30,7 +30,7 @@
                    <field name="sale_string_margin"  groups="base.group_user" />
 				   <field name="attachment_url" invisible="1" readonly="1" widget="url" string="Download retro Contratto" />
                     <field name="attachment_link" readonly="1" widget="html"/>
-
+                   <field name="stampa_prezzo"  groups="base.group_user" />
               </xpath>
             <xpath expr="//group[@name='sale_total']" position="replace">
                       <group class="oe_subtotal_footer oe_right" colspan="6" name="sale_total_laser">

@@ -222,9 +222,9 @@
 
 						<tr>
 							<th name="th_description" class="text-left bordo-inferiore">
-								Descrizione</th>
+								Prodotti ed accessori inclusi</th>
 							<th name="th_quantity" class="text-right bordo-inferiore">Quantità</th>
-							<th name="th_priceunit" class="text-right bordo-inferiore">Prezzo</th>
+							<th name="th_priceunit" class="text-right bordo-inferiore"><t t-if="doc.stampa_prezzo">Prezzo</t></th>
 						<!--	<th name="th_discount" t-if="display_discount"
 								class="text-right"
 								groups="product.group_discount_per_so_line">
@@ -234,7 +234,7 @@
 							<th name="th_taxes" class="text-right bordo-inferiore">Iva</th>
 						-->
 							<th name="th_subtotal" class="text-right bordo-inferiore">
-								<t groups="account.group_show_line_subtotals_tax_excluded">
+								<t t-if="doc.stampa_prezzo" groups="account.group_show_line_subtotals_tax_excluded">
 									Imponibile</t>
 								<t groups="account.group_show_line_subtotals_tax_included">Totale riga
 									</t>
@@ -265,7 +265,7 @@
 										<span t-field="line.product_uom_qty"/>
 									</td>
 									<td name="td_priceunit" class="text-right">
-										<span t-field="line.sale_string_price"/>
+										<span t-if="doc.stampa_prezzo" t-field="line.sale_string_price"/>
 									</td>
 									<!--
 									<td t-if="display_discount"
@@ -279,8 +279,8 @@
 									</td>
 									-->
 									<td name="td_subtotal" class="text-right o_price_total">
-										<span t-field="line.sale_string_subtotal" groups="account.group_show_line_subtotals_tax_excluded"/>
-										<span t-field="line.sale_string_total" groups="account.group_show_line_subtotals_tax_included"/>
+										<span t-if="doc.stampa_prezzo" t-field="line.sale_string_subtotal" groups="account.group_show_line_subtotals_tax_excluded"/>
+										<span t-if="doc.stampa_prezzo" t-field="line.sale_string_total" groups="account.group_show_line_subtotals_tax_included"/>
 									</td>
 								</t>
 								<t t-if="line.display_type == 'line_section'">
