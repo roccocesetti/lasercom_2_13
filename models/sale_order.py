@@ -228,7 +228,7 @@ class SaleOrder(models.Model):
     annotazione = fields.Text(string='Annotazione', required=False, copy=False, readonly=False, default='')
     tag_iva = fields.Char(string='+iva', required=False, copy=False, readonly=True, default='+iva')
     stampa_prezzo = fields.Boolean(string='stampa con', default=False)
-
+    citta_cliente = fields.Char(related='partner_id.city', string='Città', readonly=True)
 
 
     #def _compute_attachment_url(self):
