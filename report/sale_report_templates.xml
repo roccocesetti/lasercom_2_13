@@ -381,18 +381,6 @@
 								</td>
 								</tr>
 
-								<tr class="border-black o_total" t-if="doc.sale_promotion &gt;0">
-									<td name="td_amount_by_group_label">
-										<strong>Promozione</strong>
-									</td>
-									<td name="td_amount_by_group_label">
-										  <span t-field="doc.sale_promotion_note"/>
-									</td>
-									<td name="td_amount_by_group" class="text-right o_price_total">
-
-										<span t-raw="doc.get_formatted_sale_promotion()"/>
-									</td>
-								</tr>
 								<tr class="border-black o_total" t-if="doc.importo_discount &gt;0">
 									<td name="td_amount_by_group_label">
 										<strong>Sconto</strong>
