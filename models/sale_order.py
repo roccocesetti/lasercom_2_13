@@ -11,6 +11,7 @@ from datetime import datetime, timedelta
 import logging
 _logger = logging.getLogger(__name__)
 
+
 def decode_protocollo(valore="0"):
     nprot = {'1':'AAA',
                    '2':'BCD',
@@ -605,6 +606,27 @@ class MailComposeMessage(models.TransientModel):
 class SaleOrder_2(models.Model):
     _inherit = "sale.order"
 
+    banner_min_price = fields.Char(
+        string='Avviso prezzo minimo',
+        compute='_compute_banner_min_price',
+        store=False,
+    )
+    show_banner_min_price = fields.Boolean(
+        string='Mostra banner prezzo minimo',
+        compute='_compute_banner_min_price',
+        store=False,
+    )
+
+    banner_min_price_level = fields.Selection(
+        [
+            ('red', 'Rosso'),
+            ('orange', 'Arancione'),
+            ('green', 'Verde'),
+        ],
+        string='Livello banner prezzo minimo',
+        compute='_compute_banner_min_price',
+        store=False,
+    )
     def action_send_contract_email(self):
         """Genera il PDF del contratto, lo allega e apre il composer email"""
 
@@ -681,3 +703,60 @@ class SaleOrder_2(models.Model):
                 'default_attachment_ids': [(4, attachment.id)],
             }
         }
+
+
+
+    @api.depends('amount_untaxed_arrotondato', 'total_purchase_price')
+    def _compute_banner_min_price(self):
+        ICP = self.env['ir.config_parameter'].sudo()
+        param_val = ICP.get_param('amount_untaxed_arrotondato', default='0.0')
+        try:
+            soglia = float(param_val)
+        except (TypeError, ValueError):
+            soglia = 0.0
+
+
+        for order in self:
+            order.show_banner_min_price = False
+            order.banner_min_price = False
+            order.banner_min_price_level = 'green'
+            if not soglia or not order.total_purchase_price:
+                continue
+            if soglia <= 0:
+                continue
+            min_val = order.total_purchase_price + soglia
+            max_val = order.total_purchase_price + soglia * 2
+
+            if (
+                order.amount_untaxed_arrotondato
+                and min_val <= order.amount_untaxed_arrotondato <= max_val
+            ):
+                order.show_banner_min_price = True
+                order.banner_min_price_level = 'orange'
+                order.banner_min_price = _(
+                    "Attenzione: il prezzo minimo è nella soglia minima di accettazione del preventivo.\n"
+                    #"Valore ordine (arrotondato): %.2f\n"
+                    #"Soglia minima: %.2f - Soglia massima: %.2f"
+                ) #% (
+                  #                           order.amount_untaxed_arrotondato,
+                  #                           min_val,
+                  #                           max_val,
+                  #                       )
+
+            elif (order.amount_untaxed_arrotondato < min_val) :
+                order.show_banner_min_price = True
+                order.banner_min_price_level = 'red'
+                raise UserError(_('Valore troppo vasso'))
+            else:
+                order.show_banner_min_price = True
+                order.banner_min_price_level = 'green'
+                order.banner_min_price = _(
+                    "Valore preventivo in linea.\n"
+                    #"Valore ordine (arrotondato): %.2f\n"
+                    #"Soglia minima: %.2f - Soglia massima: %.2f"
+                ) #% (
+                  #                           order.amount_untaxed_arrotondato,
+                  #                           min_val,
+                  #                           max_val,
+                  #                       )
+

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-
+<data >
     <record model="ir.ui.view" id="sale_string_price_sale_order">
         <field name="name">sale.order.string_price.view.form</field>
         <field name="model">sale.order</field>
@@ -193,7 +193,7 @@
         </field>
     </record>
 
-            <record id="view_quotation_tree_citta" model="ir.ui.view">
+    <record id="view_quotation_tree_citta" model="ir.ui.view">
             <field name="name">sale.order.tree.inherit.sale.citta</field>
             <field name="model">sale.order</field>
             <field name="inherit_id" ref="sale.view_quotation_tree"/>
@@ -202,7 +202,81 @@
                     <field name="citta_cliente"  optional="hide" />
                 </xpath>
             </field>
-        </record>
+    </record>
 
+
+
+<record id="view_order_form_inherit_min_price_banner" model="ir.ui.view">
+    <field name="name">sale.order.form.min.price.banner</field>
+    <field name="model">sale.order</field>
+    <field name="inherit_id" ref="sale.view_order_form"/>
+    <field name="arch" type="xml">
+        <data>
+            <xpath expr="//sheet" position="inside">
+                <field name="show_banner_min_price" invisible="1"/>
+                <field name="banner_min_price_level" invisible="1"/>
+
+                <!-- stile banner -->
+                <style>
+                    .min-price-banner {
+                        padding: 8px;
+                        border-radius: 4px;
+                        margin: 8px 0;
+                        color: #ffffff;
+                    }
+                    .min-price-banner-red {
+                        background-color: #d9534f; /* rosso */
+                    }
+                    .min-price-banner-orange {
+                        background-color: #f0ad4e; /* arancione */
+                    }
+                    .min-price-banner-green {
+                        background-color: #5cb85c; /* verde */
+                    }
+                </style>
+
+                <!-- BANNER ROSSO -->
+                <div attrs="{'invisible': ['|', ('show_banner_min_price', '=', False), ('banner_min_price_level', '!=', 'red')]}"
+                     class="min-price-banner min-price-banner-red">
+                    <field name="banner_min_price" readonly="1" nolabel="1"/>
+                </div>
+
+                <!-- BANNER ARANCIONE -->
+                <div attrs="{'invisible': ['|', ('show_banner_min_price', '=', False), ('banner_min_price_level', '!=', 'orange')]}"
+                     class="min-price-banner min-price-banner-orange">
+                    <field name="banner_min_price" readonly="1" nolabel="1"/>
+                </div>
+
+                <!-- BANNER VERDE -->
+                <div attrs="{'invisible': ['|', ('show_banner_min_price', '=', False), ('banner_min_price_level', '!=', 'green')]}"
+                     class="min-price-banner min-price-banner-green">
+                    <field name="banner_min_price" readonly="1" nolabel="1"/>
+                </div>
+
+
+                <!-- vero “banner” -->
+                <!--
+                <field name="banner_min_price"
+                       readonly="1"
+                       nolabel="1"
+                       attrs="{'invisible': [('show_banner_min_price', '=', False)]}"
+                       class="oe_inline text-warning"/>
+                -->
+            </xpath>
+         </data>
+    </field>
+</record>
+
+
+
+
+
+ </data>
+ <data noupdate="1">
+        <record id="ir_config_parameter_amount_untaxed_arrotondato" model="ir.config_parameter">
+            <field name="key">amount_untaxed_arrotondato</field>
+            <field name="value">0.0</field>
+        </record>
+ </data>
 
 </odoo>
