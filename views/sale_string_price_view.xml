@@ -270,6 +270,46 @@
 
 
 
+<record id="product_attribute_view_form_inherit_value_cost" model="ir.ui.view">
+    <field name="name">product.attribute.form.inherit.value.cost</field>
+    <field name="model">product.attribute</field>
+    <field name="inherit_id" ref="product.product_attribute_view_form"/>
+    <field name="arch" type="xml">
+        <!-- ci agganciamo al tree dei value_ids e aggiungiamo la colonna -->
+        <xpath expr="//field[@name='value_ids']/tree/field[@name='name']" position="after">
+            <field name="x_cost_attribute"/>
+        </xpath>
+    </field>
+</record>
+
+
+    <!-- Tree di product.template.attribute.value -->
+
+
+
+
+<template id="sale_variants_inherit_cost" inherit_id="sale.variants">
+    <!-- ci agganciamo al blocco dei radio per i valori attributo -->
+    <xpath expr="//li[contains(@class, 'js_attribute_value')]//div[@class='radio_input_value']"
+           position="inside">
+        <t t-if="ptav.x_cost_attribute">
+            <span class="badge badge-pill badge-info ml-1">
+                Costo:
+                <span t-esc="ptav.x_cost_attribute"
+                      t-options='{
+                          "widget": "monetary",
+                          "display_currency": (pricelist or product).currency_id
+                      }'/>
+            </span>
+        </t>
+    </xpath>
+</template>
+
+
+
+
+
+
 
  </data>
  <data noupdate="1">

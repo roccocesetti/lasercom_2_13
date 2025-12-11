@@ -79,6 +79,14 @@ class SaleOrderLine(models.Model):
     sale_string_subtotal = fields.Char(compute='_compute_sale_string_price', store=True, precompute=True,string='Sub totale riga' )
     sale_string_total = fields.Char(compute='_compute_sale_string_price', store=True, precompute=True,string='Totale riga' )
 
+
+    # opzionale ma molto utile per non raddoppiare costi se rientri nel configuratore
+    x_attribute_cost_total = fields.Float(
+        string="Costo attributi",
+        digits='Product Price',
+        help="Somma dei costi degli attributi selezionati per questa riga."
+    )
+
     @api.depends('product_id', 'purchase_price', 'product_uom_qty', 'price_unit', 'price_subtotal')
     def _compute_sale_string_price(self):
         for line in self:
@@ -103,7 +111,10 @@ class SaleOrderLine(models.Model):
     def product_id_change_sale_string_price(self):
         if not self.order_id.pricelist_id or not self.product_id or not self.product_uom or not self.price_unit:
             return
-        self._compute_sale_string_price
+        # 1) aggiorno il prezzo con il costo degli attributi
+        self.product_attribute_cost_total()
+
+        self._compute_sale_string_price()
         #self.sale_string_price = self._compute_sale_string_price
         #self.sale_string_subtotal = self._compute_sale_string_price
         #self.sale_string_total = self._compute_sale_string_price
@@ -129,6 +140,29 @@ class SaleOrderLine(models.Model):
         self.product_id_change_sale_string_price()
         return res
 
+    def product_attribute_cost_total(self):
+        for line in self:
+            if not line.product_id:
+                line.x_attribute_cost_total = 0.0
+                continue
+
+            # valori attributo che generano varianti: sul product
+            values_variant = line.product_id.product_template_attribute_value_ids
+            # valori attributo "no variant": salvati sulla riga
+            values_no_variant = line.product_no_variant_attribute_value_ids
+
+            all_values = values_variant | values_no_variant
+
+            # tolgo dal price_unit l'eventuale costo vecchio già aggiunto
+            base_price = (line.price_unit or 0.0) #- (line.x_attribute_cost_total or 0.0)
+
+            new_extra = 0.0
+            for ptav in all_values:
+                new_extra += ptav.product_attribute_value_id.x_cost_attribute or 0.0
+
+            # aggiorno prezzo e mi ricordo il costo totale
+            line.price_unit = base_price + new_extra
+            line.x_attribute_cost_total = new_extra
     @api.model
     def create(self, vals):
         vals.update(self._prepare_add_missing_fields(vals))
@@ -734,7 +768,7 @@ class SaleOrder_2(models.Model):
                 order.show_banner_min_price = True
                 order.banner_min_price_level = 'orange'
                 order.banner_min_price = _(
-                    "Attenzione: il prezzo minimo è nella soglia minima di accettazione del preventivo.\n"
+                    "ATTENZIONE PREZZO DI VENDITA FUORI LIMITE MINIMO RICHIEDE APPROVAZIONE DEL DIRETTORE COMMERCIALE.\n"
                     #"Valore ordine (arrotondato): %.2f\n"
                     #"Soglia minima: %.2f - Soglia massima: %.2f"
                 ) #% (
@@ -746,7 +780,12 @@ class SaleOrder_2(models.Model):
             elif (order.amount_untaxed_arrotondato < min_val) :
                 order.show_banner_min_price = True
                 order.banner_min_price_level = 'red'
-                raise UserError(_('Valore troppo vasso'))
+                order.banner_min_price = _(
+                    "ATTENZIONE PREZZO DI VENDITA FUORI LIMITE MINIMO RISCHIO ANNULLAMENTO.\n"
+                    # "Valore ordine (arrotondato): %.2f\n"
+                    # "Soglia minima: %.2f - Soglia massima: %.2f"
+                )
+                #raise UserError(_('Valore troppo vasso'))
             else:
                 order.show_banner_min_price = True
                 order.banner_min_price_level = 'green'
@@ -760,3 +799,23 @@ class SaleOrder_2(models.Model):
                   #                           max_val,
                   #                       )
 
+
+
+
+class ProductAttributeValue(models.Model):
+    _inherit = 'product.attribute.value'
+
+    x_cost_attribute = fields.Float(
+        string='Costo',
+        help='Costo associato a questo valore di attributo'
+    )
+
+class ProductTemplateAttributeValue(models.Model):
+    _inherit = 'product.template.attribute.value'
+
+    x_cost_attribute = fields.Float(
+        string='Costo valore attributo',
+        related='product_attribute_value_id.x_cost_attribute',
+        readonly=True,
+        store=False,  # metti True se vuoi usarlo in domini/ricerche
+    )

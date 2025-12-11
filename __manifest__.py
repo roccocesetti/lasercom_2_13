@@ -19,7 +19,7 @@
     'version': '0.1',
 
     # any module necessary for this one to work correctly
-    'depends': ['base','crm','sale','sale_margin','sale_management','lasercom'],
+    'depends': ['base','crm','sale','sale_margin','sale_management','lasercom','sale_product_configurator'],
 
     # always loaded
     'data': [
