@@ -383,10 +383,10 @@
 
 								</td>
 								</tr>
-								<!-- rocco 1/12/2025
+
 								<tr class="border-black o_total" t-if="doc.sale_promotion &gt;0">
 									<td name="td_amount_by_group_label">
-										<strong>Promozione</strong>
+										<strong></strong>
 									</td>
 									<td name="td_amount_by_group_label">
 										  <span t-field="doc.sale_promotion_note"/>
@@ -396,7 +396,7 @@
 										<span t-raw="doc.get_formatted_sale_promotion()"/>
 									</td>
 								</tr>
-								-->
+
 								<tr class="border-black o_total" t-if="doc.importo_discount &gt;0">
 									<td name="td_amount_by_group_label">
 										<strong>Sconto</strong>
@@ -546,8 +546,12 @@
 				<div class="oe_structure"/>
 				<div class="row m-0 " id="informations">
 					<h2 class="mt16">
-						<t t-if="not (env.context.get('proforma', False) or is_pro_forma)">
-							<span>Contratto # </span>
+
+						<t t-if="nome_documento">
+						  <span t-esc="nome_documento"/>
+						</t>
+						<t t-else="">
+						  <span>DEBUG: nome_documento NON presente</span>
 						</t>
 						<span t-field="doc.numero_contratto"/>
 					</h2>
@@ -886,9 +890,11 @@
 	<template id="report_saleorder_laser_contratto">
 		<t t-call="web.html_container">
 			<t t-foreach="docs" t-as="doc">
+				<t t-set="nome_documento" t-value="'Contratto #'" />
 				<t t-call="lasercom_2_13.report_saleorder_document_laser_contratto"
 					t-lang="doc.partner_id.lang" >
 					<t t-set="company" t-value="doc.company_id" />
+
 					</t>
 
 
@@ -925,6 +931,21 @@
 		</t>
 	</template>
 
+
+	<template id="report_saleorder_laser_preventivo_contratto">
+		<t t-call="web.html_container">
+			<t t-foreach="docs" t-as="doc">
+				<t t-set="nome_documento" t-value="'Preventivo #'" />
+				<t t-call="lasercom_2_13.report_saleorder_document_laser_contratto"
+					t-lang="doc.partner_id.lang" >
+					<t t-set="company" t-value="doc.company_id" />
+
+					</t>
+
+
+			</t>
+		</t>
+	</template>
 
 
 </odoo>

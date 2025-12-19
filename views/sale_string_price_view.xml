@@ -237,19 +237,19 @@
 
                 <!-- BANNER ROSSO -->
                 <div attrs="{'invisible': ['|', ('show_banner_min_price', '=', False), ('banner_min_price_level', '!=', 'red')]}"
-                     class="min-price-banner min-price-banner-red">
+                     class="min-price-banner min-price-banner-red" style="font-size:20px; font-weight:600;">
                     <field name="banner_min_price" readonly="1" nolabel="1"/>
                 </div>
 
                 <!-- BANNER ARANCIONE -->
                 <div attrs="{'invisible': ['|', ('show_banner_min_price', '=', False), ('banner_min_price_level', '!=', 'orange')]}"
-                     class="min-price-banner min-price-banner-orange">
+                     class="min-price-banner min-price-banner-orange" style="font-size:20px; font-weight:600;">
                     <field name="banner_min_price" readonly="1" nolabel="1"/>
                 </div>
 
                 <!-- BANNER VERDE -->
                 <div attrs="{'invisible': ['|', ('show_banner_min_price', '=', False), ('banner_min_price_level', '!=', 'green')]}"
-                     class="min-price-banner min-price-banner-green">
+                     class="min-price-banner min-price-banner-green" style="font-size:20px; font-weight:600;">
                     <field name="banner_min_price" readonly="1" nolabel="1"/>
                 </div>
 
