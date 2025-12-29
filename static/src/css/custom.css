@@ -37,6 +37,9 @@
 .medium-font {
     font-size: 14px; /* Imposta la dimensione del font che preferisci */
 }
+.hight-font {
+    font-size: 18px; /* Imposta la dimensione del font che preferisci */
+}
 .tight-rows {
     padding-top: 2px; 
     padding-bottom: 2px;
@@ -80,3 +83,17 @@
 .bold-text {
         font-weight: bold;
     }
+/* Header ripetuto su ogni pagina (wkhtmltopdf) */
+.laser_doc_header{
+  position: fixed;
+  left: 0;
+  right: 0;
+
+  /* Regola questo valore in base all’altezza dell’header standard (logo/azienda) di external_layout */
+  top: 35mm;
+}
+
+/* Spazio nel corpo per non finire sotto l’header */
+.laser_doc_body{
+  margin-top: 70mm; /* da tarare in base a quanto è alto laser_doc_header */
+}
