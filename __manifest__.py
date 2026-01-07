@@ -23,7 +23,7 @@
 
     # always loaded
     'data': [
-        #'security/ir.model.access.csv',
+        "security/ir.model.access.csv",
         'data/ir_sequence_data.xml',
         'data/mail_data.xml',
 
@@ -32,6 +32,8 @@
        'views/sale_string_price_view.xml',
         'report/sale_report_templates.xml',
         'report/sale_report.xml',
+        'views/sale_order_tab_lav_view.xml',
+        'wizard/wizard_import_load_lines_views.xml'
 
         
     ],

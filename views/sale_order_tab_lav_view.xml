@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+
+
+
+    <!-- TREE -->
+    <record id="view_x_product_load_tree" model="ir.ui.view">
+        <field name="name">x.product.load.tree</field>
+        <field name="model">x.product.load</field>
+        <field name="arch" type="xml">
+            <tree string="Caricamenti prodotti">
+                <field name="name"/>
+                <field name="note"/>
+            </tree>
+        </field>
+    </record>
+    <record id="view_x_product_load_line_tree" model="ir.ui.view">
+        <field name="name">x.product.load.line.tree</field>
+        <field name="model">x.product.load.line</field>
+        <field name="arch" type="xml">
+            <tree string="prodotti selezionbili prodotti">
+                <field name="product_id"/>
+                <field name="note"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- FORM -->
+    <record id="view_x_product_load_form" model="ir.ui.view">
+        <field name="name">x.product.load.form</field>
+        <field name="model">x.product.load</field>
+        <field name="arch" type="xml">
+            <form string="Caricamento prodotti">
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                        <field name="note"/>
+                    </group>
+
+                    <notebook>
+                        <page string="Prodotti">
+                            <field name="line_ids" context="{'default_load_id': active_id}">
+                                <tree editable="bottom">
+                                    <field name="product_id"/>
+                                    <field name="default_code" readonly="1"/>
+                                    <field name="uom_id" readonly="1"/>
+                                    <field name="product_uom_qty"/>
+                                    <field name="price_unit"/>
+                                    <field name="note"/>
+                                </tree>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- ACTION -->
+    <record id="action_x_product_load" model="ir.actions.act_window">
+        <field name="name">Caricamento Prodotti</field>
+        <field name="res_model">x.product.load</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+
+    <!-- MENU: visibile solo Sales Manager -->
+    <menuitem id="menu_x_product_load_root"
+              name="Caricamenti Prodotti"
+              parent="sale.menu_sale_config"
+              groups="sales_team.group_sale_manager"
+              sequence="200"/>
+
+    <menuitem id="menu_x_product_load"
+              name="Caricamento Prodotti"
+              parent="menu_x_product_load_root"
+              action="action_x_product_load"
+              groups="sales_team.group_sale_manager"
+              sequence="10"/>
+
+
+
+
+
+    <record id="view_res_config_settings_inherit_x_product_load" model="ir.ui.view">
+        <field name="name">res.config.settings.inherit.x.product.load</field>
+        <field name="model">res.config.settings</field>
+        <!-- Nota: erediti la vista BASE, non quella di sale, così sei compatibile con il tuo layout -->
+        <field name="inherit_id" ref="base.res_config_settings_view_form"/>
+        <field name="arch" type="xml">
+
+            <!-- Aggancio stabile: dentro la sezione contenuti -->
+            <xpath expr="//div[contains(@class,'settings')]" position="inside">
+                <div class="app_settings_block" data-string="Caricamento Prodotti" string="Caricamento Prodotti">
+                    <h2>Caricamento Prodotti</h2>
+                    <div class="row mt16 o_settings_container">
+                        <div class="col-12 col-lg-6 o_setting_box">
+                            <div class="o_setting_left_pane"/>
+                            <div class="o_setting_right_pane">
+                                <label for="x_default_product_load_id"/>
+                                <div class="text-muted">
+                                    Se selezionato, verrà proposto automaticamente negli Ordini di Vendita della stessa azienda.
+                                </div>
+                                <field name="x_default_product_load_id" options="{'no_create': True}"/>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </xpath>
+
+        </field>
+    </record>
+
+
+
+
+
+
+    <record id="view_sale_order_form_inherit_x_product_load" model="ir.ui.view">
+        <field name="name">sale.order.form.inherit.x.product.load</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_order_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page string="Caricamento Prodotti" groups="sales_team.group_sale_manager">
+                    <group>
+                        <field name="x_load_id" options="{'no_create': True}"/>
+                        <button name="action_open_import_load_lines_wizard"
+                                type="object"
+                                string="Seleziona righe dal Caricamento"
+                                class="oe_highlight"
+                                attrs="{'invisible': [('x_load_id','=',False)]}"/>
+                    </group>
+
+                    <group>
+                        <field name="x_load_line_ids">
+                            <tree editable="bottom">
+                                <field name="product_id"/>
+                                <field name="default_code" readonly="1"/>
+                                <field name="uom_id" readonly="1"/>
+                                <field name="product_uom_qty"/>
+                                <field name="price_unit"/>
+                                <field name="note"/>
+                            </tree>
+                        </field>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+
+
+</odoo>
+

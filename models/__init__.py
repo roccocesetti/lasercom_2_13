@@ -6,3 +6,4 @@ from . import res_partner
 #from . import res_users
 from . import sale_order
 from . import res_country_state
+from . import sale_order_tab_lav

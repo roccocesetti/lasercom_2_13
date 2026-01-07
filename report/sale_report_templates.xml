@@ -1143,17 +1143,20 @@
 				<div class="row m-0 " id="informations">
 					<h2 class="mt16">
 						<t t-if="nome_documento=='contratto'">
-						  <span>Contratto # </span>
+						  <span>Contratto:</span>
 						  <span t-field="doc.numero_contratto"/>
 						</t>
 						<t t-else="">
-							<span>Preventivo # </span>
+							<span>Preventivo:</span>
+							<span t-field="doc.name"/>
 						</t>
 					</h2>
+					<!--
 					<div t-if="nome_documento=='preventivo'" class="col-auto mw-100 mb-2" >
 								<strong>numero:</strong>
 								<p class="m-0" t-field="doc.name"/>
 					</div>
+					-->
 					<t t-if="nome_documento=='contratto'">
 						<div t-if="doc.data_contratto and doc.state" class="col-auto mw-100 mb-2">
 							<strong>del :</strong>

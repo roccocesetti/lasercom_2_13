@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_import_load_lines_wizard_form" model="ir.ui.view">
+        <field name="name">x.sale.order.import.load.lines.wizard.form</field>
+        <field name="model">x.sale.order.import.load.lines.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Importa righe da Caricamento">
+                <group>
+                    <field name="order_id" readonly="1"/>
+                    <field name="load_id" options="{'no_create': True}"/>
+                </group>
+
+                <group>
+                    <field name="load_line_ids" widget="many2many" options="{'no_create': True}">
+                        <tree string="Righe" selectable="1">
+                            <field name="product_id"/>
+                            <field name="default_code"/>
+                            <field name="product_uom_qty"/>
+                            <field name="price_unit"/>
+                            <field name="note"/>
+                        </tree>
+                    </field>
+                </group>
+
+                <footer>
+                    <button string="Importa" type="object" name="action_confirm_import" class="btn-primary"/>
+                    <button string="Annulla" special="cancel" class="btn-secondary"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>
+

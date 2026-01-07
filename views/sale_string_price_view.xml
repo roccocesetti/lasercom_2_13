@@ -270,6 +270,7 @@
 
 
 
+
 <record id="product_attribute_view_form_inherit_value_cost" model="ir.ui.view">
     <field name="name">product.attribute.form.inherit.value.cost</field>
     <field name="model">product.attribute</field>
