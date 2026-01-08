@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+
+<odoo>
+    <!-- Categoria (apparirà nella scheda Utente, sezione Access Rights) -->
+    <record id="module_category_lav" model="ir.module.category">
+        <field name="name">LAV</field>
+        <field name="sequence">50</field>
+    </record>
+
+    <!-- Gruppo permessi -->
+    <record id="group_admin_lav" model="res.groups">
+        <field name="name">Admin LAV</field>
+        <field name="category_id" ref="module_category_lav"/>
+    </record>
+</odoo>
+
+
