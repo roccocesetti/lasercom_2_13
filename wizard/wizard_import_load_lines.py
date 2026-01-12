@@ -42,6 +42,9 @@ class ImportLoadLinesWizard(models.TransientModel):
                     "order_id": order.id,
                     "product_id": ll.product_id.id,
                     "product_uom_qty": ll.product_uom_qty,
+                    "product_uom_height": ll.product_uom_height,
+                    "product_uom_length": ll.product_uom_qty,
+                    "price_extra": ll.price_extra,
                     "price_unit": ll.price_unit,
                     "note": ll.note,
                 })

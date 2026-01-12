@@ -38,8 +38,11 @@ class ProductLoadLine(models.Model):
 
     load_id = fields.Many2one("x.product.load", string="Caricamento", required=True, ondelete="cascade")
     product_id = fields.Many2one("product.product", string="Prodotto", required=True)
+    product_uom_height = fields.Float(string="Altezza", default=0.0)
+    product_uom_length = fields.Float(string="Lunghezza", default=0.0)
     product_uom_qty = fields.Float(string="Quantità", default=1.0)
     price_unit = fields.Float(string="Prezzo Unitario")
+    price_extra = fields.Float(string="Prezzo Extra")
 
     # Nota riga (se serve anche per ogni prodotto)
     note = fields.Char(string="Nota riga")
@@ -48,6 +51,12 @@ class ProductLoadLine(models.Model):
     default_code = fields.Char(related="product_id.default_code", string="Rif. Interno", readonly=True, store=False)
     uom_id = fields.Many2one(related="product_id.uom_id", string="U.M.", readonly=True, store=False)
 
+    @api.onchange('uom_id', 'product_uom_height', 'product_uom_length')
+    def product_uom_change(self):
+        if not self.uom_id or not self.product_id:
+            self.product_uom_qty = 0.0
+            return
+        self.product_uom_qty=self.product_uom_height*self.product_uom_length
 
 class ResCompany(models.Model):
     _inherit = "res.company"
@@ -73,6 +82,19 @@ class ResConfigSettings(models.TransientModel):
 class SaleOrder(models.Model):
     _inherit = "sale.order"
 
+    @api.depends('x_load_line_ids')
+    def _compute_amount_lav(self):
+        """
+        Compute the amounts of the SO line.
+        """
+        for order in self:
+            price_subtotal_lav=0.00
+            for line in order.x_load_line_ids:
+                        price_subtotal_lav+=line.price_subtotal
+            order.update({
+                            'price_subtotal_lav': price_subtotal_lav ,
+                        })
+
     x_load_id = fields.Many2one(
         "x.product.load",
         string="Caricamento Prodotti",
@@ -86,6 +108,7 @@ class SaleOrder(models.Model):
         copy=True,
     )
 
+    price_subtotal_lav = fields.Monetary(compute='_compute_amount_lav', string='Subtotal', readonly=True, store=True)
     @api.onchange("company_id")
     def _onchange_company_id_set_default_load(self):
         for order in self:
@@ -113,11 +136,47 @@ class SaleOrderXLoadLine(models.Model):
     _description = "Righe Caricamento su Ordine di Vendita"
     _order = "id asc"
 
+    @api.depends('product_uom_qty', 'price_unit', 'price_extra')
+    def _compute_amount(self):
+        """
+        Compute the amounts of the SO line.
+        """
+        for line in self:
+            if 'price_subtotal' in line._fields:
+                 line.update({
+                    'price_subtotal': line.price_unit * line.product_uom_qty + line.price_extra,
+                })
+
+    @api.depends('product_id', 'order_id.state', 'qty_invoiced', 'qty_delivered')
+    def _compute_product_updatable(self):
+        for line in self:
+            if line.state in ['done', 'cancel'] or (line.state == 'sale' and (line.qty_invoiced > 0 or line.qty_delivered > 0)):
+                line.product_updatable = False
+            else:
+                line.product_updatable = True
+
+
     order_id = fields.Many2one("sale.order", required=True, ondelete="cascade")
+    currency_id = fields.Many2one(
+        'res.currency',
+        related='order_id.currency_id',
+        store=True,
+        readonly=True
+    )
     product_id = fields.Many2one("product.product", string="Prodotto", required=True)
+    product_uom_height = fields.Float(string="Altezza", default=0.0)
+    product_uom_length = fields.Float(string="lunghezza", default=0.0)
     product_uom_qty = fields.Float(string="Quantità", default=1.0)
     price_unit = fields.Float(string="Prezzo Unitario")
+    price_extra = fields.Float(string="Prezzo Extra")
     note = fields.Char(string="Nota")
 
     default_code = fields.Char(related="product_id.default_code", string="Rif. Interno", readonly=True, store=False)
     uom_id = fields.Many2one(related="product_id.uom_id", string="U.M.", readonly=True, store=False)
+    price_subtotal = fields.Monetary(compute='_compute_amount', string='Subtotal', readonly=True, store=True)
+    @api.onchange('uom_id', 'product_uom_height', 'product_uom_length')
+    def product_uom_change(self):
+        if not self.uom_id or not self.product_id:
+            self.product_uom_qty = 0.0
+            return
+        self.product_uom_qty=self.product_uom_height*self.product_uom_length

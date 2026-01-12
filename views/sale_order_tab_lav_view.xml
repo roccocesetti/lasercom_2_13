@@ -22,6 +22,13 @@
             <tree string="prodotti selezionbili prodotti">
                 <field name="product_id"/>
                 <field name="note"/>
+                <field name="uom_id" readonly="1"/>
+                <field name="product_uom_height" optional="show" />
+                <field name="product_uom_length" optional="show" />
+                <field name="product_uom_qty"/>
+                <field name="price_unit"/>
+                <field name="price_extra" optional="show" />
+
             </tree>
         </field>
     </record>
@@ -45,9 +52,21 @@
                                     <field name="product_id"/>
                                     <field name="default_code" readonly="1"/>
                                     <field name="uom_id" readonly="1"/>
+                                    <field name="product_uom_height" optional="show" />
+                                    <field name="product_uom_length" optional="show" />
                                     <field name="product_uom_qty"/>
                                     <field name="price_unit"/>
+                                    <field name="price_extra" optional="show" />
+
                                     <field name="note"/>
+
+
+
+
+
+
+
+
                                 </tree>
                             </field>
                         </page>
@@ -139,6 +158,8 @@
                 <page string="Caricamento Prodotti" groups="sales_team.group_sale_manager,lasercom_2_13.group_admin_lav">
                     <group>
                         <field name="x_load_id" options="{'no_create': True}"/>
+                        <field name="price_subtotal_lav"  widget="monetary"/>
+
                         <button name="action_open_import_load_lines_wizard"
                                 type="object"
                                 string="Seleziona righe dal Caricamento"
@@ -149,12 +170,16 @@
                     <group>
                         <field name="x_load_line_ids">
                             <tree editable="bottom">
-                                <field name="product_id"/>
-                                <field name="default_code" readonly="1"/>
-                                <field name="uom_id" readonly="1"/>
-                                <field name="product_uom_qty"/>
-                                <field name="price_unit"/>
-                                <field name="note"/>
+                                <field name="product_id" />
+                                <field name="default_code" readonly="1" optional="hide" />
+                                <field name="uom_id" readonly="1" optional="show" />
+                                <field name="product_uom_height" optional="show" />
+                                <field name="product_uom_length" optional="show" />
+                                <field name="product_uom_qty" optional="show" />
+                                <field name="price_unit" optional="show" />
+                                <field name="price_extra" optional="show" />
+                                <field name="price_subtotal" optional="show" />
+                                <field name="note" optional="hide"/>
                             </tree>
                         </field>
                     </group>
