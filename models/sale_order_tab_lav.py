@@ -43,6 +43,7 @@ class ProductLoadLine(models.Model):
     product_uom_qty = fields.Float(string="Quantità", default=1.0)
     price_unit = fields.Float(string="Prezzo Unitario")
     price_extra = fields.Float(string="Prezzo Extra")
+    supplier_id = fields.Many2one("res.partner", string="Fornitore", required=False)
 
     # Nota riga (se serve anche per ogni prodotto)
     note = fields.Char(string="Nota riga")
@@ -170,7 +171,7 @@ class SaleOrderXLoadLine(models.Model):
     price_unit = fields.Float(string="Prezzo Unitario")
     price_extra = fields.Float(string="Prezzo Extra")
     note = fields.Char(string="Nota")
-
+    supplier_id = fields.Many2one("res.partner", string="Fornitore", required=False)
     default_code = fields.Char(related="product_id.default_code", string="Rif. Interno", readonly=True, store=False)
     uom_id = fields.Many2one(related="product_id.uom_id", string="U.M.", readonly=True, store=False)
     price_subtotal = fields.Monetary(compute='_compute_amount', string='Subtotal', readonly=True, store=True)

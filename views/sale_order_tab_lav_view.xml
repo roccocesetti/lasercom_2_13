@@ -57,7 +57,7 @@
                                     <field name="product_uom_qty"/>
                                     <field name="price_unit"/>
                                     <field name="price_extra" optional="show" />
-
+                                    <field name="supplier_id" domain="[('commercial_partner_id.property_supplier_payment_term_id','!=',False)]" />
                                     <field name="note"/>
 
 
@@ -179,6 +179,7 @@
                                 <field name="price_unit" optional="show" />
                                 <field name="price_extra" optional="show" />
                                 <field name="price_subtotal" optional="show" />
+                                <field name="supplier_id" domain="[('commercial_partner_id.property_supplier_payment_term_id','!=',False)]" optional="show" />
                                 <field name="note" optional="hide"/>
                             </tree>
                         </field>
