@@ -21,7 +21,7 @@
 		/>
 		<report
 			id="action_report_saleorder_laser_preventivo_contratto"
-			string="Preventivo Lasercom 2"
+			string="Preventivo/Odine"
 			model="sale.order"
 			report_type="qweb-pdf"
 			file="lasercom_2_13.report_saleorder_laser_preventivo_contratto"

@@ -1462,7 +1462,8 @@
 									</div>
 
 				</div>
-				<div class="row m-0 avoid-page-break  custom-border" id="firma_nota_piede">
+				<t t-if="nome_documento=='contratto'">
+					<div class="row m-0 avoid-page-break  custom-border" id="firma_nota_piede">
 									<div class="col-3 mb-2 ">
 										<p><strong>Firma Agente:&amp;nbsp;</strong></p>
 
@@ -1484,7 +1485,7 @@
 									</div>
 
 				</div>
-
+				</t>
 			</div>
 
 		</t>
