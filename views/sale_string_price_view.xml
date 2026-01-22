@@ -38,7 +38,7 @@
                            class="text-danger"
                            attrs="{'invisible': [('sale_string_margin_has_dash','=',False)]}" groups="base.group_user"/>
 
-                   
+
 				   <field name="attachment_url" invisible="1" readonly="1" widget="url" string="Download retro Contratto" />
                     <field name="attachment_link" readonly="1" widget="html"/>
                    <field name="stampa_prezzo"  groups="base.group_user" />
