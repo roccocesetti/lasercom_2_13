@@ -24,7 +24,8 @@ def decode_protocollo(valore="0"):
                    '9':'YJY',
                    '0':'TTT',
                    ',':'V',
-                   '.':'P'
+                   '.':'P',
+                   '-':'NEG-'
     }
     myvalore="A"
     valchar2=""
@@ -42,6 +43,52 @@ def decode_protocollo(valore="0"):
     myvalore=myvalore.replace('.','VI').replace('.','PU')
         
     return myvalore
+
+def decode_protocollo(valore="0"):
+    nprot = {
+        '1': 'AAA',
+        '2': 'BCD',
+        '3': 'EFG',
+        '4': 'HIL',
+        '5': 'MNO',
+        '6': 'PQR',
+        '7': 'STU',
+        '8': 'VWZ',
+        '9': 'YJY',
+        '0': 'TTT',
+        ',': 'V',
+        '.': 'P',
+        '-': 'NEG-',
+    }
+
+    s = str(valore)
+
+    out = ["A"]
+    block = []
+    last_char = None
+
+    for ch in s:
+        last_char = ch
+        block.append(ch)
+
+        # ogni 4 caratteri: emetti (codice dell'ultimo char) + blocco
+        if len(block) == 4:
+            out.append(nprot.get(ch, ""))          # se vuoi: alza errore invece di ""
+            out.append("".join(block))
+            block.clear()
+
+    # blocco finale incompleto (1..3 char)
+    if block and last_char is not None:
+        out.append(nprot.get(last_char, ""))
+        out.append("".join(block))
+
+    result = "".join(out)
+
+    # Correzione del refuso: prima avevi replace('.') due volte.
+    # Se l'intento era normalizzare i separatori:
+    result = result.replace(",", "VI").replace(".", "PU")
+
+    return result
 
 class productTemplate(models.Model):
     _inherit = "product.template"
@@ -265,7 +312,16 @@ class SaleOrder(models.Model):
     stampa_prezzo = fields.Boolean(string='stampa con', default=False)
     citta_cliente = fields.Char(related='partner_id.city', string='Città', readonly=True)
 
+    sale_string_margin_has_dash = fields.Boolean(
+        string="Margin contiene '-'",
+        compute="_compute_sale_string_margin_has_dash",
+        store=False,
+    )
 
+    @api.depends('sale_string_margin')
+    def _compute_sale_string_margin_has_dash(self):
+        for order in self:
+            order.sale_string_margin_has_dash = bool(order.sale_string_margin and '-' in order.sale_string_margin)
     #def _compute_attachment_url(self):
         #self._recompute_attachment_url()
         #for record in self:
@@ -508,10 +564,10 @@ class SaleOrder(models.Model):
             order.total_purchase_price=order.total_purchase_price+order.sale_acq_usage
             #order.sale_string_margin=order.amount_untaxed-order.total_purchase_price
 
-        sale_string_price=   "{:.2f}".format(order.total_purchase_price) if order.total_purchase_price>0 else '999999999'  
-        sale_string_margin=   "{:.2f}".format(order.amount_untaxed_arrotondato-order.total_purchase_price) if order.amount_untaxed_arrotondato-order.total_purchase_price>0 else '999999999'
+        sale_string_price=   "{:.2f}".format(order.total_purchase_price) #if order.total_purchase_price>0 else  "-" + "{:.2f}".format(order.total_purchase_price)
+        sale_string_margin=   "{:.2f}".format(order.amount_untaxed_arrotondato-order.total_purchase_price) #if order.amount_untaxed_arrotondato-order.total_purchase_price>0 else "-" + "{:.2f}".format(order.amount_untaxed_arrotondato-order.total_purchase_price)
         order.sale_string_price=decode_protocollo(sale_string_price)
-        order.sale_string_margin=decode_protocollo(sale_string_margin)                
+        order.sale_string_margin=decode_protocollo(sale_string_margin)
         order.update({
             'total_purchase_price': order.total_purchase_price,
             'sale_string_margin': order.sale_string_margin,
@@ -537,6 +593,7 @@ class SaleOrder(models.Model):
         return self.env['ir.qweb.field.monetary'].value_to_html(
             -1 * self.importo_discount, {'display_currency': self.currency_id}
         )
+
 
 
 import base64
@@ -664,6 +721,18 @@ class SaleOrder_2(models.Model):
         compute='_compute_banner_min_price',
         store=False,
     )
+
+    force_show_min_price_banner = fields.Boolean(
+        string="Forza visualizzazione banner",
+        default=False,
+        copy=False,
+    )
+
+    def action_toggle_min_price_banner(self):
+        self.ensure_one()
+        self.force_show_min_price_banner = not self.force_show_min_price_banner
+        return True
+
     def action_send_contract_email(self):
         """Genera il PDF del contratto, lo allega e apre il composer email"""
 
@@ -766,12 +835,13 @@ class SaleOrder_2(models.Model):
 
             if (
                 order.amount_untaxed_arrotondato
-                and min_val <= order.amount_untaxed_arrotondato <= max_val
+                #and min_val <= order.amount_untaxed_arrotondato <= max_val
+                and  order.total_purchase_price <= order.amount_untaxed_arrotondato <= max_val-1
             ):
                 order.show_banner_min_price = True
                 order.banner_min_price_level = 'orange'
                 order.banner_min_price = _(
-                    "ATTENZIONE PREZZO DI VENDITA FUORI LIMITE MINIMO RICHIEDE APPROVAZIONE DEL DIRETTORE COMMERCIALE.\n"
+                    "ATTENZIONE PREZZO DI VENDITA FUORI LIMITE MINIMO RISCHIO ANNULLAMENTO.\n"
                     #"Valore ordine (arrotondato): %.2f\n"
                     #"Soglia minima: %.2f - Soglia massima: %.2f"
                 ) #% (
@@ -780,11 +850,12 @@ class SaleOrder_2(models.Model):
                   #                           max_val,
                   #                       )
 
-            elif (order.amount_untaxed_arrotondato < min_val) :
+            elif (order.amount_untaxed_arrotondato < order.total_purchase_price) : #(order.amount_untaxed_arrotondato < min_val) :
+
                 order.show_banner_min_price = True
                 order.banner_min_price_level = 'red'
                 order.banner_min_price = _(
-                    "ATTENZIONE PREZZO DI VENDITA FUORI LIMITE MINIMO RISCHIO ANNULLAMENTO.\n"
+                    "ATTENZIONE PREVENTIVO NON VALIDO.\n"
                     # "Valore ordine (arrotondato): %.2f\n"
                     # "Soglia minima: %.2f - Soglia massima: %.2f"
                 )
@@ -793,7 +864,8 @@ class SaleOrder_2(models.Model):
                 order.show_banner_min_price = True
                 order.banner_min_price_level = 'green'
                 order.banner_min_price = _(
-                    "Valore preventivo in linea.\n"
+                    #"Valore preventivo in linea.\n"
+                    "Attenzione prezzo di vendita fuori dal limite minimo richiede approvazione dal direttore commerciale.\n"
                     #"Valore ordine (arrotondato): %.2f\n"
                     #"Soglia minima: %.2f - Soglia massima: %.2f"
                 ) #% (

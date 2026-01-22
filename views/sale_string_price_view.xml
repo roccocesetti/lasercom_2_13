@@ -27,7 +27,18 @@
                    <field name="sale_caparra"  groups="base.group_user" />
 
                    <field name="sale_string_price"  groups="base.group_user" />
-                   <field name="sale_string_margin"  groups="base.group_user" />
+                   <field name="sale_string_margin_has_dash" invisible="1"/>
+
+                    <!-- versione normale -->
+                    <field name="sale_string_margin"
+                           attrs="{'invisible': [('sale_string_margin_has_dash','=',True)]}" groups="base.group_user"/>
+
+                    <!-- versione rossa -->
+                    <field name="sale_string_margin"
+                           class="text-danger"
+                           attrs="{'invisible': [('sale_string_margin_has_dash','=',False)]}" groups="base.group_user"/>
+
+                   
 				   <field name="attachment_url" invisible="1" readonly="1" widget="url" string="Download retro Contratto" />
                     <field name="attachment_link" readonly="1" widget="html"/>
                    <field name="stampa_prezzo"  groups="base.group_user" />
@@ -212,6 +223,21 @@
     <field name="inherit_id" ref="sale.view_order_form"/>
     <field name="arch" type="xml">
         <data>
+            <xpath expr="//form/header" position="inside">
+                <field name="force_show_min_price_banner" invisible="1"/>
+
+                <button name="action_toggle_min_price_banner"
+                        type="object"
+                        string="Visualizza banner"
+                        class="btn-primary"
+                        attrs="{'invisible': [('force_show_min_price_banner','=',True)]}"/>
+
+                <button name="action_toggle_min_price_banner"
+                        type="object"
+                        string="Nascondi banner"
+                        class="btn-secondary"
+                        attrs="{'invisible': [('force_show_min_price_banner','=',False)]}"/>
+            </xpath>
             <xpath expr="//sheet" position="inside">
                 <field name="show_banner_min_price" invisible="1"/>
                 <field name="banner_min_price_level" invisible="1"/>
@@ -233,35 +259,36 @@
                     .min-price-banner-green {
                         background-color: #5cb85c; /* verde */
                     }
+                     .min-price-banner-default { background-color: #6c757d; } /* grigio */
                 </style>
+  <!-- ROSSO -->
+    <div attrs="{'invisible': ['|', ('force_show_min_price_banner','=',False), ('banner_min_price_level','!=','red')]}"
+         class="min-price-banner min-price-banner-red"
+         style="font-size:20px; font-weight:600;">
+        <field name="banner_min_price" readonly="1" nolabel="1"/>
+    </div>
 
-                <!-- BANNER ROSSO -->
-                <div attrs="{'invisible': ['|', ('show_banner_min_price', '=', False), ('banner_min_price_level', '!=', 'red')]}"
-                     class="min-price-banner min-price-banner-red" style="font-size:20px; font-weight:600;">
-                    <field name="banner_min_price" readonly="1" nolabel="1"/>
-                </div>
+    <!-- ARANCIONE -->
+    <div attrs="{'invisible': ['|', ('force_show_min_price_banner','=',False), ('banner_min_price_level','!=','orange')]}"
+         class="min-price-banner min-price-banner-orange"
+         style="font-size:20px; font-weight:600;">
+        <field name="banner_min_price" readonly="1" nolabel="1"/>
+    </div>
 
-                <!-- BANNER ARANCIONE -->
-                <div attrs="{'invisible': ['|', ('show_banner_min_price', '=', False), ('banner_min_price_level', '!=', 'orange')]}"
-                     class="min-price-banner min-price-banner-orange" style="font-size:20px; font-weight:600;">
-                    <field name="banner_min_price" readonly="1" nolabel="1"/>
-                </div>
+    <!-- VERDE -->
+    <div attrs="{'invisible': ['|', ('force_show_min_price_banner','=',False), ('banner_min_price_level','!=','green')]}"
+         class="min-price-banner min-price-banner-green"
+         style="font-size:20px; font-weight:600;">
+        <field name="banner_min_price" readonly="1" nolabel="1"/>
+    </div>
 
-                <!-- BANNER VERDE -->
-                <div attrs="{'invisible': ['|', ('show_banner_min_price', '=', False), ('banner_min_price_level', '!=', 'green')]}"
-                     class="min-price-banner min-price-banner-green" style="font-size:20px; font-weight:600;">
-                    <field name="banner_min_price" readonly="1" nolabel="1"/>
-                </div>
-
-
-                <!-- vero “banner” -->
-                <!--
-                <field name="banner_min_price"
-                       readonly="1"
-                       nolabel="1"
-                       attrs="{'invisible': [('show_banner_min_price', '=', False)]}"
-                       class="oe_inline text-warning"/>
-                -->
+    <!-- DEFAULT (se livello vuoto o diverso) -->
+    <div attrs="{'invisible': ['|', ('force_show_min_price_banner','=',False),
+                               ('banner_min_price_level','in',('red','orange','green'))]}"
+         class="min-price-banner min-price-banner-default"
+         style="font-size:20px; font-weight:600;">
+        <field name="banner_min_price" readonly="1" nolabel="1"/>
+    </div>
             </xpath>
          </data>
     </field>

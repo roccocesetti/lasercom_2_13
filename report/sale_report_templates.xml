@@ -903,17 +903,7 @@
 										<span t-raw="doc.get_formatted_importo_discount()"/>
 									</td>
 								</tr>
-  								<tr class="border-black o_total" t-if="doc.sale_acq_usage &gt;0">
-									<td name="td_amount_by_group_label" class="text-righ o_price_totalt">
-										<strong>Acquisto usato</strong>
-									</td>
-									<td name="td_amount_by_group_label" class="text-righ o_price_totalt">
-										  <span t-field="doc.sale_modello_usato"/>
-									</td>
-									<td name="td_sale_acq_usage" class="text-right o_price_total">
-										<span t-field="doc.sale_acq_usage"/>
-									</td>
-								</tr>
+
 								<tr class="border-black o_total">
 									<td name="td_amount_total_label">
 										<strong>Totale</strong>
@@ -926,7 +916,17 @@
 										<span t-field="doc.amount_untaxed"/>
 									</td>
 								</tr>
-
+  								<tr class="border-black o_total" t-if="doc.sale_acq_usage &gt;0">
+									<td name="td_amount_by_group_label" class="text-righ o_price_totalt">
+										<strong>Acquisto usato</strong>
+									</td>
+									<td name="td_amount_by_group_label" class="text-righ o_price_totalt">
+										  <span t-field="doc.sale_modello_usato"/>
+									</td>
+									<td name="td_sale_acq_usage" class="text-right o_price_total">
+										<span t-field="doc.sale_acq_usage"/>
+									</td>
+								</tr>
 
 							<!-- -->
 
