@@ -260,7 +260,7 @@
                         background-color: #5cb85c; /* verde */
                     }
                     .min-price-banner-blue {
-                        background-color: ##4A90E2; /* blu */
+                        background-color: ##4A90E2; /*  blu */
                     }
 
                      .min-price-banner-default { background-color: #6c757d; } /* grigio */

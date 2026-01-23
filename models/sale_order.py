@@ -870,11 +870,7 @@ class SaleOrder_2(models.Model):
 
                     #"Valore ordine (arrotondato): %.2f\n"
                     #"Soglia minima: %.2f - Soglia massima: %.2f"
-                ) #% (
-                  #                           order.amount_untaxed_arrotondato,
-                  #                           min_val,
-                  #                           max_val,
-                  #                       )
+                ) 
 
 
 
