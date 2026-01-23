@@ -861,12 +861,13 @@ class SaleOrder_2(models.Model):
                     # "Soglia minima: %.2f - Soglia massima: %.2f"
                 )
                 #raise UserError(_('Valore troppo vasso'))
+
             else:
                 order.show_banner_min_price = True
                 order.banner_min_price_level = 'blue'
                 order.banner_min_price = _(
-                    #"Valore preventivo in linea.\n"
                     "Attenzione prezzo di vendita fuori dal limite minimo richiede approvazione dal direttore commerciale.\n"
+
                     #"Valore ordine (arrotondato): %.2f\n"
                     #"Soglia minima: %.2f - Soglia massima: %.2f"
                 ) #% (
