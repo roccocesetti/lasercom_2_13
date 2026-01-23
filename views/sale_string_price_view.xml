@@ -259,6 +259,10 @@
                     .min-price-banner-green {
                         background-color: #5cb85c; /* verde */
                     }
+                    .min-price-banner-blue {
+                        background-color: ##4A90E2; /* blu */
+                    }
+
                      .min-price-banner-default { background-color: #6c757d; } /* grigio */
                 </style>
   <!-- ROSSO -->
@@ -281,10 +285,16 @@
          style="font-size:20px; font-weight:600;">
         <field name="banner_min_price" readonly="1" nolabel="1"/>
     </div>
+    <!-- BLU -->
+    <div attrs="{'invisible': ['|', ('force_show_min_price_banner','=',False), ('banner_min_price_level','!=','blue')]}"
+         class="min-price-banner min-price-banner-blue"
+         style="font-size:20px; font-weight:600;">
+        <field name="banner_min_price" readonly="1" nolabel="1"/>
+    </div>
 
     <!-- DEFAULT (se livello vuoto o diverso) -->
     <div attrs="{'invisible': ['|', ('force_show_min_price_banner','=',False),
-                               ('banner_min_price_level','in',('red','orange','green'))]}"
+                               ('banner_min_price_level','in',('red','orange','green','blue'))]}"
          class="min-price-banner min-price-banner-default"
          style="font-size:20px; font-weight:600;">
         <field name="banner_min_price" readonly="1" nolabel="1"/>

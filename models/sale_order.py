@@ -716,6 +716,7 @@ class SaleOrder_2(models.Model):
             ('red', 'Rosso'),
             ('orange', 'Arancione'),
             ('green', 'Verde'),
+            ('blue', 'Blu'),
         ],
         string='Livello banner prezzo minimo',
         compute='_compute_banner_min_price',
@@ -862,7 +863,7 @@ class SaleOrder_2(models.Model):
                 #raise UserError(_('Valore troppo vasso'))
             else:
                 order.show_banner_min_price = True
-                order.banner_min_price_level = 'green'
+                order.banner_min_price_level = 'blue'
                 order.banner_min_price = _(
                     #"Valore preventivo in linea.\n"
                     "Attenzione prezzo di vendita fuori dal limite minimo richiede approvazione dal direttore commerciale.\n"
