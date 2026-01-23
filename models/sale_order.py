@@ -534,7 +534,8 @@ class SaleOrder(models.Model):
             for order in self:
                 order.total_purchase_price=0.00
                 order.total_purchase_price = sum(order.order_line.filtered(lambda r: r.state != 'cancel').mapped(lambda r: r.purchase_price * r.product_uom_qty))
-            order.total_purchase_price = order.total_purchase_price + order.sale_acq_usage
+            #order.total_purchase_price = order.total_purchase_price + order.sale_acq_usage
+            order.sale_string_margin = order.sale_string_margin - order.sale_acq_usage
             #order.sale_string_margin = order.amount_untaxed - order.total_purchase_price
         else:
             self.env["sale.order.line"].flush(['margin', 'state','purchase_price','product_uom_qty'])
@@ -561,7 +562,8 @@ class SaleOrder(models.Model):
             # Assign the computed total purchase price to each order
             for order in self:
                 order.total_purchase_price = order_totals.get(order.id, 0.0)
-            order.total_purchase_price=order.total_purchase_price+order.sale_acq_usage
+            #order.total_purchase_price=order.total_purchase_price+order.sale_acq_usage
+            order.sale_string_margin=order.sale_string_margin-order.sale_acq_usage
             #order.sale_string_margin=order.amount_untaxed-order.total_purchase_price
 
         sale_string_price=   "{:.2f}".format(order.total_purchase_price) #if order.total_purchase_price>0 else  "-" + "{:.2f}".format(order.total_purchase_price)
@@ -867,10 +869,7 @@ class SaleOrder_2(models.Model):
                 order.banner_min_price_level = 'blue'
                 order.banner_min_price = _(
                     "Attenzione prezzo di vendita fuori dal limite minimo richiede approvazione dal direttore commerciale.\n"
-
-                    #"Valore ordine (arrotondato): %.2f\n"
-                    #"Soglia minima: %.2f - Soglia massima: %.2f"
-                ) 
+                )
 
 
 
