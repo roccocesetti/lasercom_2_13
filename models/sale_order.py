@@ -535,7 +535,7 @@ class SaleOrder(models.Model):
                 order.total_purchase_price=0.00
                 order.total_purchase_price = sum(order.order_line.filtered(lambda r: r.state != 'cancel').mapped(lambda r: r.purchase_price * r.product_uom_qty))
             #order.total_purchase_price = order.total_purchase_price + order.sale_acq_usage
-            order.sale_string_margin = order.sale_string_margin - order.sale_acq_usage
+            #order.sale_string_margin = order.sale_string_margin - order.sale_acq_usage
             #order.sale_string_margin = order.amount_untaxed - order.total_purchase_price
         else:
             self.env["sale.order.line"].flush(['margin', 'state','purchase_price','product_uom_qty'])
@@ -563,11 +563,11 @@ class SaleOrder(models.Model):
             for order in self:
                 order.total_purchase_price = order_totals.get(order.id, 0.0)
             #order.total_purchase_price=order.total_purchase_price+order.sale_acq_usage
-            order.sale_string_margin=order.sale_string_margin-order.sale_acq_usage
+            #order.sale_string_margin=order.sale_string_margin-order.sale_acq_usage
             #order.sale_string_margin=order.amount_untaxed-order.total_purchase_price
 
         sale_string_price=   "{:.2f}".format(order.total_purchase_price) #if order.total_purchase_price>0 else  "-" + "{:.2f}".format(order.total_purchase_price)
-        sale_string_margin=   "{:.2f}".format(order.amount_untaxed_arrotondato-order.total_purchase_price) #if order.amount_untaxed_arrotondato-order.total_purchase_price>0 else "-" + "{:.2f}".format(order.amount_untaxed_arrotondato-order.total_purchase_price)
+        sale_string_margin=   "{:.2f}".format(order.amount_untaxed_arrotondato-order.total_purchase_price-order.sale_acq_usage) #if order.amount_untaxed_arrotondato-order.total_purchase_price>0 else "-" + "{:.2f}".format(order.amount_untaxed_arrotondato-order.total_purchase_price)
         order.sale_string_price=decode_protocollo(sale_string_price)
         order.sale_string_margin=decode_protocollo(sale_string_margin)
         order.update({
