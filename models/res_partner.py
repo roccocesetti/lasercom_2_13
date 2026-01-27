@@ -106,8 +106,8 @@ class ResPartner(models.Model):
                  args = []
                 args += [
                     '|',
-                    '|',
-                    ('venditore_ids', 'in', [user.id]),
+                    #'|',
+                    #('venditore_ids', 'in', [user.id]),
                     ('venditore_ids', '=', False),
                     ('state_id', 'in', user_state_ids)
                 ]

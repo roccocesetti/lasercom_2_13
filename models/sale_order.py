@@ -839,7 +839,7 @@ class SaleOrder_2(models.Model):
             if (
                 order.amount_untaxed_arrotondato
                 #and min_val <= order.amount_untaxed_arrotondato <= max_val
-                and  order.total_purchase_price-order.sale_acq_usage <= order.amount_untaxed_arrotondato <= max_val-1
+                and  order.amount_untaxed_arrotondato-(order.total_purchase_price-order.sale_acq_usage) <= (soglia * 2)-1
             ):
                 order.show_banner_min_price = True
                 order.banner_min_price_level = 'orange'
@@ -853,7 +853,7 @@ class SaleOrder_2(models.Model):
                   #                           max_val,
                   #                       )
 
-            elif (order.amount_untaxed_arrotondato < order.total_purchase_price-order.sale_acq_usage) : #(order.amount_untaxed_arrotondato < min_val) :
+            elif (order.amount_untaxed_arrotondato < (order.total_purchase_price-order.sale_acq_usage)) : #(order.amount_untaxed_arrotondato < min_val) :
 
                 order.show_banner_min_price = True
                 order.banner_min_price_level = 'red'
