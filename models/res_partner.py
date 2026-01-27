@@ -105,11 +105,12 @@ class ResPartner(models.Model):
                 if not args:
                  args = []
                 args += [
-                    '|',
-                    #'|',
-                    #('venditore_ids', 'in', [user.id]),
+                    '&',
+                    ('state_id', 'in', user_state_ids),
+                    '|','|',
+                    ('venditore_ids', 'in', [user.id]),
+                    ('venditore_ids', 'not in', [user.id]),
                     ('venditore_ids', '=', False),
-                    ('state_id', 'in', user_state_ids)
                 ]
 
         res = super(ResPartner,self.sudo()).search(args, offset=offset, limit=limit, order=order, count=count)
