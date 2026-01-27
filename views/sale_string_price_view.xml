@@ -228,13 +228,13 @@
 
                 <button name="action_toggle_min_price_banner"
                         type="object"
-                        string="Visualizza banner"
+                        string="Verifica preventivo"
                         class="btn-primary"
                         attrs="{'invisible': [('force_show_min_price_banner','=',True)]}"/>
 
                 <button name="action_toggle_min_price_banner"
                         type="object"
-                        string="Nascondi banner"
+                        string="No Verifica prevenitvo"
                         class="btn-secondary"
                         attrs="{'invisible': [('force_show_min_price_banner','=',False)]}"/>
             </xpath>
