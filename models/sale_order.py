@@ -136,7 +136,7 @@ class SaleOrderLine(models.Model):
 
     @api.depends('product_id', 'purchase_price', 'product_uom_qty', 'price_unit', 'price_subtotal')
     def _compute_sale_string_price(self):
-        for line in self:
+        for line in self.sudo():
             #sale_string_price = "{:.2f}".format(line.price_unit) #if line.purchase_price>0 else 'INCLUSO'
             sale_string_price = "{:,.2f}".format(line.price_unit).replace(',', 'X').replace('.', ',').replace('X', '.')
             sale_string_price = sale_string_price.rjust(len(sale_string_price) + 12-len(sale_string_price), ' ')
@@ -596,6 +596,14 @@ class SaleOrder(models.Model):
             -1 * self.importo_discount, {'display_currency': self.currency_id}
         )
 
+
+    @api.onchange('partner_id')
+    def onchange_partner_id(self):
+        super(SaleOrder, self).onchange_partner_id()
+        values = {
+            'pricelist_id': self.partner_id.property_product_pricelist and self.partner_id.property_product_pricelist.id and self.company_id.partner_id.property_product_pricelist.id or 1,
+        }
+        self.update(values)
 
 
 import base64
