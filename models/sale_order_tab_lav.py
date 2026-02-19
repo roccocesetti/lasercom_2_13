@@ -34,8 +34,8 @@ class ProductLoad(models.Model):
 class ProductLoadLine(models.Model):
     _name = "x.product.load.line"
     _description = "Riga Caricamento Prodotto"
-    _order = "id asc"
-
+    _order = "sequence,id asc"
+    sequence = fields.Integer(string="Sequenza", default=10, index=True)
     load_id = fields.Many2one("x.product.load", string="Caricamento", required=True, ondelete="cascade")
     product_id = fields.Many2one("product.product", string="Prodotto", required=True)
     product_uom_height = fields.Float(string="Altezza", default=0.0)
@@ -44,13 +44,21 @@ class ProductLoadLine(models.Model):
     price_unit = fields.Float(string="Prezzo Unitario")
     price_extra = fields.Float(string="Prezzo Extra")
     supplier_id = fields.Many2one("res.partner", string="Fornitore", required=False)
-
+    editable = fields.Boolean(string="Edit", default=False)
     # Nota riga (se serve anche per ogni prodotto)
     note = fields.Char(string="Nota riga")
 
     # Campi utili “related” per vedere info del prodotto senza duplicarle
     default_code = fields.Char(related="product_id.default_code", string="Rif. Interno", readonly=True, store=False)
     uom_id = fields.Many2one(related="product_id.uom_id", string="U.M.", readonly=True, store=False)
+    tipo_vetrina = fields.Selection(
+        [
+            ('inside', 'Interna'),
+            ('outside', 'Esterna'),
+
+        ],
+        string='Tipo vetrina',
+    )
 
     @api.onchange('uom_id', 'product_uom_height', 'product_uom_length')
     def product_uom_change(self):
@@ -132,10 +140,52 @@ class SaleOrder(models.Model):
         }
 
 
+
+    def action_apply_product_load(self, replace=True):
+        """
+        Carica tutte le righe x.product.load.line in sale.order.line.
+        replace=True  -> rimpiazza le righe ordine
+        replace=False -> aggiunge alle righe esistenti
+        """
+        for order in self:
+            if not order.x_load_id:
+                raise UserError(_("Seleziona un Caricamento Prodotti."))
+
+            if replace:
+                order.x_load_line_ids.unlink()
+
+            # Creazione righe ordine
+            for ll in order.x_load_id.line_ids:
+                # usa new() + onchange per avere descrizione, tasse, uom coerenti con Odoo
+                line = self.env["sale.order.x_load_line"].new({
+                    "order_id": order.id,
+                    "product_id": ll.product_id.id,
+                    "product_uom_qty": ll.product_uom_qty or 1.0,
+                })
+                line._onchange_product_id()
+
+                vals = line._convert_to_write(line._cache)
+
+                # Override prezzo e nota da caricamento
+                if ll.price_unit:
+                    vals["price_unit"] = ll.price_unit
+                vals["note"] = ll.note or False
+
+                # opzionale: se vuoi la nota anche nel testo riga:
+                # if ll.note:
+                #     vals["name"] = (vals.get("name") or "") + "\n" + ll.note
+
+                vals["order_id"] = order.id
+                self.env["sale.order.x_load_line"].create(vals)
+
+        return True
+
+
+
 class SaleOrderXLoadLine(models.Model):
     _name = "sale.order.x_load_line"
     _description = "Righe Caricamento su Ordine di Vendita"
-    _order = "id asc"
+    _order = "sequence,id asc"
 
     @api.depends('product_uom_qty', 'price_unit', 'price_extra')
     def _compute_amount(self):
@@ -156,7 +206,7 @@ class SaleOrderXLoadLine(models.Model):
             else:
                 line.product_updatable = True
 
-
+    sequence = fields.Integer(string="Sequenza", default=10, index=True)
     order_id = fields.Many2one("sale.order", required=True, ondelete="cascade")
     currency_id = fields.Many2one(
         'res.currency',
@@ -175,9 +225,114 @@ class SaleOrderXLoadLine(models.Model):
     default_code = fields.Char(related="product_id.default_code", string="Rif. Interno", readonly=True, store=False)
     uom_id = fields.Many2one(related="product_id.uom_id", string="U.M.", readonly=True, store=False)
     price_subtotal = fields.Monetary(compute='_compute_amount', string='Subtotal', readonly=True, store=True)
+
+    sale_line_id = fields.Many2one(
+        "sale.order.line",
+        compute="_compute_sale_line_id",
+        store=False,
+        string="Riga Ordine (mappata)",
+    )
+    editable = fields.Boolean(string="Edit", default=False)
+    tipo_vetrina = fields.Selection(
+        [
+            ('inside', 'Interna'),
+            ('outside', 'Esterna'),
+
+        ],
+        string='Tipo vetrina',
+    )
+
     @api.onchange('uom_id', 'product_uom_height', 'product_uom_length')
     def product_uom_change(self):
         if not self.uom_id or not self.product_id:
             self.product_uom_qty = 0.0
             return
         self.product_uom_qty=self.product_uom_height*self.product_uom_length
+    @api.onchange("product_id")
+    def _onchange_product_id(self):
+            for line in self:
+                if not line.product_id:
+                    # reset “soft”
+                    line.supplier_id = False
+                    if not line.product_uom_qty:
+                        line.product_uom_qty = 1.0
+                    return
+
+                # qty default
+                if not line.product_uom_qty:
+                    line.product_uom_qty = 1.0
+
+                # fornitore suggerito (primo vendor)
+                # (Odoo 13: seller_ids è su product.template, ma su product.product esiste via related)
+                seller = False
+                # prova su product_id.seller_ids (di solito ok) altrimenti su template
+                sellers = getattr(line.product_id, "seller_ids", False) or line.product_id.product_tmpl_id.seller_ids
+                if sellers:
+                    # prendi il primo vendor “utile” (puoi migliorare filtrando per company, qty, ecc.)
+                    seller = sellers[0]
+                line.supplier_id = seller.name if seller else False
+
+                # prezzo: se l'utente lo ha già messo, non lo sovrascrivo
+                if not line.price_unit:
+                    order = line.order_id
+                    qty = line.product_uom_qty or 1.0
+                    product = line.product_id
+
+                    # fallback: list_price
+                    price = product.lst_price
+
+                    # se ho un ordine con listino, provo a prendere il prezzo dal listino
+                    if order and getattr(order, "pricelist_id", False):
+                        pricelist = order.pricelist_id
+                        partner = order.partner_id
+
+                        # Tentativo 1: API moderna (get_product_price_rule)
+                        if hasattr(pricelist, "get_product_price_rule"):
+                            # ritorna (price, rule_id) o (rule_id, price) a seconda di implementazioni
+                            res = pricelist.get_product_price_rule(product, qty, partner)
+                            # gestisco entrambe le forme in modo safe
+                            if isinstance(res, (list, tuple)) and len(res) >= 1:
+                                # alcuni moduli: (price, rule_id)
+                                if isinstance(res[0], (int, float)):
+                                    price = res[0]
+                                # altri: (rule_id, price)
+                                elif len(res) > 1 and isinstance(res[1], (int, float)):
+                                    price = res[1]
+
+                        # Tentativo 2: API vecchia (price_get)
+                        elif hasattr(pricelist, "price_get"):
+                            # price_get ritorna dict {pricelist_id: price}
+                            d = pricelist.price_get(product.id, qty, partner=partner.id if partner else False)
+                            if isinstance(d, dict) and d.get(pricelist.id) is not None:
+                                price = d[pricelist.id]
+
+                    line.price_unit = price
+
+                # prezzo extra: se vuoi che si azzeri al cambio prodotto (opzionale)
+                if line.price_extra is False:
+                    line.price_extra = 0.0
+            # line.note = line.note  # non tocco la nota
+
+    @api.depends("order_id", "order_id.order_line.product_id", "product_id")
+    def _compute_sale_line_id(self):
+        for line in self:
+            if not line.order_id or not line.product_id:
+                line.sale_line_id = False
+                continue
+            so_line = line.order_id.order_line.filtered(lambda l: l.product_id == line.product_id)[:1]
+            line.sale_line_id = so_line
+
+    def write(self, vals):
+        # consenti sempre il toggle del flag stesso
+        only_toggle = set(vals.keys()) <= {"editable"}
+        if not only_toggle:
+            locked = self.filtered(lambda r: not r.editable)
+            if locked and locked.editable==True:
+                raise UserError(_("Riga bloccata: abilita 'Edit' sulla singola riga per modificarla."))
+        return super().write(vals)
+
+    def unlink(self):
+        locked = self.filtered(lambda r: not r.editable)
+        if locked:
+            raise UserError(_("Riga bloccata: abilita 'Edit' sulla singola riga per eliminarla."))
+        return super().unlink()

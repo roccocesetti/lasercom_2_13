@@ -90,6 +90,9 @@ def decode_protocollo(valore="0"):
 
     return result
 
+
+
+
 class productTemplate(models.Model):
     _inherit = "product.template"
     _order = "sequence,name,id"
@@ -111,6 +114,29 @@ class productProduct(models.Model):
 
         return name
 
+
+DEFAULT_NOTA_PIEDE = (
+    "LASER.COM snc SEDE OPERATIVA CENTRO ITALIA VIA PERU', 61 63066 GROTTAMMARE AP P.IVA 02177190440 "
+    "INFORMATIVA AI SENSI DELL'ART13 D.LGS.196 DEL 30/06/03 E SUCCESSIVE MODIFICHE ED INTEGRAZIONI "
+    "Laser.com snc è titolare del trattamento dei dati personali dell'acquirente, I dati necessari per la conclusione del contratto sono: la ragione sociale, la sede "
+    "legale,il numero di partita iva, il codice fiscale, il codice univoco o indirizzo Pec, la banca di appogigio. In mancanza di tali dati non sarà possibile "
+    "concludere il contratto. I dati verranno trattati esclusivamente da Laser.comsnc e comunicati ai soggetti terzi nei limiti degli adempimenti di natura fiscale. "
+    "L'interessato,ai sensi e per gli effetti dell'art.7 può chiedere che i propri dati vengano corretti, cancellati, modificati nei limiti consentiti dalla normativa "
+    "vigente in materia fiscale. Il consenso scritto per il trattamento dei dati necessari alla conclusione del presente contratto non è richiesto dalla legge."
+)
+
+class SaleOrderXNote(models.Model):
+    _name = "sale.order.x_note"
+    _description = "Template Nota Piede Ordine (per Azienda)"
+    _rec_name = "company_id"
+
+    company_id = fields.Many2one("res.company", required=True, ondelete="cascade", index=True)
+
+    finaziamento_direct_nota_piede = fields.Text(
+        string="Nota_piede",
+        copy=False,
+        default=DEFAULT_NOTA_PIEDE,
+    )
 
 
 class SaleOrderLine(models.Model):
@@ -292,13 +318,14 @@ class SaleOrder(models.Model):
     finaziamento_direct_numero_mesi = fields.Integer(string='Numero mesi', default=0, copy=False)
     finaziamento_direct_saldo_titolo = fields.Monetary(string='Saldo titoli', store=True, readonly=False, tracking=5,currency_field='currency_id', copy=False)
     finaziamento_direct_nota = fields.Char(string='Nota', required=False, copy=False, readonly=False, default='Salvo approvazione Istituto erogante', )
-    finaziamento_direct_nota_piede = fields.Text(string='Nota_piede', required=False, copy=False, readonly=False, default="LASER.COM snc SEDE OPERATIVA CENTRO ITALIA VIA PERU', 61 63066 GROTTAMMARE AP P.IVA 02177190440 " \
-"INFORMATIVA AI SENSI DELL'ART13 D.LGS.196 DEL 30/06/03 E SUCCESSIVE MODIFICHE ED INTEGRAZIONI" \
-"Laser.com snc è titolare del trattamento dei dati personali dell'acquirente, I dati necessari per la conclusione del contratto sono: la ragione sociale, la sede" \
-"legale,il numero di partita iva, il codice fiscale, il codice univoco o indirizzo Pec, la banca di appogigio. In mancanza di tali dati non sarà possibile" \
-"concludere il contratto. I dati verranno trattati esclusivamente da Laser.comsnc e comunicati ai soggetti terzi nei limiti degli adempimenti di natura fiscale." \
-"L'interessato,ai sensi e per gli effetti dell'art.7 può chiedere che i propri dati vengano corretti, cancellati, modificati nei limiti consentiti dalla normativa" \
-"vigente in materia fiscale. Il consenso scritto per il trattamento dei dati necessari alla conclusione del presente contratto non è richiesto dalla legge.")
+    # 18-02-2026 rocco
+    #finaziamento_direct_nota_piede = fields.Text(string='Nota_piede', required=False, copy=False, readonly=False, default="LASER.COM snc SEDE OPERATIVA CENTRO ITALIA VIA PERU', 61 63066 GROTTAMMARE AP P.IVA 02177190440 " \
+#"INFORMATIVA AI SENSI DELL'ART13 D.LGS.196 DEL 30/06/03 E SUCCESSIVE MODIFICHE ED INTEGRAZIONI" \
+#"Laser.com snc è titolare del trattamento dei dati personali dell'acquirente, I dati necessari per la conclusione del contratto sono: la ragione sociale, la sede" \
+#"legale,il numero di partita iva, il codice fiscale, il codice univoco o indirizzo Pec, la banca di appogigio. In mancanza di tali dati non sarà possibile" \
+#"concludere il contratto. I dati verranno trattati esclusivamente da Laser.comsnc e comunicati ai soggetti terzi nei limiti degli adempimenti di natura fiscale." \
+#"L'interessato,ai sensi e per gli effetti dell'art.7 può chiedere che i propri dati vengano corretti, cancellati, modificati nei limiti consentiti dalla normativa" \
+#"vigente in materia fiscale. Il consenso scritto per il trattamento dei dati necessari alla conclusione del presente contratto non è richiesto dalla legge.")
     data_contratto = fields.Date(string='Data contratto', readonly=True, copy=False, states={'draft': [('readonly', False)], 'sent': [('readonly', False)]},
                                 )
    
@@ -317,6 +344,24 @@ class SaleOrder(models.Model):
         compute="_compute_sale_string_margin_has_dash",
         store=False,
     )
+
+    finaziamento_direct_nota_piede = fields.Text(string="Nota_piede", copy=False)
+
+    def _get_company_note_text(self, company_id):
+        note = self.env["sale.order.x_note"].search([("company_id", "=", company_id)], limit=1)
+        return note.finaziamento_direct_nota_piede if note else False
+
+    @api.model
+    def default_get(self, fields_list):
+        res = super().default_get(fields_list)
+
+        # company in default: prova da res, poi da context, poi env.company
+        company_id = res.get("company_id") or self.env.context.get("default_company_id") or self.env.company.id
+
+        if "finaziamento_direct_nota_piede" in fields_list and not res.get("finaziamento_direct_nota_piede"):
+            res["finaziamento_direct_nota_piede"] = self._get_company_note_text(company_id) or False
+
+        return res
 
     @api.depends('sale_string_margin')
     def _compute_sale_string_margin_has_dash(self):
@@ -427,11 +472,26 @@ class SaleOrder(models.Model):
                 self._recompute_attachment_url(vals['numero_contratto'])
         vals.update({'note':'Prezzi iva esclusa' })
 
+        company_id = vals.get("company_id") or self.env.company.id
+        if not vals.get("finaziamento_direct_nota_piede"):
+            note = self.env["sale.order.x_note"].search([("company_id", "=", company_id)], limit=1)
+            if note:
+                vals["finaziamento_direct_nota_piede"] = note.finaziamento_direct_nota_piede
+
         res=super(SaleOrder, self).create(vals)
         if len(res.order_line)>16:
             raise UserError(_('Superato il limite di righe da immettere: 16 invece di %s' % str(len(res.order_line)) ))
 
         return res
+    @api.onchange("company_id")
+    def _onchange_company_id_note_template(self):
+        for order in self:
+            if not order.company_id:
+                continue
+            if not order.finaziamento_direct_nota_piede:
+                note = self.env["sale.order.x_note"].search([("company_id", "=", order.company_id.id)], limit=1)
+                if note:
+                    order.finaziamento_direct_nota_piede = note.finaziamento_direct_nota_piede
     def write(self, vals):
         res = super(SaleOrder, self).write(vals)
         for order in self:
