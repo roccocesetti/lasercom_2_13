@@ -323,16 +323,16 @@ class SaleOrderXLoadLine(models.Model):
             line.sale_line_id = so_line
 
     def write(self, vals):
-        # consenti sempre il toggle del flag stesso
-        only_toggle = set(vals.keys()) <= {"editable"}
-        if not only_toggle:
-            locked = self.filtered(lambda r: not r.editable)
-            if locked and locked.editable==True:
-                raise UserError(_("Riga bloccata: abilita 'Edit' sulla singola riga per modificarla."))
-        return super().write(vals)
+        #only_toggle = set(vals.keys()) <= {"editable"}
 
+        #if 'editable' in vals.keys() and vals['editable']==True:
+        #    locked = self.filtered(lambda r: not r.editable)
+        #    if locked:
+        #        raise UserError(_("Riga bloccata: abilita 'Edit' sulla singola riga per modificarla."))
+
+        return super().write(vals)
     def unlink(self):
-        locked = self.filtered(lambda r: not r.editable)
-        if locked:
-            raise UserError(_("Riga bloccata: abilita 'Edit' sulla singola riga per eliminarla."))
+        #locked = self.filtered(lambda r: not r.editable)
+        #if locked:
+        #    raise UserError(_("Riga bloccata: abilita 'Edit' sulla singola riga per eliminarla."))
         return super().unlink()
