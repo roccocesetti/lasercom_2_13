@@ -188,7 +188,7 @@
 
                                 <field name="sequence" widget="handle"/>
                                 <field name="sale_line_id" readonly="1" optional="hide"/>
-                                
+
                                 <field name="default_code" readonly="1" optional="hide" />
                                 <field name="editable" />
                                 <field name="product_id"  attrs="{'readonly': [('editable','=',False)]}"/>

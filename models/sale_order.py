@@ -905,7 +905,19 @@ class SaleOrder_2(models.Model):
             min_val = order.total_purchase_price + soglia
             max_val = order.total_purchase_price + soglia * 2
 
-            if (
+
+            if (order.amount_untaxed_arrotondato < (order.total_purchase_price-order.sale_acq_usage)) : #(order.amount_untaxed_arrotondato < min_val) :
+
+                order.show_banner_min_price = True
+                order.banner_min_price_level = 'red'
+                order.banner_min_price = _(
+                    "ATTENZIONE PREVENTIVO NON VALIDO.\n"
+                    # "Valore ordine (arrotondato): %.2f\n"
+                    # "Soglia minima: %.2f - Soglia massima: %.2f"
+                )
+                #raise UserError(_('Valore troppo vasso'))
+
+            elif (
                 order.amount_untaxed_arrotondato
                 #and min_val <= order.amount_untaxed_arrotondato <= max_val
                 and  order.amount_untaxed_arrotondato-(order.total_purchase_price-order.sale_acq_usage) <= (soglia * 2)-1
@@ -922,16 +934,6 @@ class SaleOrder_2(models.Model):
                   #                           max_val,
                   #                       )
 
-            elif (order.amount_untaxed_arrotondato < (order.total_purchase_price-order.sale_acq_usage)) : #(order.amount_untaxed_arrotondato < min_val) :
-
-                order.show_banner_min_price = True
-                order.banner_min_price_level = 'red'
-                order.banner_min_price = _(
-                    "ATTENZIONE PREVENTIVO NON VALIDO.\n"
-                    # "Valore ordine (arrotondato): %.2f\n"
-                    # "Soglia minima: %.2f - Soglia massima: %.2f"
-                )
-                #raise UserError(_('Valore troppo vasso'))
 
             else:
                 order.show_banner_min_price = True
