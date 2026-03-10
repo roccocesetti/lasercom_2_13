@@ -25,6 +25,7 @@
                 <field name="uom_id" readonly="1"/>
                 <field name="product_uom_height" optional="show" />
                 <field name="product_uom_length" optional="show" />
+                <field name="product_uom_width" optional="show" />
                 <field name="product_uom_qty"/>
                 <field name="price_unit"/>
                 <field name="price_extra" optional="show" />
@@ -48,37 +49,63 @@
 
                     <notebook>
                         <page string="Prodotti">
-                            <field name="line_ids" context="{'default_load_id': active_id}">
+                            <button name="action_add_section_line"
+                                type="object"
+                                string="Aggiungi sezione"
+                                class="oe_highlight"/>
+                            <field name="line_ids"
+                                   context="{'default_load_id': active_id}"
+                                   >
                                 <tree editable="bottom">
-                                    <field name="editable"/>
-                                    <field name="tipo_vetrina"/>
+                                    <control>
+                                        <create string="Aggiungi riga"/>
+
+                                    </control>
+
                                     <field name="sequence" widget="handle"/>
-                                    <field name="product_id"/>
-                                    <field name="default_code" readonly="1"/>
-                                    <field name="uom_id" readonly="1"/>
-                                    <field name="product_uom_height" optional="show" />
-                                    <field name="product_uom_length" optional="show" />
-                                    <field name="product_uom_qty"/>
-                                    <field name="price_unit"/>
-                                    <field name="price_extra" optional="show" />
-                                    <field name="supplier_id" domain="[('commercial_partner_id.property_supplier_payment_term_id','!=',False)]" />
-                                    <field name="note"/>
+                                    <field name="display_type" invisible="1"/>
+                                    <field name="name" string="Descrizione" widget="section_and_note_text"  attrs="{'readonly': [('display_type','=',False)]}"/>
 
-
-
-
-
-
-
-
+                                    <field name="editable"
+                                           attrs="{'invisible': [('display_type','!=',False)]}"/>
+                                    <field name="tipo_vetrina"
+                                           attrs="{'invisible': [('display_type','!=',False)]}"/>
+                                    <field name="product_id"
+                                           attrs="{'invisible': [('display_type','!=',False)]}"/>
+                                    <field name="default_code" readonly="1"
+                                           attrs="{'invisible': [('display_type','!=',False)]}"/>
+                                    <field name="uom_id" readonly="1"
+                                           attrs="{'invisible': [('display_type','!=',False)]}"/>
+                                    <field name="product_uom_height" optional="show"
+                                           attrs="{'invisible': [('display_type','!=',False)]}"/>
+                                    <field name="product_uom_length" optional="show"
+                                           attrs="{'invisible': [('display_type','!=',False)]}"/>
+                                    <field name="product_uom_width" optional="show"
+                                           attrs="{'invisible': [('display_type','!=',False)]}"/>
+                                    <field name="product_uom_qty"
+                                           attrs="{'invisible': [('display_type','!=',False)]}"/>
+                                    <field name="price_unit"
+                                           attrs="{'invisible': [('display_type','!=',False)]}"/>
+                                    <field name="price_extra" optional="show"
+                                           attrs="{'invisible': [('display_type','!=',False)]}"/>
+                                    <field name="supplier_id"
+                                           domain="[('commercial_partner_id.property_supplier_payment_term_id','!=',False)]"
+                                           attrs="{'invisible': [('display_type','!=',False)]}"/>
+                                    <field name="note"
+                                           attrs="{'invisible': [('display_type','!=',False)]}"/>
                                 </tree>
-                            </field>
-                        </page>
+
+                             </field>
+                         </page>
                     </notebook>
                 </sheet>
             </form>
         </field>
     </record>
+
+
+
+
 
 
 
@@ -183,12 +210,17 @@
                     </group>
 
                     <group>
-                        <field name="x_load_line_ids">
+                        <field name="x_load_line_ids" style="height: 1400px;" widget="section_and_note_one2many">
                             <tree editable="bottom" decoration-info="sale_line_id">
+                                <control>
+                                    <create string="Aggiungi riga"/>
+                                    <create string="Aggiungi sezione" context="{'default_display_type': 'line_section'}"/>
+                                </control>
 
                                 <field name="sequence" widget="handle"/>
                                 <field name="sale_line_id" readonly="1" optional="hide"/>
-
+                                <field name="display_type" invisible="1"/>
+                                <field name="name" widget="section_and_note_text"  attrs="{'readonly': [('display_type','=',False)]}"/>
                                 <field name="default_code" readonly="1" optional="hide" />
                                 <field name="editable" />
                                 <field name="product_id"  attrs="{'readonly': [('editable','=',False)]}"/>
@@ -196,6 +228,7 @@
                                 <field name="uom_id" readonly="1" optional="show" attrs="{'readonly': [('editable','=',False)]}"/>
                                 <field name="product_uom_height" optional="show" attrs="{'readonly': [('editable','=',False)]}"/>
                                 <field name="product_uom_length" optional="show" attrs="{'readonly': [('editable','=',False)]}"/>
+                                <field name="product_uom_width" optional="show" attrs="{'readonly': [('editable','=',False)]}"/>
                                 <field name="product_uom_qty" optional="show" attrs="{'readonly': [('editable','=',False)]}"/>
                                 <field name="price_unit" optional="show" attrs="{'readonly': [('editable','=',False)]}"/>
                                 <field name="price_extra" optional="show" attrs="{'readonly': [('editable','=',False)]}"/>
@@ -203,13 +236,15 @@
                                 <field name="supplier_id" domain="[('commercial_partner_id.property_supplier_payment_term_id','!=',False)]" optional="hide" attrs="{'readonly': [('editable','=',False)]}"/>
                                 <field name="note" optional="hide" attrs="{'readonly': [('editable','=',False)]}"/>
                             </tree>
+
+
+
                         </field>
                     </group>
                 </page>
             </xpath>
         </field>
     </record>
-
 
 
 

@@ -30,16 +30,27 @@ class ProductLoad(models.Model):
         # semplice progressivo basato su sequenza; se non vuoi la sequenza, puoi mettere un default diverso
         return self.env["ir.sequence"].next_by_code("x.product.load") or "Nuovo"
 
-
+    def action_add_section_line(self):
+        self.ensure_one()
+        max_seq = max(self.line_ids.mapped('sequence') or [0])
+        self.write({
+            'line_ids': [(0, 0, {
+                'display_type': 'line_section',
+                'name': '__________________________________________________',
+                'sequence': max_seq + 10,
+            })]
+        })
+        return True
 class ProductLoadLine(models.Model):
     _name = "x.product.load.line"
     _description = "Riga Caricamento Prodotto"
     _order = "sequence,id asc"
     sequence = fields.Integer(string="Sequenza", default=10, index=True)
     load_id = fields.Many2one("x.product.load", string="Caricamento", required=True, ondelete="cascade")
-    product_id = fields.Many2one("product.product", string="Prodotto", required=True)
+    product_id = fields.Many2one("product.product", string="Prodotto", required=False)
     product_uom_height = fields.Float(string="Altezza", default=0.0)
     product_uom_length = fields.Float(string="Lunghezza", default=0.0)
+    product_uom_width = fields.Float(string="Larghezza", default=0.0)
     product_uom_qty = fields.Float(string="Quantità", default=1.0)
     price_unit = fields.Float(string="Prezzo Unitario")
     price_extra = fields.Float(string="Prezzo Extra")
@@ -59,6 +70,11 @@ class ProductLoadLine(models.Model):
         ],
         string='Tipo vetrina',
     )
+    display_type = fields.Selection([
+        ('line_section', "Sezione"),
+
+    ], default=False)
+    name = fields.Char(string='Sezione')
 
     @api.onchange('uom_id', 'product_uom_height', 'product_uom_length')
     def product_uom_change(self):
@@ -66,6 +82,34 @@ class ProductLoadLine(models.Model):
             self.product_uom_qty = 0.0
             return
         self.product_uom_qty=self.product_uom_height*self.product_uom_length
+        self.price_unit=self.product_id.standard_price
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        for vals in vals_list:
+            if vals.get("display_type") == "line_section":
+                vals.update({
+                    "product_id": False,
+                    "product_uom_qty": 0.0,
+                    "price_unit": 0.0,
+                    "price_extra": 0.0,
+                    "supplier_id": False,
+
+                })
+        return super().create(vals_list)
+
+    def write(self, vals):
+        if vals.get("display_type") == "line_section":
+            vals.update({
+                "product_id": False,
+                "product_uom_qty": 0.0,
+                "price_unit": 0.0,
+                "price_extra": 0.0,
+                "supplier_id": False,
+
+            })
+        return super().write(vals)
+
 
 class ResCompany(models.Model):
     _inherit = "res.company"
@@ -154,6 +198,19 @@ class SaleOrder(models.Model):
             if replace:
                 order.x_load_line_ids.unlink()
 
+            if self.order_line:
+                line = self.env["sale.order.x_load_line"].new({
+                    "order_id": order.id,
+                    "product_id":self.order_line[0].product_id.id,
+                    "product_uom_qty":  1.0,
+
+                })
+                line._onchange_product_id()
+
+                vals = line._convert_to_write(line._cache)
+
+
+
             # Creazione righe ordine
             for ll in order.x_load_id.line_ids:
                 # usa new() + onchange per avere descrizione, tasse, uom coerenti con Odoo
@@ -161,6 +218,16 @@ class SaleOrder(models.Model):
                     "order_id": order.id,
                     "product_id": ll.product_id.id,
                     "product_uom_qty": ll.product_uom_qty or 1.0,
+                    "product_uom_height": ll.product_uom_height,
+                    "product_uom_length": ll.product_uom_length,
+                    "product_uom_width": ll.product_uom_width,
+                    "price_unit": ll.price_unit,
+                    "price_extra": ll.price_extra,
+                    "supplier_id": ll.supplier_id,
+                    "editable": ll.editable,
+                    "note": ll.note,
+                    "display_type":ll.display_type,
+                    "name": ll.name,
                 })
                 line._onchange_product_id()
 
@@ -176,6 +243,7 @@ class SaleOrder(models.Model):
                 #     vals["name"] = (vals.get("name") or "") + "\n" + ll.note
 
                 vals["order_id"] = order.id
+                vals['display_type']: ll.display_type
                 self.env["sale.order.x_load_line"].create(vals)
 
         return True
@@ -214,9 +282,10 @@ class SaleOrderXLoadLine(models.Model):
         store=True,
         readonly=True
     )
-    product_id = fields.Many2one("product.product", string="Prodotto", required=True)
+    product_id = fields.Many2one("product.product", string="Prodotto", required=False)
     product_uom_height = fields.Float(string="Altezza", default=0.0)
-    product_uom_length = fields.Float(string="lunghezza", default=0.0)
+    product_uom_length = fields.Float(string="Lunghezza", default=0.0)
+    product_uom_width = fields.Float(string="Larghezza", default=0.0)
     product_uom_qty = fields.Float(string="Quantità", default=1.0)
     price_unit = fields.Float(string="Prezzo Unitario")
     price_extra = fields.Float(string="Prezzo Extra")
@@ -248,6 +317,7 @@ class SaleOrderXLoadLine(models.Model):
             self.product_uom_qty = 0.0
             return
         self.product_uom_qty=self.product_uom_height*self.product_uom_length
+        self.price_unit=self.product_id.standard_price
     @api.onchange("product_id")
     def _onchange_product_id(self):
             for line in self:
@@ -279,7 +349,7 @@ class SaleOrderXLoadLine(models.Model):
                     product = line.product_id
 
                     # fallback: list_price
-                    price = product.lst_price
+                    price = product.standard_price
 
                     # se ho un ordine con listino, provo a prendere il prezzo dal listino
                     if order and getattr(order, "pricelist_id", False):
@@ -306,7 +376,7 @@ class SaleOrderXLoadLine(models.Model):
                             if isinstance(d, dict) and d.get(pricelist.id) is not None:
                                 price = d[pricelist.id]
 
-                    line.price_unit = price
+                    line.price_unit = product.standard_price
 
                 # prezzo extra: se vuoi che si azzeri al cambio prodotto (opzionale)
                 if line.price_extra is False:
@@ -336,3 +406,39 @@ class SaleOrderXLoadLine(models.Model):
         #if locked:
         #    raise UserError(_("Riga bloccata: abilita 'Edit' sulla singola riga per eliminarla."))
         return super().unlink()
+
+
+
+
+    display_type = fields.Selection([
+        ('line_section', "Sezione"),
+
+    ], default=False)
+    name = fields.Char(string='Sezione')
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        for vals in vals_list:
+            if vals.get("display_type") == "line_section":
+                vals.update({
+                    "product_id": False,
+                    "product_uom_qty": 0.0,
+                    "price_unit": 0.0,
+                    "price_extra": 0.0,
+                    "supplier_id": False,
+                    "editable": False,
+                })
+        return super().create(vals_list)
+
+    def write(self, vals):
+        if vals.get("display_type") == "line_section":
+            vals.update({
+                "product_id": False,
+                "product_uom_qty": 0.0,
+                "price_unit": 0.0,
+                "price_extra": 0.0,
+                "supplier_id": False,
+                "editable": False,
+            })
+        return super().write(vals)
+
