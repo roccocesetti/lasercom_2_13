@@ -14,6 +14,12 @@ _logger = logging.getLogger(__name__)
 
 
 
+class ProductCategory(models.Model):
+    _inherit = "product.category"
+
+    x_lavorazione = fields.Boolean(string="Lavorazione")
+
+
 
 
 class ProductLoad(models.Model):
@@ -75,7 +81,12 @@ class ProductLoadLine(models.Model):
 
     ], default=False)
     name = fields.Char(string='Sezione')
-
+    x_lavorazione = fields.Boolean(
+        string="Lavorazione",
+        related="product_id.categ_id.x_lavorazione",
+        store=True,
+        readonly=True,
+    )
     @api.onchange('uom_id', 'product_uom_height', 'product_uom_length')
     def product_uom_change(self):
         if not self.uom_id or not self.product_id:
@@ -228,6 +239,7 @@ class SaleOrder(models.Model):
                     "note": ll.note,
                     "display_type":ll.display_type,
                     "name": ll.name,
+                    "x_lavorazione":ll.x_lavorazione
                 })
                 line._onchange_product_id()
 
@@ -310,7 +322,12 @@ class SaleOrderXLoadLine(models.Model):
         ],
         string='Tipo vetrina',
     )
-
+    x_lavorazione = fields.Boolean(
+        string="Lavorazione",
+        related="product_id.categ_id.x_lavorazione",
+        store=True,
+        readonly=True,
+    )
     @api.onchange('uom_id', 'product_uom_height', 'product_uom_length')
     def product_uom_change(self):
         if not self.uom_id or not self.product_id:

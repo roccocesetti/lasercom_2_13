@@ -1,7 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
 
-
+<record id="product_category_form_inherit_lavorazione" model="ir.ui.view">
+    <field name="name">product.category.form.inherit.lavorazione</field>
+    <field name="model">product.category</field>
+    <field name="inherit_id" ref="product.product_category_form_view"/>
+    <field name="arch" type="xml">
+        <xpath expr="//field[@name='parent_id']" position="after">
+            <field name="x_lavorazione"/>
+        </xpath>
+    </field>
+</record>
 
 
     <!-- TREE -->
@@ -21,6 +30,7 @@
         <field name="arch" type="xml">
             <tree string="prodotti selezionbili prodotti">
                 <field name="product_id"/>
+                <field name="x_lavorazione"/>
                 <field name="note"/>
                 <field name="uom_id" readonly="1"/>
                 <field name="product_uom_height" optional="show" />
@@ -72,6 +82,8 @@
                                            attrs="{'invisible': [('display_type','!=',False)]}"/>
                                     <field name="product_id"
                                            attrs="{'invisible': [('display_type','!=',False)]}"/>
+                                    <field name="x_lavorazione"
+       attrs="{'invisible': [('display_type','!=',False)]}"/>
                                     <field name="default_code" readonly="1"
                                            attrs="{'invisible': [('display_type','!=',False)]}"/>
                                     <field name="uom_id" readonly="1"
@@ -208,9 +220,13 @@
                     attrs="{'invisible': [('x_load_id','=',False)]}"/>
 
                     </group>
-
+                    <separator string="Righe"/>
                     <group>
-                        <field name="x_load_line_ids" style="height: 1400px;" widget="section_and_note_one2many">
+                        <field name="x_load_line_ids"
+                               nolabel="1"
+                                colspan="4"
+
+                               widget="section_and_note_one2many">
                             <tree editable="bottom" decoration-info="sale_line_id">
                                 <control>
                                     <create string="Aggiungi riga"/>
@@ -224,6 +240,8 @@
                                 <field name="default_code" readonly="1" optional="hide" />
                                 <field name="editable" />
                                 <field name="product_id"  attrs="{'readonly': [('editable','=',False)]}"/>
+                                <field name="x_lavorazione"
+       attrs="{'invisible': [('display_type','!=',False)]}"/>
                                 <field name="tipo_vetrina" optional="show" attrs="{'readonly': [('editable','=',False)]}"/>
                                 <field name="uom_id" readonly="1" optional="show" attrs="{'readonly': [('editable','=',False)]}"/>
                                 <field name="product_uom_height" optional="show" attrs="{'readonly': [('editable','=',False)]}"/>
