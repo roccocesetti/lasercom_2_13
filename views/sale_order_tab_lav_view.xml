@@ -65,6 +65,7 @@
                                 class="oe_highlight"/>
                             <field name="line_ids"
                                    context="{'default_load_id': active_id}"
+                                    limit="100"
                                    >
                                 <tree editable="bottom">
                                     <control>
@@ -225,7 +226,7 @@
                         <field name="x_load_line_ids"
                                nolabel="1"
                                 colspan="4"
-
+                                limit="100"
                                widget="section_and_note_one2many">
                             <tree editable="bottom" decoration-info="sale_line_id">
                                 <control>
