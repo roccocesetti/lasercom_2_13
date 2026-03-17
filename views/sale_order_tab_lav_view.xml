@@ -67,7 +67,7 @@
                                    context="{'default_load_id': active_id}"
                                     limit="100"
                                    >
-                                <tree editable="bottom">
+                                <tree editable="bottom" limit="100">
                                     <control>
                                         <create string="Aggiungi riga"/>
 
@@ -228,7 +228,7 @@
                                 colspan="4"
                                 limit="100"
                                widget="section_and_note_one2many">
-                            <tree editable="bottom" decoration-info="sale_line_id">
+                            <tree editable="bottom" decoration-info="sale_line_id" limit="100">
                                 <control>
                                     <create string="Aggiungi riga"/>
                                     <create string="Aggiungi sezione" context="{'default_display_type': 'line_section'}"/>
