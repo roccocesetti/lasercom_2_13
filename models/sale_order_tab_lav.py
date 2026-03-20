@@ -27,9 +27,9 @@ class ProductLoad(models.Model):
     _description = "Caricamento Prodotti"
     _order = "id desc"
 
-    name = fields.Char(string="Riferimento", required=True, default=lambda self: self._default_name())
-    note = fields.Text(string="Nota")
-    line_ids = fields.One2many("x.product.load.line", "load_id", string="Righe prodotti")
+    name = fields.Char(string="Riferimento", required=True, default=lambda self: self._default_name(), copy=True)
+    note = fields.Text(string="Nota", copy=True)
+    line_ids = fields.One2many("x.product.load.line", "load_id", string="Righe prodotti", copy=True)
 
     @api.model
     def _default_name(self):
@@ -47,6 +47,27 @@ class ProductLoad(models.Model):
             })]
         })
         return True
+    def copy(self, default=None):
+        self.ensure_one()
+        default = dict(default or {})
+
+        # nome duplicato
+        if not default.get("name"):
+            default["name"] = _("%s (Copia)") % (self.name or "")
+
+        return super(ProductLoad, self).copy(default)
+
+    def action_duplicate(self):
+        self.ensure_one()
+        new_record = self.copy()
+        return {
+            "type": "ir.actions.act_window",
+            "name": _("Duplicato"),
+            "res_model": "x.product.load",
+            "view_mode": "form",
+            "res_id": new_record.id,
+            "target": "current",
+        }
 class ProductLoadLine(models.Model):
     _name = "x.product.load.line"
     _description = "Riga Caricamento Prodotto"
