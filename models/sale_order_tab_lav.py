@@ -295,17 +295,17 @@ class SaleOrderXLoadLine(models.Model):
         readonly=True
     )
     product_id = fields.Many2one("product.product", string="Prodotto", required=False)
-    product_uom_height = fields.Float(string="Altezza", default=0.0)
-    product_uom_length = fields.Float(string="Lunghezza", default=0.0)
-    product_uom_width = fields.Float(string="Larghezza", default=0.0)
-    product_uom_qty = fields.Float(string="Quantità", default=1.0)
-    price_unit = fields.Float(string="Prezzo Unitario")
-    price_extra = fields.Float(string="Prezzo Extra")
+    product_uom_height = fields.Float(string="Alt", default=0.0)
+    product_uom_length = fields.Float(string="Lung", default=0.0)
+    product_uom_width = fields.Float(string="Prof", default=0.0)
+    product_uom_qty = fields.Float(string="Qta", default=1.0)
+    price_unit = fields.Float(string="PU")
+    price_extra = fields.Float(string="PE")
     note = fields.Char(string="Nota")
-    supplier_id = fields.Many2one("res.partner", string="Fornitore", required=False)
-    default_code = fields.Char(related="product_id.default_code", string="Rif. Interno", readonly=True, store=False)
+    supplier_id = fields.Many2one("res.partner", string="For", required=False)
+    default_code = fields.Char(related="product_id.default_code", string="Codice", readonly=True, store=False)
     uom_id = fields.Many2one(related="product_id.uom_id", string="U.M.", readonly=True, store=False)
-    price_subtotal = fields.Monetary(compute='_compute_amount', string='Subtotal', readonly=True, store=True)
+    price_subtotal = fields.Monetary(compute='_compute_amount', string='T.riga', readonly=True, store=True)
 
     sale_line_id = fields.Many2one(
         "sale.order.line",
@@ -320,10 +320,10 @@ class SaleOrderXLoadLine(models.Model):
             ('outside', 'Esterna'),
 
         ],
-        string='Tipo vetrina',
+        string='T.vetr.',
     )
     x_lavorazione = fields.Boolean(
-        string="Lavorazione",
+        string="Lav",
         related="product_id.categ_id.x_lavorazione",
         store=True,
         readonly=True,
@@ -431,7 +431,7 @@ class SaleOrderXLoadLine(models.Model):
         ('line_section', "Sezione"),
 
     ], default=False)
-    name = fields.Char(string='Sezione')
+    name = fields.Char(string='S.')
 
     @api.model_create_multi
     def create(self, vals_list):

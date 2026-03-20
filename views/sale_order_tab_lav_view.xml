@@ -237,21 +237,23 @@
                                 <field name="sequence" widget="handle"/>
                                 <field name="sale_line_id" readonly="1" optional="hide"/>
                                 <field name="display_type" invisible="1"/>
-                                <field name="name" widget="section_and_note_text"  attrs="{'readonly': [('display_type','=',False)]}"/>
+
+                                <field name="name" widget="section_and_note_text"  attrs="{'readonly': [('display_type','=',False)],'invisible': [('display_type','=',False)]}"/>
+
                                 <field name="default_code" readonly="1" optional="hide" />
                                 <field name="editable" />
                                 <field name="product_id"  attrs="{'readonly': [('editable','=',False)]}"/>
                                 <field name="x_lavorazione"
-       attrs="{'invisible': [('display_type','!=',False)]}"/>
-                                <field name="tipo_vetrina" optional="show" attrs="{'readonly': [('editable','=',False)]}"/>
-                                <field name="uom_id" readonly="1" optional="show" attrs="{'readonly': [('editable','=',False)]}"/>
+       attrs="{'invisible': [('display_type','!=',False)]}" optional="hide"/>
+                                <field name="tipo_vetrina" optional="hide" attrs="{'readonly': [('editable','=',False)]}"/>
+                                <field name="uom_id" readonly="1" optional="hide" attrs="{'readonly': [('editable','=',False)]}"/>
                                 <field name="product_uom_height" optional="show" attrs="{'readonly': [('editable','=',False)]}"/>
                                 <field name="product_uom_length" optional="show" attrs="{'readonly': [('editable','=',False)]}"/>
                                 <field name="product_uom_width" optional="show" attrs="{'readonly': [('editable','=',False)]}"/>
                                 <field name="product_uom_qty" optional="show" attrs="{'readonly': [('editable','=',False)]}"/>
                                 <field name="price_unit" optional="show" attrs="{'readonly': [('editable','=',False)]}"/>
                                 <field name="price_extra" optional="show" attrs="{'readonly': [('editable','=',False)]}"/>
-                                <field name="price_subtotal" optional="show" attrs="{'readonly': [('editable','=',False)]}"/>
+                                <field name="price_subtotal" optional="hide" attrs="{'readonly': [('editable','=',False)]}"/>
                                 <field name="supplier_id" domain="[('commercial_partner_id.property_supplier_payment_term_id','!=',False)]" optional="hide" attrs="{'readonly': [('editable','=',False)]}"/>
                                 <field name="note" optional="hide" attrs="{'readonly': [('editable','=',False)]}"/>
                             </tree>
