@@ -1,6 +1,46 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
 
+           crm.lead.tag views
+        -->
+        <record id="x_product_load_tag_form" model="ir.ui.view">
+            <field name="name">x.product.load.tag.form</field>
+            <field name="model">x.product.load.tag</field>
+            <field name="arch" type="xml">
+                <form string="Tags">
+                    <sheet>
+                        <div class="oe_title">
+                            <div class="oe_edit_only">
+                                <label for="name"/>
+                            </div>
+                            <h1>
+                                <field name="name"/>
+                            </h1>
+                        </div>
+                        <group>
+                            <group>
+                                <field name="color" required="True"/>
+                            </group>
+                        </group>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+
+        <record id="x_product_load_tag_tree" model="ir.ui.view">
+            <field name="name">x.product.load.tag.tree</field>
+            <field name="model">x.product.load.tag</field>
+            <field name="arch" type="xml">
+                <tree string="Tags" editable="bottom">
+                    <field name="name"/>
+                    <field name="color" groups="base.group_no_one"/>
+                </tree>
+            </field>
+        </record>
+
+
+
+
 <record id="product_category_form_inherit_lavorazione" model="ir.ui.view">
     <field name="name">product.category.form.inherit.lavorazione</field>
     <field name="model">product.category</field>
@@ -29,6 +69,8 @@
         <field name="model">x.product.load.line</field>
         <field name="arch" type="xml">
             <tree string="prodotti selezionbili prodotti">
+                <field name="tag_true"   optional="show"/>
+                <field name="tag_ids" optional="show" widget="many2many_tags"/>
                 <field name="product_id"/>
                 <field name="x_lavorazione"/>
                 <field name="note"/>
@@ -76,7 +118,9 @@
                                     <field name="sequence" widget="handle"/>
                                     <field name="display_type" invisible="1"/>
                                     <field name="name" string="Descrizione" widget="section_and_note_text"  attrs="{'readonly': [('display_type','=',False)]}"/>
-
+                                <field name="tag_true"  attrs="{'invisible': [('display_type','!=',False)]}" optional="show"/>
+                                <field name="tag_ids" widget="many2many_tags" optional="show"
+       attrs="{'invisible': [('display_type','!=',False)],'required': [('tag_true', '=', True)]}"/>
                                     <field name="editable"
                                            attrs="{'invisible': [('display_type','!=',False)]}"/>
                                     <field name="tipo_vetrina"
@@ -131,6 +175,11 @@
         <field name="view_mode">tree,form</field>
     </record>
 
+    <record id="action_x_product_load_tags" model="ir.actions.act_window">
+        <field name="name">Etichette</field>
+        <field name="res_model">x.product.load.tag</field>
+        <field name="view_mode">tree,form</field>
+    </record>
     <!-- MENU: visibile solo Sales Manager -->
     <menuitem id="menu_x_product_load_root"
               name="Caricamenti Prodotti"
@@ -144,6 +193,12 @@
               action="action_x_product_load"
               groups="sales_team.group_sale_manager,lasercom_2_13.group_admin_lav"
               sequence="10"/>
+    <menuitem id="menu_x_product_load_tag"
+              name="Etichette"
+              parent="menu_x_product_load_root"
+              action="action_x_product_load_tags"
+              groups="sales_team.group_sale_manager,lasercom_2_13.group_admin_lav"
+              sequence="125"/>
 
     <menuitem id="menu_x_product_load_root_2"
               name="Caricamenti Prodotti"
@@ -157,7 +212,12 @@
               action="action_x_product_load"
               groups="sales_team.group_sale_manager,lasercom_2_13.group_admin_lav"
               sequence="10"/>
-
+    <menuitem id="menu_x_product_load_tag_2"
+              name="Etichette"
+              parent="menu_x_product_load_root_2"
+              action="action_x_product_load_tags"
+              groups="sales_team.group_sale_manager,lasercom_2_13.group_admin_lav"
+              sequence="125"/>
 
 
 
@@ -239,21 +299,23 @@
                                 <field name="display_type" invisible="1"/>
 
                                 <field name="name" widget="section_and_note_text"  attrs="{'readonly': [('display_type','=',False)],'invisible': [('display_type','=',False)]}"/>
-
+                                <field name="tag_true" optional="hide"  attrs="{'readonly':True}"/>
+                                 <field name="tag_ids" widget="many2many_tags" optional="show"
+       attrs="{'required': [('tag_true', '=', True)]}"/>
                                 <field name="default_code" readonly="1" optional="hide" />
                                 <field name="editable" />
-                                <field name="product_id"  attrs="{'readonly': [('editable','=',False)]}"/>
+                                <field name="product_id"  attrs="{'readonly': [('editable','=',False)]}" />
                                 <field name="x_lavorazione"
        attrs="{'invisible': [('display_type','!=',False)]}" optional="hide"/>
                                 <field name="tipo_vetrina" optional="hide" attrs="{'readonly': [('editable','=',False)]}"/>
-                                <field name="uom_id" readonly="1" optional="hide" attrs="{'readonly': [('editable','=',False)]}"/>
-                                <field name="product_uom_height" optional="show" attrs="{'readonly': [('editable','=',False)]}"/>
-                                <field name="product_uom_length" optional="show" attrs="{'readonly': [('editable','=',False)]}"/>
-                                <field name="product_uom_width" optional="show" attrs="{'readonly': [('editable','=',False)]}"/>
                                 <field name="product_uom_qty" optional="show" attrs="{'readonly': [('editable','=',False)]}"/>
                                 <field name="price_unit" optional="show" attrs="{'readonly': [('editable','=',False)]}"/>
                                 <field name="price_extra" optional="show" attrs="{'readonly': [('editable','=',False)]}"/>
                                 <field name="price_subtotal" optional="hide" attrs="{'readonly': [('editable','=',False)]}"/>
+                                <field name="uom_id" readonly="1" optional="hide" attrs="{'readonly': [('editable','=',False)]}"/>
+                                <field name="product_uom_height" optional="show" attrs="{'readonly': [('editable','=',False)]}"/>
+                                <field name="product_uom_length" optional="show" attrs="{'readonly': [('editable','=',False)]}"/>
+                                <field name="product_uom_width" optional="show" attrs="{'readonly': [('editable','=',False)]}"/>
                                 <field name="supplier_id" domain="[('commercial_partner_id.property_supplier_payment_term_id','!=',False)]" optional="hide" attrs="{'readonly': [('editable','=',False)]}"/>
                                 <field name="note" optional="hide" attrs="{'readonly': [('editable','=',False)]}"/>
                             </tree>

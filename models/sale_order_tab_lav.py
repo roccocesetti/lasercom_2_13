@@ -19,6 +19,17 @@ class ProductCategory(models.Model):
 
     x_lavorazione = fields.Boolean(string="Lavorazione")
 
+class Tag(models.Model):
+
+    _name = "x.product.load.tag"
+    _description = "product Tag"
+
+    name = fields.Char('Tag Name', required=True, translate=True)
+    color = fields.Integer('Color Index')
+
+    _sql_constraints = [
+        ('name_uniq', 'unique (name)', "Tag name already exists !"),
+    ]
 
 
 
@@ -108,6 +119,9 @@ class ProductLoadLine(models.Model):
         store=True,
         readonly=True,
     )
+    tag_true = fields.Boolean(string="Etc", default=False,help="Etichetta obbligatoria")
+    tag_ids = fields.Many2many('x.product.load.tag', 'x_product_load_line_rel', 'product_line_id', 'tag_id', string='Tags', help="Etichette")
+
     @api.onchange('uom_id', 'product_uom_height', 'product_uom_length')
     def product_uom_change(self):
         if not self.uom_id or not self.product_id:
@@ -223,6 +237,7 @@ class SaleOrder(models.Model):
         replace=True  -> rimpiazza le righe ordine
         replace=False -> aggiunge alle righe esistenti
         """
+
         for order in self:
             if not order.x_load_id:
                 raise UserError(_("Seleziona un Caricamento Prodotti."))
@@ -230,22 +245,25 @@ class SaleOrder(models.Model):
             if replace:
                 order.x_load_line_ids.unlink()
 
-            if self.order_line:
-                line = self.env["sale.order.x_load_line"].new({
-                    "order_id": order.id,
-                    "product_id":self.order_line[0].product_id.id,
-                    "product_uom_qty":  1.0,
-
-                })
-                line._onchange_product_id()
-
-                vals = line._convert_to_write(line._cache)
 
 
 
             # Creazione righe ordine
+            testata=True
             for ll in order.x_load_id.line_ids:
                 # usa new() + onchange per avere descrizione, tasse, uom coerenti con Odoo
+                if self.order_line and testata:
+                    line = self.env["sale.order.x_load_line"].new({
+                        "order_id": order.id,
+                        "product_id": self.order_line[0].product_id.id,
+                        "product_uom_qty": 1.0,
+                        "price_unit": self.order_line[0].price_unit,
+
+                    })
+                    line._onchange_product_id()
+                    vals = line._convert_to_write(line._cache)
+                    testata=False
+                    self.env["sale.order.x_load_line"].create(vals)
                 line = self.env["sale.order.x_load_line"].new({
                     "order_id": order.id,
                     "product_id": ll.product_id.id,
@@ -260,10 +278,11 @@ class SaleOrder(models.Model):
                     "note": ll.note,
                     "display_type":ll.display_type,
                     "name": ll.name,
-                    "x_lavorazione":ll.x_lavorazione
+                    "x_lavorazione":ll.x_lavorazione,
+                    "tag_true": ll.tag_true,
+                    "tag_ids": [(6, 0, ll.tag_ids.ids)],
                 })
                 line._onchange_product_id()
-
                 vals = line._convert_to_write(line._cache)
 
                 # Override prezzo e nota da caricamento
@@ -349,6 +368,15 @@ class SaleOrderXLoadLine(models.Model):
         store=True,
         readonly=True,
     )
+    tag_true = fields.Boolean(string="Etc", default=False,help="Etichetta obbligatoria")
+    tag_ids = fields.Many2many('x.product.load.tag', 'sale_order_x_load_line_rel', 'product_line_id', 'tag_id', string='Tags', help="Etichette")
+
+
+    @api.constrains('tag_true', 'tag_ids')
+    def _check_tag_ids_required(self):
+        for rec in self:
+            if rec.tag_true and not rec.tag_ids:
+                raise ValidationError(_("Il campo Tags è obbligatorio quando Edit è attivo."))
     @api.onchange('uom_id', 'product_uom_height', 'product_uom_length')
     def product_uom_change(self):
         if not self.uom_id or not self.product_id:
