@@ -51,7 +51,13 @@
 						</div>
 
 						<div t-if="report_type == 'pdf'" class="text-muted">
-							Page: <span class="page"/> /2<span /><!--<span class="topage"/>-->
+							<t t-if="nome_documento=='contratto'">
+							   Page: <span class="page"/> /1<span />
+							</t>
+							<t t-if="nome_documento != 'contratto'">
+								Page: <t t-esc="pagina"/>
+							</t>
+
 						</div>
 					</div>
 				</div>
@@ -469,8 +475,15 @@
 																<strong class="mr-2 ml-2">importo titoli:</strong>
 															<p t-if="doc.payment_direct_importo_titoli &gt;0" t-field="doc.payment_direct_importo_titoli"/>
 										</div>
+										<!-- rocco
 										<div t-if="doc.payment_direct" class="row m-1 break-line">
 																   <p t-if="doc.payment_direct" class="mr-2 ml-2 medium-font break-line bold-text" t-field="doc.payment_direct_nota" style="white-space: pre-line;"/>
+										</div>
+										-->
+										<div t-if="doc.payment_direct" class="row ml-1 mr-1 break-line" style="margin-top: -6px; margin-bottom: 0;">
+    											<p class="mr-2 ml-2 medium-font break-line bold-text"
+       											t-field="doc.payment_direct_nota"
+       												style="white-space: pre-line; margin: 0;"/>
 										</div>
 										<div t-if="doc.leasing_direct" class="row m-0   avoid-page-breakr medium-font" style="page-break-inside: avoid;">
 														<p><strong class="mr-2 ml-2">Leasing:</strong>
@@ -1060,10 +1073,12 @@
 	<template id="report_saleorder_laser">
 		<t t-call="web.html_container">
 			<t t-foreach="docs" t-as="doc">
+				<t t-set="pagina" t-value="'1/2'" />
 				<t t-call="lasercom_2_13.report_saleorder_document_laser_1"
 					t-lang="doc.partner_id.lang" >
 					<t t-set="company" t-value="doc.company_id" />
 					</t>
+									<t t-set="pagina" t-value="'2/2'" />
 									<t t-call="lasercom_2_13.report_saleorder_document_laser_2"
 					t-lang="doc.partner_id.lang" >
 					<t t-set="company" t-value="doc.company_id" />

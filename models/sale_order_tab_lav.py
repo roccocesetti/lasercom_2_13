@@ -302,6 +302,28 @@ class SaleOrder(models.Model):
 
 
 
+    x_filter_tag_id = fields.Many2one(
+        'x.product.load.tag',
+        string='Filtra per etichetta'
+    )
+    x_load_line_filtered_ids = fields.Many2many(
+        'sale.order.x_load_line',
+        compute='_compute_x_load_line_filtered_ids',
+        string='Righe filtrate'
+    )
+    @api.depends('x_load_line_ids', 'x_load_line_ids.tag_ids', 'x_filter_tag_id')
+    def _compute_x_load_line_filtered_ids(self):
+        for order in self:
+            if order.x_filter_tag_id:
+                order.x_load_line_filtered_ids = order.x_load_line_ids.filtered(
+                    lambda l: order.x_filter_tag_id in l.tag_ids
+                )
+            else:
+                order.x_load_line_filtered_ids = order.x_load_line_ids
+    def action_refresh_tag_filter(self):
+        self._compute_x_load_line_filtered_ids()
+        return True
+
 class SaleOrderXLoadLine(models.Model):
     _name = "sale.order.x_load_line"
     _description = "Righe Caricamento su Ordine di Vendita"
@@ -371,6 +393,20 @@ class SaleOrderXLoadLine(models.Model):
     tag_true = fields.Boolean(string="Etc", default=False,help="Etichetta obbligatoria")
     tag_ids = fields.Many2many('x.product.load.tag', 'sale_order_x_load_line_rel', 'product_line_id', 'tag_id', string='Tags', help="Etichette")
 
+
+    x_tag_visible = fields.Boolean(
+        string='Visibile filtro tag',
+        compute='_compute_x_tag_visible',
+        store=False
+    )
+
+    @api.depends('tag_ids', 'order_id.x_filter_tag_id')
+    def _compute_x_tag_visible(self):
+        for line in self:
+            if not line.order_id.x_filter_tag_id:
+                line.x_tag_visible = True
+            else:
+                line.x_tag_visible = line.order_id.x_filter_tag_id in line.tag_ids
 
     @api.constrains('tag_true', 'tag_ids')
     def _check_tag_ids_required(self):

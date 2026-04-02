@@ -267,6 +267,8 @@
                     <group>
                         <field name="x_load_id" options="{'no_create': True}"/>
                         <field name="price_subtotal_lav"  widget="monetary"/>
+
+
                         <!-- 16/02/20026 rocco
                         <button name="action_open_import_load_lines_wizard"
                                 type="object"
@@ -279,7 +281,7 @@
                     string="Applica Caricamento (Sostituisci righe)"
                     class="oe_highlight"
                     attrs="{'invisible': [('x_load_id','=',False)]}"/>
-
+   
                     </group>
                     <separator string="Righe"/>
                     <group>
