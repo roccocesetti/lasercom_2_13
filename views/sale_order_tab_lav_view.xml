@@ -281,7 +281,7 @@
                     string="Applica Caricamento (Sostituisci righe)"
                     class="oe_highlight"
                     attrs="{'invisible': [('x_load_id','=',False)]}"/>
-   
+
                     </group>
                     <separator string="Righe"/>
                     <group>
