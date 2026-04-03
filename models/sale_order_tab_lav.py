@@ -181,6 +181,14 @@ class ResConfigSettings(models.TransientModel):
 class SaleOrder(models.Model):
     _inherit = "sale.order"
 
+    def _default_validity_date_2(self):
+        if self.env['ir.config_parameter'].sudo().get_param('sale.use_quotation_validity_days'):
+            days = self.env.company.quotation_validity_days
+            if days > 0:
+                return fields.Date.to_string(datetime.now() + timedelta(days))
+        return False
+
+
     @api.depends('x_load_line_ids')
     def _compute_amount_lav(self):
         """
@@ -208,6 +216,8 @@ class SaleOrder(models.Model):
     )
 
     price_subtotal_lav = fields.Monetary(compute='_compute_amount_lav', string='Subtotal', readonly=True, store=True)
+    date_module = fields.Date(string='Data Modulo',  copy=False,
+                                default=_default_validity_date_2)
     @api.onchange("company_id")
     def _onchange_company_id_set_default_load(self):
         for order in self:
@@ -257,7 +267,7 @@ class SaleOrder(models.Model):
                         "order_id": order.id,
                         "product_id": self.order_line[0].product_id.id,
                         "product_uom_qty": 1.0,
-                        "price_unit": self.order_line[0].price_unit,
+                        "price_unit": self.order_line[0].purchase_price,
 
                     })
                     line._onchange_product_id()
@@ -398,6 +408,14 @@ class SaleOrderXLoadLine(models.Model):
         string='Visibile filtro tag',
         compute='_compute_x_tag_visible',
         store=False
+    )
+    etichetta_si = fields.Selection(
+        [
+            ('yes', 'SI'),
+            ('no', 'NO'),
+
+        ],
+        string='SI/NO',default='no'
     )
 
     @api.depends('tag_ids', 'order_id.x_filter_tag_id')
@@ -542,5 +560,83 @@ class SaleOrderXLoadLine(models.Model):
                 "supplier_id": False,
                 "editable": False,
             })
+        else:
+            protected_fields = {
+                'tag_ids',
+                'etichetta_si',
+                'product_id',
+                'product_uom_qty',
+                'price_unit',
+                'discount',
+                'price_extra'
+            }
+
+            for rec in self:
+                if rec.x_readonly_by_tag and protected_fields.intersection(vals.keys()):
+                    raise UserError("Non puoi modificare una riga NO bloccata da una riga SI con la stessa etichetta.")
+
         return super().write(vals)
+
+
+
+    x_readonly_by_tag = fields.Boolean(
+        string='Bloccata da etichetta',
+        compute='_compute_x_readonly_by_tag',
+        store=False
+    )
+
+    def _same_tag_signature(self):
+        self.ensure_one()
+        return tuple(sorted(self.tag_ids.ids))
+
+    def _is_locked_by_yes_line(self):
+        self.ensure_one()
+
+        if self.etichetta_si == 'yes':
+            return False
+
+        if not self.order_id or not self.tag_ids:
+            return False
+
+        my_signature = self._same_tag_signature()
+
+        yes_lines = self.order_id.x_load_line_ids.filtered(
+            lambda r: r != self and r.etichetta_si == 'yes' and r.tag_ids
+        )
+
+        for other in yes_lines:
+            if tuple(sorted(other.tag_ids.ids)) == my_signature:
+                return True
+
+        return False
+
+
+
+
+    @api.depends(
+        'etichetta_si',
+        'tag_ids',
+        'order_id.x_load_line_ids.etichetta_si',
+        'order_id.x_load_line_ids.tag_ids',
+    )
+    def _compute_x_readonly_by_tag(self):
+        for rec in self:
+            rec.x_readonly_by_tag = rec._is_locked_by_yes_line()
+
+
+    @api.onchange('etichetta_si', 'tag_ids')
+    def _onchange_etichetta_si_tag_ids(self):
+        if self.order_id:
+
+            self.order_id.x_load_line_ids._compute_x_readonly_by_tag()
+
+        if self._is_locked_by_yes_line():
+                return {
+                    'warning': {
+                        'title': _('Riga bloccata'),
+                        'message': _(
+                            'Esiste già una riga con SI e la stessa etichetta. Questa riga NO non è modificabile.'),
+                    }
+                }
+
 
