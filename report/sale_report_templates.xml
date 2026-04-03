@@ -1016,8 +1016,15 @@
 																<strong class="mr-2 ml-2">importo titoli:</strong>
 															<p t-if="doc.payment_direct_importo_titoli &gt;0" t-field="doc.payment_direct_importo_titoli"/>
 										</div>
+										<!--
 										<div t-if="doc.payment_direct" class="row m-1 break-line">
-																   <p t-if="doc.payment_direct" class="mr-2 ml-2 medium-font break-line bold-text" t-field="doc.payment_direct_nota" style="white-space: pre-line;"/>
+																					   <p t-if="doc.payment_direct" class="mr-2 ml-2 medium-font break-line bold-text" t-field="doc.payment_direct_nota" style="white-space: pre-line;"/>
+															</div>
+										-->
+										<div t-if="doc.payment_direct" class="row ml-1 mr-1 break-line" style="margin-top: -6px; margin-bottom: 0;">
+												<p class="mr-2 ml-2 medium-font break-line bold-text"
+						   						t-field="doc.payment_direct_nota"
+						   						style="white-space: pre-line; margin: 0;"/>
 										</div>
 										<div t-if="doc.leasing_direct" class="row m-0   avoid-page-breakr medium-font" style="page-break-inside: avoid;">
 														<p><strong class="mr-2 ml-2">Leasing:</strong>
@@ -1396,8 +1403,15 @@
 											<strong class="mr-2 ml-2">importo titoli:</strong>
 										<p t-if="doc.payment_direct_importo_titoli &gt;0" t-field="doc.payment_direct_importo_titoli"/>
 					</div>
-				    <div t-if="doc.payment_direct" class="row m-1 break-line">
+				    <!--
+					<div t-if="doc.payment_direct" class="row m-1 break-line">
 											   <p t-if="doc.payment_direct" class="mr-2 ml-2 medium-font break-line bold-text" t-field="doc.payment_direct_nota" style="white-space: pre-line;"/>
+					</div>
+					-->
+					<div t-if="doc.payment_direct" class="row ml-1 mr-1 break-line" style="margin-top: -6px; margin-bottom: 0;">
+						<p class="mr-2 ml-2 medium-font break-line bold-text"
+						   t-field="doc.payment_direct_nota"
+						   style="white-space: pre-line; margin: 0;"/>
 					</div>
 				    <div t-if="doc.leasing_direct" class="row m-0   avoid-page-breakr medium-font" style="page-break-inside: avoid;">
 									<p><strong class="mr-2 ml-2">Leasing:</strong>
