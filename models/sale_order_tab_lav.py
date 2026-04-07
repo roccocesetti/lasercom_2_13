@@ -571,11 +571,17 @@ class SaleOrderXLoadLine(models.Model):
                 'price_extra'
             }
 
-            for rec in self:
-                if rec.x_readonly_by_tag and protected_fields.intersection(vals.keys()):
-                    raise UserError("Non puoi modificare una riga NO bloccata da una riga SI con la stessa etichetta.")
+            # se non stai toccando campi sensibili, lascia passare
+            if not protected_fields.intersection(vals.keys()):
+                return super(SaleOrderXLoadLine, self).write(vals)
 
-        return super().write(vals)
+            for rec in self:
+                if rec._is_locked_by_yes_line():
+                    raise UserError(
+                        _("Non puoi modificare una riga NO bloccata da una riga SI con la stessa etichetta.")
+                    )
+
+        return super(SaleOrderXLoadLine,self).write(vals)
 
 
 
@@ -585,20 +591,22 @@ class SaleOrderXLoadLine(models.Model):
         store=False
     )
 
-    def _same_tag_signature(self):
+    def _tag_signature(self):
         self.ensure_one()
         return tuple(sorted(self.tag_ids.ids))
+
 
     def _is_locked_by_yes_line(self):
         self.ensure_one()
 
+        # la riga SI resta sempre libera
         if self.etichetta_si == 'yes':
             return False
 
         if not self.order_id or not self.tag_ids:
             return False
 
-        my_signature = self._same_tag_signature()
+        my_signature = self._tag_signature()
 
         yes_lines = self.order_id.x_load_line_ids.filtered(
             lambda r: r != self and r.etichetta_si == 'yes' and r.tag_ids
@@ -622,7 +630,6 @@ class SaleOrderXLoadLine(models.Model):
     def _compute_x_readonly_by_tag(self):
         for rec in self:
             rec.x_readonly_by_tag = rec._is_locked_by_yes_line()
-
 
     @api.onchange('etichetta_si', 'tag_ids')
     def _onchange_etichetta_si_tag_ids(self):
