@@ -578,7 +578,7 @@ class SaleOrderXLoadLine(models.Model):
             for rec in self:
                 if rec._is_locked_by_yes_line():
                     raise UserError(
-                        _("Non puoi modificare una riga NO bloccata da una riga SI con la stessa etichetta.")
+                        _("--Non puoi modificare una riga NO bloccata da una riga SI con la stessa etichetta.")
                     )
 
         return super(SaleOrderXLoadLine,self).write(vals)
