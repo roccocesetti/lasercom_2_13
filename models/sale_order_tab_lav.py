@@ -333,6 +333,52 @@ class SaleOrder(models.Model):
     def action_refresh_tag_filter(self):
         self._compute_x_load_line_filtered_ids()
         return True
+    x_tag_warning_visible = fields.Boolean(
+        string='Mostra warning etichette',
+        compute='_compute_x_tag_warning',
+        store=False
+    )
+
+    x_tag_warning_message = fields.Html(
+        string='Messaggio warning etichette',
+        compute='_compute_x_tag_warning',
+        sanitize=False,
+        store=False
+    )
+
+
+    @api.depends(
+        'x_load_line_ids',
+        'x_load_line_ids.tag_ids',
+        'x_load_line_ids.etichetta_si',
+        'x_load_line_ids.display_type',
+    )
+    def _compute_x_tag_warning(self):
+        for order in self:
+            order.x_tag_warning_visible = False
+            order.x_tag_warning_message = False
+
+            conflicts = []
+            lines = order.x_load_line_ids.filtered(lambda l: not l.display_type and l.tag_ids)
+
+            yes_lines = lines.filtered(lambda l: l.etichetta_si == 'yes')
+
+            for line in yes_lines:
+                same_group_yes = yes_lines.filtered(
+                    lambda l: l.id != line.id and bool(l.tag_ids & line.tag_ids)
+                )
+                if same_group_yes:
+                    tags = ', '.join(line.tag_ids.mapped('name'))
+                    conflicts.append(tags)
+
+            if conflicts:
+                unique_conflicts = sorted(set(conflicts))
+                order.x_tag_warning_visible = True
+                order.x_tag_warning_message = _(
+                    "<div class='alert alert-danger' role='alert'>"
+                    "<strong>Attenzione:</strong> esistono più righe con valore SI per lo stesso gruppo etichetta: %s"
+                    "</div>"
+                ) % ', '.join(unique_conflicts)
 
 class SaleOrderXLoadLine(models.Model):
     _name = "sale.order.x_load_line"
@@ -570,10 +616,13 @@ class SaleOrderXLoadLine(models.Model):
                 'discount',
                 'price_extra'
             }
-
-            # se non stai toccando campi sensibili, lascia passare
-            if not protected_fields.intersection(vals.keys()):
-                return super(SaleOrderXLoadLine, self).write(vals)
+            if protected_fields.intersection(vals.keys()):
+                for rec in self:
+                    rec._compute_x_locked_by_tag()
+                    if rec.x_locked_by_tag:
+                        raise ValidationError(
+                            _("Non puoi modificare una riga NO se nel gruppo esiste già una riga SI.")
+                        )
 
 
         return super(SaleOrderXLoadLine,self).write(vals)
@@ -586,17 +635,52 @@ class SaleOrderXLoadLine(models.Model):
         self.ensure_one()
         return tuple(sorted(self.tag_ids.ids))
 
-    @api.constrains('etichetta_si', 'tag_ids', 'order_id')
-    def _check_etichetta_si_blocco(self):
+
+    x_locked_by_tag = fields.Boolean(
+        string='Bloccata da etichetta',
+        compute='_compute_x_locked_by_tag',
+        store=False
+    )
+
+    @api.depends(
+        'etichetta_si',
+        'tag_ids',
+        'display_type',
+        'order_id.x_load_line_ids.etichetta_si',
+        'order_id.x_load_line_ids.tag_ids',
+        'order_id.x_load_line_ids.display_type',
+    )
+    def _compute_x_locked_by_tag(self):
         for rec in self:
-            if not rec.order_id or rec.display_type or not rec.tag_ids:
+            rec.x_locked_by_tag = False
+
+            if rec.display_type or not rec.order_id or not rec.tag_ids:
                 continue
 
-            # La riga SI non è bloccata
-            if rec.etichetta_si == 'yes':
+            gruppo = rec.order_id.x_load_line_ids.filtered(
+                lambda l: l.id != rec.id
+                and not l.display_type
+                and l.tag_ids
+                and bool(l.tag_ids & rec.tag_ids)
+            )
+
+            has_si = any(l.etichetta_si == 'yes' for l in gruppo)
+
+            rec.x_locked_by_tag = (
+                rec.etichetta_si != 'yes'
+                and has_si
+            )
+
+    @api.constrains('etichetta_si', 'tag_ids', 'order_id', 'display_type')
+    def _check_unique_si_per_tag_group(self):
+        for rec in self:
+            if rec.display_type or not rec.order_id or not rec.tag_ids:
                 continue
 
-            righe_bloccanti = rec.order_id.x_load_line_ids.filtered(
+            if rec.etichetta_si != 'yes':
+                continue
+
+            righe_conflitto = rec.order_id.x_load_line_ids.filtered(
                 lambda l: l.id != rec.id
                 and not l.display_type
                 and l.etichetta_si == 'yes'
@@ -604,38 +688,9 @@ class SaleOrderXLoadLine(models.Model):
                 and bool(l.tag_ids & rec.tag_ids)
             )
 
-            if righe_bloccanti:
+            if righe_conflitto:
                 raise ValidationError(
-                    _("Non puoi modificare una riga NO bloccata da una riga SI con la stessa etichetta.")
-                )
-
-    x_locked_by_tag = fields.Boolean(
-        string='Bloccata da etichetta',
-        compute='_compute_x_locked_by_tag'
-    )
-
-    @api.depends(
-        'etichetta_si',
-        'tag_ids',
-        'order_id.x_load_line_ids.etichetta_si',
-        'order_id.x_load_line_ids.tag_ids'
-    )
-    def _compute_x_locked_by_tag(self):
-        for rec in self:
-            rec.x_locked_by_tag = False
-
-            if not rec.order_id or rec.display_type or rec.etichetta_si == 'yes' or not rec.tag_ids:
-                continue
-
-            righe_bloccanti = rec.order_id.x_load_line_ids.filtered(
-                lambda l: l.id != rec.id
-                          and not l.display_type
-                          and l.etichetta_si == 'yes'
-                          and l.tag_ids
-                          and bool(l.tag_ids & rec.tag_ids)
-            )
-            rec.x_locked_by_tag = bool(righe_bloccanti)
-
+                    _("Può esistere una sola riga SI per gruppo con la stessa etichetta.")  )
 
 
 

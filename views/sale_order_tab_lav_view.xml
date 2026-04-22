@@ -284,7 +284,13 @@
                     attrs="{'invisible': [('x_load_id','=',False)]}"/>
 
                     </group>
+                    <field name="x_tag_warning_visible" invisible="1"/>
+<field name="x_tag_warning_message"
+       widget="html"
+       nolabel="1"
+       attrs="{'invisible': [('x_tag_warning_visible', '=', False)]}"/>
                     <separator string="Righe"/>
+
                     <group>
                         <field name="x_load_line_ids"
                                nolabel="1"
