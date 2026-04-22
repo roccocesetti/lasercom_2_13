@@ -616,13 +616,7 @@ class SaleOrderXLoadLine(models.Model):
                 'discount',
                 'price_extra'
             }
-            if protected_fields.intersection(vals.keys()):
-                for rec in self:
-                    rec._compute_x_locked_by_tag()
-                    if rec.x_locked_by_tag:
-                        raise ValidationError(
-                            _("Non puoi modificare una riga NO se nel gruppo esiste già una riga SI.")
-                        )
+
 
 
         return super(SaleOrderXLoadLine,self).write(vals)
