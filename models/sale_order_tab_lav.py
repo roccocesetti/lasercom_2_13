@@ -575,75 +575,67 @@ class SaleOrderXLoadLine(models.Model):
             if not protected_fields.intersection(vals.keys()):
                 return super(SaleOrderXLoadLine, self).write(vals)
 
-            for rec in self:
-                if rec._is_locked_by_yes_line():
-                    raise UserError(
-                        _("--Non puoi modificare una riga NO bloccata da una riga SI con la stessa etichetta.")
-                    )
 
         return super(SaleOrderXLoadLine,self).write(vals)
 
 
 
-    x_readonly_by_tag = fields.Boolean(
-        string='Bloccata da etichetta',
-        compute='_compute_x_readonly_by_tag',
-        store=False
-    )
+
 
     def _tag_signature(self):
         self.ensure_one()
         return tuple(sorted(self.tag_ids.ids))
 
+    @api.constrains('etichetta_si', 'tag_ids', 'order_id')
+    def _check_etichetta_si_blocco(self):
+        for rec in self:
+            if not rec.order_id or rec.display_type or not rec.tag_ids:
+                continue
 
-    def _is_locked_by_yes_line(self):
-        self.ensure_one()
+            # La riga SI non è bloccata
+            if rec.etichetta_si == 'yes':
+                continue
 
-        # la riga SI resta sempre libera
-        if self.etichetta_si == 'yes':
-            return False
+            righe_bloccanti = rec.order_id.x_load_line_ids.filtered(
+                lambda l: l.id != rec.id
+                and not l.display_type
+                and l.etichetta_si == 'yes'
+                and l.tag_ids
+                and bool(l.tag_ids & rec.tag_ids)
+            )
 
-        if not self.order_id or not self.tag_ids:
-            return False
+            if righe_bloccanti:
+                raise ValidationError(
+                    _("Non puoi modificare una riga NO bloccata da una riga SI con la stessa etichetta.")
+                )
 
-        my_signature = self._tag_signature()
-
-        yes_lines = self.order_id.x_load_line_ids.filtered(
-            lambda r: r != self and r.etichetta_si == 'yes' and r.tag_ids
-        )
-
-        for other in yes_lines:
-            if tuple(sorted(other.tag_ids.ids)) == my_signature:
-                return True
-
-        return False
-
-
-
+    x_locked_by_tag = fields.Boolean(
+        string='Bloccata da etichetta',
+        compute='_compute_x_locked_by_tag'
+    )
 
     @api.depends(
         'etichetta_si',
         'tag_ids',
         'order_id.x_load_line_ids.etichetta_si',
-        'order_id.x_load_line_ids.tag_ids',
+        'order_id.x_load_line_ids.tag_ids'
     )
-    def _compute_x_readonly_by_tag(self):
+    def _compute_x_locked_by_tag(self):
         for rec in self:
-            rec.x_readonly_by_tag = rec._is_locked_by_yes_line()
+            rec.x_locked_by_tag = False
 
-    @api.onchange('etichetta_si', 'tag_ids')
-    def _onchange_etichetta_si_tag_ids(self):
-        if self.order_id:
+            if not rec.order_id or rec.display_type or rec.etichetta_si == 'yes' or not rec.tag_ids:
+                continue
 
-            self.order_id.x_load_line_ids._compute_x_readonly_by_tag()
+            righe_bloccanti = rec.order_id.x_load_line_ids.filtered(
+                lambda l: l.id != rec.id
+                          and not l.display_type
+                          and l.etichetta_si == 'yes'
+                          and l.tag_ids
+                          and bool(l.tag_ids & rec.tag_ids)
+            )
+            rec.x_locked_by_tag = bool(righe_bloccanti)
 
-        if self._is_locked_by_yes_line():
-                return {
-                    'warning': {
-                        'title': _('Riga bloccata'),
-                        'message': _(
-                            'Esiste già una riga con SI e la stessa etichetta. Questa riga NO non è modificabile.'),
-                    }
-                }
+
 
 
