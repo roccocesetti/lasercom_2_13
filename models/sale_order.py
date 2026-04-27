@@ -290,7 +290,7 @@ class SaleOrder(models.Model):
     codice_sdi = fields.Char('res.partner', related='partner_id.codice_sdi',readonly=False)
     numero_contratto = fields.Char(string='Numero Contratto', required=False, copy=False, readonly=False, states={'draft': [('readonly', False)]},  default=lambda self: _('New'))
     sale_caparra = fields.Monetary(string='Caparra', digits='Product Price', default=0.0,currency_field='currency_id',)
-    amount_untaxed_arrotondamento = fields.Monetary(string='Arrotondamento', store=True,copy=False, readonly=False, default=0.0,currency_field='currency_id',)
+    amount_untaxed_arrotondamento = fields.Float(string='Arrotondamento', store=True,copy=False, readonly=False, default=0.0, digits=(12, 6),)
     amount_untaxed_arrotondato = fields.Monetary(string='Imponibile finale', store=True, readonly=True, compute='_amount_all',tracking=5)
     payment_direct=fields.Boolean(string='Pagamento Diretto',default=False, copy=False)
     payment_direct_allordine = fields.Monetary(string="All'ordine", digits='Product Price', default=0.0,currency_field='currency_id', copy=False)
