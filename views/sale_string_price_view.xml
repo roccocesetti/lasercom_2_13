@@ -70,7 +70,7 @@
                           <field name="sale_modello_usato" nolabel="1"  attrs="{'invisible': [('sale_acq_usage', '&lt;=', 0)]}"  groups="base.group_user" />
 
                        <field name="amount_untaxed" widget='monetary' options="{'currency_field': 'currency_id'}"/>
-                       <field name="amount_untaxed_arrotondamento" widget='monetary' options="{'currency_field': 'currency_id'}"/>
+                       <field name="amount_untaxed_arrotondamento" />
                        <field name="amount_untaxed_arrotondato" widget='monetary' options="{'currency_field': 'currency_id'}"/>
                        <field name="amount_tax" widget='monetary' options="{'currency_field': 'currency_id'}" groups="lasercom.group_amministratore"/>
                       <div class="oe_subtotal_footer_separator oe_inline o_td_label" groups="lasercom.group_amministratore">
