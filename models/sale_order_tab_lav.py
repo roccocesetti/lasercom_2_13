@@ -215,9 +215,30 @@ class SaleOrder(models.Model):
         copy=True,
     )
 
-    price_subtotal_lav = fields.Monetary(compute='_compute_amount_lav', string='Subtotal', readonly=True, store=True)
-    date_module = fields.Date(string='Data Modulo',  copy=False,
+    price_subtotal_lav = fields.Monetary(compute='_compute_amount_lav', string='Totale costi installazione', readonly=True, store=True)
+    date_module = fields.Date(string='Consegna Richiesta dal Cliente',  copy=False,
                                 default=_default_validity_date_2)
+    date_installation = fields.Date(string='Installazione prevista il',  copy=False,
+                                default=_default_validity_date_2)
+
+    @api.onchange("date_installation")
+    def _onchange_period_date(self):
+        if self.date_installation:
+            self.date_installation = self.date_installation.replace(day=1)
+
+    date_installation_display = fields.Char(
+        string="Mese previsto per l'installazione",
+        compute="_compute_date_installation_display",
+    )
+
+    @api.depends("date_installation_display","date_installation")
+    def _compute_date_installation_display(self):
+        for record in self:
+            record.date_installation_display = (
+                record.date_installation.strftime("%m/%Y")
+                if record.date_installation
+                else False
+            )
     @api.onchange("company_id")
     def _onchange_company_id_set_default_load(self):
         for order in self:
@@ -380,6 +401,41 @@ class SaleOrder(models.Model):
                     "</div>"
                 ) % ', '.join(unique_conflicts)
 
+    def action_open_product_load_fullscreen(self):
+        self.ensure_one()
+
+        return {
+            'type': 'ir.actions.act_window',
+            'name': 'Caricamento Prodotti',
+            'res_model': self._name,
+            'res_id': self.id,
+            'view_mode': 'form',
+            'view_id': self.env.ref(
+                'lasercom_2_13.view_sale_order_product_load_fullscreen_form'
+            ).id,
+            'target': 'current',
+            'context': dict(
+                self.env.context,
+                form_view_initial_mode='edit',
+            ),
+        }
+
+    def action_open_sale_order_standard_form(self):
+        self.ensure_one()
+
+        return {
+            'type': 'ir.actions.act_window',
+            'name': 'Ordine di vendita',
+            'res_model': 'sale.order',
+            'res_id': self.id,
+            'view_mode': 'form',
+            'view_id': self.env.ref('sale.view_order_form').id,
+            'target': 'current',
+            'context': dict(
+                self.env.context,
+                form_view_initial_mode='edit',
+            ),
+        }
 class SaleOrderXLoadLine(models.Model):
     _name = "sale.order.x_load_line"
     _description = "Righe Caricamento su Ordine di Vendita"
@@ -557,7 +613,8 @@ class SaleOrderXLoadLine(models.Model):
                 continue
             so_line = line.order_id.order_line.filtered(lambda l: l.product_id == line.product_id)[:1]
             line.sale_line_id = so_line
-
+            if so_line:
+                line.etichetta_si="yes"
     def write(self, vals):
         #only_toggle = set(vals.keys()) <= {"editable"}
 

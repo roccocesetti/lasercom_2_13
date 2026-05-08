@@ -264,10 +264,18 @@
         <field name="arch" type="xml">
             <xpath expr="//notebook" position="inside">
                 <page string="Caricamento Prodotti" groups="sales_team.group_sale_manager,lasercom_2_13.group_admin_lav">
+                    <button name="action_open_product_load_fullscreen"
+        type="object"
+        string="Apri Caricamento Prodotti a pagina piena"
+         class="oe_highlight"
+        attrs="{'invisible': [('id', '=', False)]}"/>
+
                     <group>
                         <field name="x_load_id" options="{'no_create': True}"/>
                         <field name="price_subtotal_lav"  widget="monetary"/>
                         <field name="date_module"  widget="date"/>
+                        <field name="date_installation" widget="month_year"/>
+                        <field name="date_installation_display" readonly="1"/>
 
 
                         <!-- 16/02/20026 rocco
@@ -343,6 +351,219 @@
     </record>
 
 
+    <record id="view_sale_order_product_load_fullscreen_form" model="ir.ui.view">
+    <field name="name">sale.order.product.load.fullscreen.form</field>
+    <field name="model">sale.order</field>
+    <field name="arch" type="xml">
+        <form string="Caricamento Prodotti">
+            <header>
+                <button name="action_apply_product_load"
+                        type="object"
+                        string="Applica Caricamento"
+                        class="oe_highlight"
+                        attrs="{'invisible': [('x_load_id','=',False)]}"/>
+
+                <button name="action_open_sale_order_standard_form"
+                        type="object"
+                        string="Torna all'ordine"
+                        class="btn-secondary"/>
+            </header>
+
+            <sheet>
+                <div class="oe_title">
+                    <h1>
+                        <field name="name" readonly="1"/>
+                    </h1>
+                </div>
+
+                <group>
+                    <group>
+                        <field name="x_load_id" options="{'no_create': True}"/>
+                        <field name="price_subtotal_lav" widget="monetary"/>
+                    </group>
+
+                    <group>
+                        <field name="date_module" widget="date"/>
+                        <field name="date_installation" widget="month_year"/>
+                        <field name="date_installation_display" readonly="1"/>
+                    </group>
+                </group>
+
+                <field name="x_tag_warning_visible" invisible="1"/>
+
+                <field name="x_tag_warning_message"
+                       widget="html"
+                       nolabel="1"
+                       attrs="{'invisible': [('x_tag_warning_visible', '=', False)]}"/>
+
+                <separator string="Righe"/>
+
+                <field name="x_load_line_ids"
+                       nolabel="1"
+                       limit="100"
+                       widget="section_and_note_one2many">
+                    <tree editable="bottom"
+                          decoration-info="sale_line_id"
+                          limit="100">
+
+                        <control>
+                            <create string="Aggiungi riga"/>
+                            <create string="Aggiungi sezione"
+                                    context="{'default_display_type': 'line_section'}"/>
+                        </control>
+
+                        <field name="x_locked_by_tag" optional="hide"/>
+                        <field name="sequence" widget="handle"/>
+                        <field name="sale_line_id" readonly="1" optional="hide"/>
+                        <field name="display_type" invisible="1"/>
+
+                        <field name="name"
+                               widget="section_and_note_text"
+                               attrs="{
+                                   'readonly': [('display_type','=',False)],
+                                   'invisible': [('display_type','=',False)]
+                               }"/>
+
+                        <field name="tag_true"
+                               optional="hide"
+                               attrs="{'readonly': True}"/>
+
+                        <field name="tag_ids"
+                               widget="many2many_tags"
+                               optional="show"
+                               attrs="{'required': [('tag_true', '=', True)]}"/>
+
+                        <field name="default_code" readonly="1" optional="hide"/>
+                        <field name="editable"/>
+
+                        <field name="etichetta_si"
+                               optional="show"
+                               attrs="{'readonly': [('editable','=',False)]}"/>
+
+                        <field name="product_id"
+                               attrs="{
+                                   'readonly': [
+                                       '|',
+                                       ('x_locked_by_tag', '=', True),
+                                       ('editable','=',False)
+                                   ]
+                               }"/>
+
+                        <field name="x_lavorazione"
+                               optional="hide"
+                               attrs="{'invisible': [('display_type','!=',False)]}"/>
+
+                        <field name="tipo_vetrina"
+                               optional="hide"
+                               attrs="{
+                                   'readonly': [
+                                       '|',
+                                       ('x_locked_by_tag', '=', True),
+                                       ('editable','=',False)
+                                   ]
+                               }"/>
+
+                        <field name="product_uom_qty"
+                               optional="show"
+                               attrs="{
+                                   'readonly': [
+                                       '|',
+                                       ('x_locked_by_tag', '=', True),
+                                       ('editable','=',False)
+                                   ]
+                               }"/>
+
+                        <field name="price_unit"
+                               optional="show"
+                               attrs="{
+                                   'readonly': [
+                                       '|',
+                                       ('x_locked_by_tag', '=', True),
+                                       ('editable','=',False)
+                                   ]
+                               }"/>
+
+                        <field name="price_extra"
+                               optional="show"
+                               attrs="{
+                                   'readonly': [
+                                       '|',
+                                       ('x_locked_by_tag', '=', True),
+                                       ('editable','=',False)
+                                   ]
+                               }"/>
+
+                        <field name="price_subtotal"
+                               optional="hide"
+                               attrs="{
+                                   'readonly': [
+                                       '|',
+                                       ('x_locked_by_tag', '=', True),
+                                       ('editable','=',False)
+                                   ]
+                               }"/>
+
+                        <field name="uom_id"
+                               readonly="1"
+                               optional="hide"/>
+
+                        <field name="product_uom_height"
+                               optional="show"
+                               attrs="{
+                                   'readonly': [
+                                       '|',
+                                       ('x_locked_by_tag', '=', True),
+                                       ('editable','=',False)
+                                   ]
+                               }"/>
+
+                        <field name="product_uom_length"
+                               optional="show"
+                               attrs="{
+                                   'readonly': [
+                                       '|',
+                                       ('x_locked_by_tag', '=', True),
+                                       ('editable','=',False)
+                                   ]
+                               }"/>
+
+                        <field name="product_uom_width"
+                               optional="show"
+                               attrs="{
+                                   'readonly': [
+                                       '|',
+                                       ('x_locked_by_tag', '=', True),
+                                       ('editable','=',False)
+                                   ]
+                               }"/>
+
+                        <field name="supplier_id"
+                               optional="hide"
+                               domain="[('commercial_partner_id.property_supplier_payment_term_id','!=',False)]"
+                               attrs="{
+                                   'readonly': [
+                                       '|',
+                                       ('x_locked_by_tag', '=', True),
+                                       ('editable','=',False)
+                                   ]
+                               }"/>
+
+                        <field name="note"
+                               optional="hide"
+                               attrs="{
+                                   'readonly': [
+                                       '|',
+                                       ('x_locked_by_tag', '=', True),
+                                       ('editable','=',False)
+                                   ]
+                               }"/>
+
+                    </tree>
+                </field>
+            </sheet>
+        </form>
+    </field>
+</record>
 
 
 </odoo>
