@@ -518,7 +518,7 @@ class SaleOrderXLoadLine(models.Model):
             ('no', 'NO'),
 
         ],
-        string='SI/NO',default='no'
+        string='SI/NO',default=''
     )
 
     @api.depends('tag_ids', 'order_id.x_filter_tag_id')
