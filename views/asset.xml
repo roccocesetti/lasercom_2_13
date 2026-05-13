@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+
+    <template id="assets_backend_sticky_list_header"
+              inherit_id="web.assets_backend"
+              name="Sticky List Header">
+        <xpath expr="." position="inside">
+            <link rel="stylesheet"
+                  type="text/css"
+                  href="/lasercom_2_13/static/src/css/sticky_list_header.css"/>
+        </xpath>
+    </template>
+
+</odoo>
+

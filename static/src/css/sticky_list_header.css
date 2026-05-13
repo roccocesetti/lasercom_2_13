@@ -1,0 +1,159 @@
+/* ============================================================
+   FORM FULLSCREEN PIÙ AMPIA
+   ============================================================ */
+
+.o_form_view.product_load_fullscreen_form .o_form_sheet_bg {
+    max-width: none !important;
+    width: 100% !important;
+}
+
+.o_form_view.product_load_fullscreen_form .o_form_sheet {
+    max-width: 98vw !important;
+    width: 98vw !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+}
+
+
+/* ============================================================
+   STICKY HEADER SOLO PER x_load_line_ids
+   Odoo 13 - sale.order form
+   ============================================================ */
+
+.o_field_widget.o_field_one2many[name="x_load_line_ids"] {
+    display: block !important;
+    max-height: 500px !important;
+    overflow-y: auto !important;
+    overflow-x: auto !important;
+    position: relative !important;
+    box-sizing: border-box !important;
+}
+
+
+/* Wrapper interni Odoo */
+.o_field_widget.o_field_one2many[name="x_load_line_ids"] .o_field_x2many,
+.o_field_widget.o_field_one2many[name="x_load_line_ids"] .o_field_x2many_list,
+.o_field_widget.o_field_one2many[name="x_load_line_ids"] .o_list_view,
+.o_field_widget.o_field_one2many[name="x_load_line_ids"] .table-responsive {
+    overflow: visible !important;
+}
+
+
+/* Spazio a destra per scrollbar + selettore colonne */
+.o_field_widget.o_field_one2many[name="x_load_line_ids"] .o_list_view {
+    padding-right: 42px !important;
+    box-sizing: border-box !important;
+}
+
+
+/* Tabella */
+.o_field_widget.o_field_one2many[name="x_load_line_ids"] .o_list_table {
+    border-collapse: separate !important;
+    border-spacing: 0 !important;
+    width: calc(100% - 42px) !important;
+    max-width: calc(100% - 42px) !important;
+}
+
+
+/* Header sticky */
+.o_field_widget.o_field_one2many[name="x_load_line_ids"] .o_list_table thead th {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 9999 !important;
+    background-color: #ffffff !important;
+    box-shadow: 0 2px 3px rgba(0, 0, 0, 0.15) !important;
+}
+
+
+/* Titolo interno colonne */
+.o_field_widget.o_field_one2many[name="x_load_line_ids"] .o_list_table thead th .o_column_title {
+    background-color: #ffffff !important;
+}
+
+
+/* ============================================================
+   CONTROLLO NATIVO ODOO - COLONNE OPZIONALI
+   ============================================================ */
+
+.o_field_widget.o_field_one2many[name="x_load_line_ids"] .o_list_table thead th.o_optional_columns_dropdown_toggle {
+    display: table-cell !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+
+    position: sticky !important;
+    top: 0 !important;
+    right: 0 !important;
+
+    width: 36px !important;
+    min-width: 36px !important;
+    max-width: 36px !important;
+
+    z-index: 10050 !important;
+    background-color: #ffffff !important;
+    text-align: center !important;
+    cursor: pointer !important;
+
+    padding-left: 6px !important;
+    padding-right: 6px !important;
+    pointer-events: auto !important;
+}
+
+
+/* Icona nativa se presente */
+.o_field_widget.o_field_one2many[name="x_load_line_ids"] .o_list_table thead th.o_optional_columns_dropdown_toggle i,
+.o_field_widget.o_field_one2many[name="x_load_line_ids"] .o_list_table thead th.o_optional_columns_dropdown_toggle .fa {
+    display: inline-block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    color: #555555 !important;
+    pointer-events: none !important;
+}
+
+
+/* Disegna i tre puntini SOPRA il controllo nativo, ma senza bloccare il click */
+.o_field_widget.o_field_one2many[name="x_load_line_ids"] .o_list_table thead th.o_optional_columns_dropdown_toggle::before {
+    content: "\f142" !important; /* FontAwesome fa-ellipsis-v */
+    font-family: FontAwesome !important;
+    font-size: 14px !important;
+    color: #555555 !important;
+
+    display: inline-block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+
+    pointer-events: none !important;
+}
+
+
+/* Nasconde eventuale triangolino/freccia */
+.o_field_widget.o_field_one2many[name="x_load_line_ids"] .o_list_table thead th.o_optional_columns_dropdown_toggle::after {
+    display: none !important;
+}
+
+
+/* Menu dropdown colonne opzionali */
+.o_field_widget.o_field_one2many[name="x_load_line_ids"] .o_optional_columns_dropdown,
+.o_field_widget.o_field_one2many[name="x_load_line_ids"] .o_optional_columns_dropdown_toggle,
+.o_field_widget.o_field_one2many[name="x_load_line_ids"] .dropdown-menu {
+    overflow: visible !important;
+    z-index: 30000 !important;
+}
+
+
+/* ============================================================
+   Ultima colonna del corpo: cestino
+   ============================================================ */
+
+.o_field_widget.o_field_one2many[name="x_load_line_ids"] .o_list_table tbody td:last-child {
+    min-width: 36px !important;
+    width: 36px !important;
+    max-width: 36px !important;
+    text-align: center !important;
+}
+
+
+/* Evita che le righe passino sopra l'header */
+.o_field_widget.o_field_one2many[name="x_load_line_ids"] .o_list_table tbody td {
+    position: relative;
+    z-index: 1;
+}

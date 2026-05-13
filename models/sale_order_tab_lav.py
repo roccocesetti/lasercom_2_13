@@ -90,10 +90,10 @@ class ProductLoadLine(models.Model):
     product_uom_length = fields.Float(string="Lunghezza", default=0.0)
     product_uom_width = fields.Float(string="Larghezza", default=0.0)
     product_uom_qty = fields.Float(string="Quantità", default=1.0)
-    price_unit = fields.Float(string="Prezzo Unitario")
-    price_extra = fields.Float(string="Prezzo Extra")
+    price_unit = fields.Float(string="Prezzo Unitario",digits='Product Price')
+    price_extra = fields.Float(string="Prezzo Extra",digits='Product Price')
     supplier_id = fields.Many2one("res.partner", string="Fornitore", required=False)
-    editable = fields.Boolean(string="Edit", default=False)
+    editable = fields.Boolean(string="Edit", default=True)
     # Nota riga (se serve anche per ogni prodotto)
     note = fields.Char(string="Nota riga")
 
@@ -473,13 +473,13 @@ class SaleOrderXLoadLine(models.Model):
     product_uom_length = fields.Float(string="Lung", default=0.0)
     product_uom_width = fields.Float(string="Prof", default=0.0)
     product_uom_qty = fields.Float(string="Qta", default=1.0)
-    price_unit = fields.Float(string="PU")
-    price_extra = fields.Float(string="PE")
+    price_unit = fields.Float(string="P.Unitario",digits='Product Price')
+    price_extra = fields.Float(string="P.Extra",digits='Product Price')
     note = fields.Char(string="Nota")
     supplier_id = fields.Many2one("res.partner", string="For", required=False)
     default_code = fields.Char(related="product_id.default_code", string="Codice", readonly=True, store=False)
     uom_id = fields.Many2one(related="product_id.uom_id", string="U.M.", readonly=True, store=False)
-    price_subtotal = fields.Monetary(compute='_compute_amount', string='T.riga', readonly=True, store=True)
+    price_subtotal = fields.Monetary(compute='_compute_amount', string='Tot.riga', readonly=True, store=True)
 
     sale_line_id = fields.Many2one(
         "sale.order.line",
@@ -487,7 +487,7 @@ class SaleOrderXLoadLine(models.Model):
         store=False,
         string="Riga Ordine (mappata)",
     )
-    editable = fields.Boolean(string="Edit", default=False)
+    editable = fields.Boolean(string="Edit", default=True)
     tipo_vetrina = fields.Selection(
         [
             ('inside', 'Interna'),

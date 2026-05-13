@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
 
-           crm.lead.tag views
-        -->
+
         <record id="x_product_load_tag_form" model="ir.ui.view">
             <field name="name">x.product.load.tag.form</field>
             <field name="model">x.product.load.tag</field>
@@ -89,10 +88,12 @@
 
     <!-- FORM -->
     <record id="view_x_product_load_form" model="ir.ui.view">
+
         <field name="name">x.product.load.form</field>
         <field name="model">x.product.load</field>
         <field name="arch" type="xml">
             <form string="Caricamento prodotti">
+
                 <sheet>
                     <group>
                         <field name="name"/>
@@ -109,9 +110,9 @@
                                    context="{'default_load_id': active_id}"
                                     limit="100"
                                    >
-                                <tree editable="bottom" limit="100">
+                                <tree editable="bottom" limit="100"  >
                                     <control>
-                                        <create string="Aggiungi riga"/>
+                                        <create string="Aggiungi riga" />
 
                                     </control>
 
@@ -258,6 +259,7 @@
 
 
     <record id="view_sale_order_form_inherit_x_product_load" model="ir.ui.view">
+
         <field name="name">sale.order.form.inherit.x.product.load</field>
         <field name="model">sale.order</field>
         <field name="inherit_id" ref="sale.view_order_form"/>
@@ -304,8 +306,8 @@
                                nolabel="1"
                                 colspan="4"
                                 limit="100"
-                               widget="section_and_note_one2many">
-                            <tree editable="bottom" decoration-info="sale_line_id" limit="100">
+                               widget="section_and_note_one2many"  >
+                            <tree editable="bottom" decoration-info="sale_line_id" limit="100" >
                                 <control>
                                     <create string="Aggiungi riga"/>
                                     <create string="Aggiungi sezione" context="{'default_display_type': 'line_section'}"/>
@@ -314,7 +316,7 @@
 
 
                                 <field name="x_locked_by_tag"  optional="hide"/>
-                                <field name="sequence" widget="handle"/>
+                                <field name="sequence" widget="handle" optional="hide"/>
                                 <field name="sale_line_id" readonly="1" optional="hide"/>
                                 <field name="display_type" invisible="1"/>
 
@@ -323,7 +325,7 @@
                                  <field name="tag_ids" widget="many2many_tags" optional="show"
        attrs="{'required': [('tag_true', '=', True)]}"/>
                                 <field name="default_code" readonly="1" optional="hide" />
-                                <field name="editable" />
+                                <field name="editable" optional="hide"/>
                                 <field name="etichetta_si"  optional="show" attrs="{'readonly': [('editable','=',False)]}"/>
                                 <field name="product_id"  attrs="{'readonly': ['|',('x_locked_by_tag', '=', True),('editable','=',False)]}" />
                                 <field name="x_lavorazione"
@@ -351,11 +353,13 @@
     </record>
 
 
-    <record id="view_sale_order_product_load_fullscreen_form" model="ir.ui.view">
+    <record id="view_sale_order_product_load_fullscreen_form" model="ir.ui.view" >
+
+
     <field name="name">sale.order.product.load.fullscreen.form</field>
     <field name="model">sale.order</field>
     <field name="arch" type="xml">
-        <form string="Caricamento Prodotti">
+        <form string="Caricamento Prodotti" class="product_load_fullscreen_form">
             <header>
                 <button name="action_apply_product_load"
                         type="object"
@@ -401,10 +405,10 @@
                 <field name="x_load_line_ids"
                        nolabel="1"
                        limit="100"
-                       widget="section_and_note_one2many">
+                       widget="section_and_note_one2many" class="sticky_header_only_this_list">
                     <tree editable="bottom"
                           decoration-info="sale_line_id"
-                          limit="100">
+                          limit="100"  >
 
                         <control>
                             <create string="Aggiungi riga"/>
@@ -413,7 +417,7 @@
                         </control>
 
                         <field name="x_locked_by_tag" optional="hide"/>
-                        <field name="sequence" widget="handle"/>
+                        <field name="sequence" widget="handle" optional="hide"/>
                         <field name="sale_line_id" readonly="1" optional="hide"/>
                         <field name="display_type" invisible="1"/>
 
@@ -434,7 +438,7 @@
                                attrs="{'required': [('tag_true', '=', True)]}"/>
 
                         <field name="default_code" readonly="1" optional="hide"/>
-                        <field name="editable"/>
+                        <field name="editable"  optional="hide"/>
 
                         <field name="etichetta_si"
                                optional="show"
