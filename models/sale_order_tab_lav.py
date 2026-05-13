@@ -197,6 +197,7 @@ class SaleOrder(models.Model):
         for order in self:
             price_subtotal_lav=0.00
             for line in order.x_load_line_ids:
+                if line.etichetta_si=="yes":
                         price_subtotal_lav+=line.price_subtotal
             order.update({
                             'price_subtotal_lav': price_subtotal_lav ,
