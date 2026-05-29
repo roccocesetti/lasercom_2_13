@@ -19,6 +19,16 @@ class ProductCategory(models.Model):
 
     x_lavorazione = fields.Boolean(string="Lavorazione")
 
+class Producttemplate(models.Model):
+    _inherit = "product.template"
+
+    x_load_id = fields.Many2one(
+        "x.product.load",
+        string="Modulo Caricamento Prodotti",
+        default=lambda self: self.env.company.x_default_product_load_id,
+    )
+
+
 class Tag(models.Model):
 
     _name = "x.product.load.tag"
@@ -102,6 +112,7 @@ class ProductLoadLine(models.Model):
     uom_id = fields.Many2one(related="product_id.uom_id", string="U.M.", readonly=True, store=False)
     tipo_vetrina = fields.Selection(
         [
+            ('blank', 'Riga in bianco'),
             ('inside', 'Interna'),
             ('outside', 'Esterna'),
 
@@ -176,7 +187,25 @@ class ResConfigSettings(models.TransientModel):
     )
 
 
+class SaleOrderLine(models.Model):
+    _inherit = "sale.order.line"
 
+    x_load_id = fields.Many2one(
+        comodel_name="x.product.load",
+        string="Caricamento Prodotti",
+    )
+
+    @api.onchange("product_id", "product_uom_qty")
+    def product_id_change(self):
+        res = super(SaleOrderLine, self).product_id_change()
+
+        for line in self:
+            product_tmpl = line.product_id.product_tmpl_id if line.product_id else False
+            load = product_tmpl.x_load_id if product_tmpl and product_tmpl.x_load_id else False
+
+            line.x_load_id = load
+
+        return res
 
 class SaleOrder(models.Model):
     _inherit = "sale.order"
@@ -187,6 +216,7 @@ class SaleOrder(models.Model):
             if days > 0:
                 return fields.Date.to_string(datetime.now() + timedelta(days))
         return False
+
 
 
     @api.depends('x_load_line_ids')
@@ -203,11 +233,183 @@ class SaleOrder(models.Model):
                             'price_subtotal_lav': price_subtotal_lav ,
                         })
 
-    x_load_id = fields.Many2one(
-        "x.product.load",
-        string="Caricamento Prodotti",
-        default=lambda self: self.env.company.x_default_product_load_id,
+    x_load_ids = fields.Many2many(
+        comodel_name="x.product.load",
+        relation="sale_order_x_product_load_rel",
+        column1="sale_order_id",
+        column2="product_load_id",
+        string="Caricamenti Prodotti",
+
     )
+
+    def _sync_x_load_ids_from_order_lines(self):
+        for order in self:
+            load_ids = []
+
+            for line in order.order_line:
+                if line.display_type:
+                    continue
+
+                load = line.x_load_id
+
+                if not load and line.product_id:
+                    load = line.product_id.product_tmpl_id.x_load_id
+                    line.x_load_id = load
+
+                if load:
+                    load_ids.append(load.id)
+
+            load_ids = list(dict.fromkeys(load_ids))
+
+            if load_ids:
+                order.x_load_ids = [(6, 0, load_ids)]
+            else:
+                order.x_load_ids = [(5, 0, 0)]
+
+    @api.onchange("order_line")
+    def _onchange_order_line_sync_x_load_ids(self):
+        self._sync_x_load_ids_from_order_lines()
+        #self.action_apply_product_load()
+
+    def _rebuild_x_load_lines_from_loads(self):
+        for order in self:
+            commands = [(5, 0, 0)]
+            sequence = 10
+
+            lines = order.order_line.filtered(
+                lambda l: not l.display_type and l.x_load_id
+            )
+
+            # Raggruppo per modulo x_load_id, sommando le quantità
+            qty_by_load = {}
+
+            for so_line in lines:
+                load = so_line.x_load_id
+                if not load:
+                    continue
+
+                if load.id not in qty_by_load:
+                    qty_by_load[load.id] = {
+                        "load": load,
+                        "qty": 0.0,
+                        "first_sale_line": so_line,
+                    }
+
+                qty_by_load[load.id]["qty"] += so_line.product_uom_qty or 0.0
+
+            for data in qty_by_load.values():
+                load = data["load"]
+                qta_multi = data["qty"]
+                first_sale_line = data["first_sale_line"]
+
+                # Riga di testata derivata dalla riga ordine
+                commands.append((0, 0, {
+                    "x_load_id": load.id,
+                    "sequence": sequence,
+                    "product_id": first_sale_line.product_id.id if first_sale_line.product_id else False,
+                    "product_uom_qty": qta_multi,
+                    "price_unit": first_sale_line.purchase_price or 0.0,
+                    "name": first_sale_line.name,
+                }))
+                sequence += 10
+
+                # Righe del modulo caricamento prodotti
+                for ll in load.line_ids.sorted(key=lambda l: (l.sequence, l.id)):
+                    commands.append((0, 0, {
+                        "x_load_id": load.id,
+                        "sequence": sequence,
+                        "display_type": ll.display_type,
+                        "name": ll.name or (ll.product_id.display_name if ll.product_id else False),
+                        "name": ll.name or (ll.product_id.display_name if ll.product_id else False),
+                        "tag_true": ll.tag_true,
+                        "tag_ids": [(6, 0, ll.tag_ids.ids)],
+                        "editable": ll.editable,
+                        "tipo_vetrina": ll.tipo_vetrina,
+                        "product_id": ll.product_id.id if ll.product_id else False,
+                        "x_lavorazione": ll.x_lavorazione,
+                        "product_uom_height": ll.product_uom_height,
+                        "product_uom_length": ll.product_uom_length,
+                        "product_uom_width": ll.product_uom_width,
+                        "product_uom_qty": 0.0 if ll.display_type else (ll.product_uom_qty or 0.0) * qta_multi,
+                        "price_unit": 0.0 if ll.display_type else ll.price_unit,
+                        "price_extra": 0.0 if ll.display_type else ll.price_extra,
+                        "supplier_id": ll.supplier_id.id if ll.supplier_id and not ll.display_type else False,
+                        "note": ll.note,
+                    }))
+                    sequence += 10
+
+            order.x_load_line_ids = commands
+    def action_apply_product_load(self, replace=True):
+        """
+        Carica tutte le righe x.product.load.line in sale.order.line.
+        replace=True  -> rimpiazza le righe ordine
+        replace=False -> aggiunge alle righe esistenti
+        """
+
+        for order in self:
+            #if not order.x_load_ids:
+            #   raise UserError(_("Seleziona un Caricamento Prodotti."))
+            if not order.id or not isinstance(order.id, int):
+                raise UserError(_("Salva prima il preventivo prima di applicare il caricamento prodotti."))
+            if replace:
+                if  order.x_load_line_ids:
+                    order.x_load_line_ids.unlink()
+
+            # Creazione righe ordine
+            testata = True
+            for x_load_id in order.x_load_ids:
+                for ll in x_load_id.line_ids:
+                    # usa new() + onchange per avere descrizione, tasse, uom coerenti con Odoo
+                    if self.order_line and testata:
+                        line = self.env["sale.order.x_load_line"].new({
+                            "order_id": order.id,
+                            "product_id": self.order_line[0].product_id.id,
+                            "product_uom_qty": 1.0,
+                            "price_unit": self.order_line[0].purchase_price,
+                            "x_load_id": x_load_id.id
+
+                        })
+                        line._onchange_product_id()
+                        vals = line._convert_to_write(line._cache)
+                        testata = False
+                        self.env["sale.order.x_load_line"].create(vals)
+                    line = self.env["sale.order.x_load_line"].new({
+                        "order_id": order.id,
+                        "x_load_id": x_load_id.id,
+                        "product_id": ll.product_id.id,
+                        "product_uom_qty": ll.product_uom_qty or 1.0,
+                        "product_uom_height": ll.product_uom_height,
+                        "product_uom_length": ll.product_uom_length,
+                        "product_uom_width": ll.product_uom_width,
+                        "price_unit": ll.price_unit,
+                        "price_extra": ll.price_extra,
+                        "supplier_id": ll.supplier_id,
+                        "editable": ll.editable,
+                        "tipo_vetrina": ll.tipo_vetrina,
+                        "note": ll.note,
+                        "display_type": ll.display_type,
+                        "name": ll.name,
+                        "x_lavorazione": ll.x_lavorazione,
+                        "tag_true": ll.tag_true,
+                        "tag_ids": [(6, 0, ll.tag_ids.ids)],
+                    })
+                    line._onchange_product_id()
+                    vals = line._convert_to_write(line._cache)
+
+                    # Override prezzo e nota da caricamento
+                    if ll.price_unit:
+                        vals["price_unit"] = ll.price_unit
+                    vals["note"] = ll.note or False
+
+                    # opzionale: se vuoi la nota anche nel testo riga:
+                    # if ll.note:
+                    #     vals["name"] = (vals.get("name") or "") + "\n" + ll.note
+
+                    vals["order_id"] = order.id
+                    vals['display_type']: ll.display_type
+                    self.env["sale.order.x_load_line"].create(vals)
+
+        return True
 
     x_load_line_ids = fields.One2many(
         "sale.order.x_load_line",
@@ -216,16 +418,14 @@ class SaleOrder(models.Model):
         copy=True,
     )
 
+
     price_subtotal_lav = fields.Monetary(compute='_compute_amount_lav', string='Totale costi installazione', readonly=True, store=True)
     date_module = fields.Date(string='Consegna Richiesta dal Cliente',  copy=False,
                                 default=_default_validity_date_2)
     date_installation = fields.Date(string='Installazione prevista il',  copy=False,
                                 default=_default_validity_date_2)
 
-    @api.onchange("date_installation")
-    def _onchange_period_date(self):
-        if self.date_installation:
-            self.date_installation = self.date_installation.replace(day=1)
+
 
     date_installation_display = fields.Char(
         string="Mese previsto per l'installazione",
@@ -240,13 +440,32 @@ class SaleOrder(models.Model):
                 if record.date_installation
                 else False
             )
-    @api.onchange("company_id")
-    def _onchange_company_id_set_default_load(self):
-        for order in self:
-            # se non valorizzato, applica la property della company
-            if not order.x_load_id and order.company_id:
-                order.x_load_id = order.company_id.x_default_product_load_id
 
+    date_module_display = fields.Char(
+        string="Mese previsto per la consegna",
+        compute="_compute_date_module_display",
+    )
+
+    @api.onchange("date_module")
+    def _onchange_period_date(self):
+        if self.date_module:
+            self.date_module = self.date_module.replace(day=1)
+
+
+    @api.depends("date_module_display","date_module")
+    def _compute_date_module_display(self):
+        for record in self:
+            record.date_module_display = (
+                record.date_module.strftime("%m/%Y")
+                if record.date_module
+                else False
+            )
+
+    #@api.onchange("company_id")
+    #def _onchange_company_id_set_default_load(self):
+    #    for order in self:
+    #        if not order.x_load_ids and order.company_id.x_default_product_load_id:
+    #            order.x_load_ids = [(6, 0, [order.company_id.x_default_product_load_id.id])]
     def action_open_import_load_lines_wizard(self):
         self.ensure_one()
         return {
@@ -263,74 +482,9 @@ class SaleOrder(models.Model):
 
 
 
-    def action_apply_product_load(self, replace=True):
-        """
-        Carica tutte le righe x.product.load.line in sale.order.line.
-        replace=True  -> rimpiazza le righe ordine
-        replace=False -> aggiunge alle righe esistenti
-        """
-
-        for order in self:
-            if not order.x_load_id:
-                raise UserError(_("Seleziona un Caricamento Prodotti."))
-
-            if replace:
-                order.x_load_line_ids.unlink()
 
 
 
-
-            # Creazione righe ordine
-            testata=True
-            for ll in order.x_load_id.line_ids:
-                # usa new() + onchange per avere descrizione, tasse, uom coerenti con Odoo
-                if self.order_line and testata:
-                    line = self.env["sale.order.x_load_line"].new({
-                        "order_id": order.id,
-                        "product_id": self.order_line[0].product_id.id,
-                        "product_uom_qty": 1.0,
-                        "price_unit": self.order_line[0].purchase_price,
-
-                    })
-                    line._onchange_product_id()
-                    vals = line._convert_to_write(line._cache)
-                    testata=False
-                    self.env["sale.order.x_load_line"].create(vals)
-                line = self.env["sale.order.x_load_line"].new({
-                    "order_id": order.id,
-                    "product_id": ll.product_id.id,
-                    "product_uom_qty": ll.product_uom_qty or 1.0,
-                    "product_uom_height": ll.product_uom_height,
-                    "product_uom_length": ll.product_uom_length,
-                    "product_uom_width": ll.product_uom_width,
-                    "price_unit": ll.price_unit,
-                    "price_extra": ll.price_extra,
-                    "supplier_id": ll.supplier_id,
-                    "editable": ll.editable,
-                    "note": ll.note,
-                    "display_type":ll.display_type,
-                    "name": ll.name,
-                    "x_lavorazione":ll.x_lavorazione,
-                    "tag_true": ll.tag_true,
-                    "tag_ids": [(6, 0, ll.tag_ids.ids)],
-                })
-                line._onchange_product_id()
-                vals = line._convert_to_write(line._cache)
-
-                # Override prezzo e nota da caricamento
-                if ll.price_unit:
-                    vals["price_unit"] = ll.price_unit
-                vals["note"] = ll.note or False
-
-                # opzionale: se vuoi la nota anche nel testo riga:
-                # if ll.note:
-                #     vals["name"] = (vals.get("name") or "") + "\n" + ll.note
-
-                vals["order_id"] = order.id
-                vals['display_type']: ll.display_type
-                self.env["sale.order.x_load_line"].create(vals)
-
-        return True
 
 
 
@@ -461,6 +615,7 @@ class SaleOrderXLoadLine(models.Model):
             else:
                 line.product_updatable = True
 
+    x_load_id = fields.Many2one("x.product.load", required=False, ondelete="cascade")
     sequence = fields.Integer(string="Sequenza", default=10, index=True)
     order_id = fields.Many2one("sale.order", required=True, ondelete="cascade")
     currency_id = fields.Many2one(
@@ -491,6 +646,7 @@ class SaleOrderXLoadLine(models.Model):
     editable = fields.Boolean(string="Edit", default=True)
     tipo_vetrina = fields.Selection(
         [
+            ('blank', 'Riga in bianco'),
             ('inside', 'Interna'),
             ('outside', 'Esterna'),
 
@@ -520,7 +676,7 @@ class SaleOrderXLoadLine(models.Model):
         ],
         string='SI/NO',default=''
     )
-
+    attachment_product = fields.Binary("Allegato", Copy=False)
     @api.depends('tag_ids', 'order_id.x_filter_tag_id')
     def _compute_x_tag_visible(self):
         for line in self:
@@ -643,6 +799,13 @@ class SaleOrderXLoadLine(models.Model):
     @api.model_create_multi
     def create(self, vals_list):
         for vals in vals_list:
+            # Fallback: se x_load_id non arriva ma c'è il prodotto,
+            # lo recupero dal template prodotto.
+            if not vals.get("x_load_id") and vals.get("product_id"):
+                product = self.env["product.product"].browse(vals["product_id"])
+                if product and product.product_tmpl_id.x_load_id:
+                    vals["x_load_id"] = product.product_tmpl_id.x_load_id.id
+
             if vals.get("display_type") == "line_section":
                 vals.update({
                     "product_id": False,
@@ -652,8 +815,8 @@ class SaleOrderXLoadLine(models.Model):
                     "supplier_id": False,
                     "editable": False,
                 })
-        return super().create(vals_list)
 
+        return super().create(vals_list)
     def write(self, vals):
         if vals.get("display_type") == "line_section":
             vals.update({

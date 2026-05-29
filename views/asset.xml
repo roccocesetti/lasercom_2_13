@@ -9,6 +9,8 @@
             <link rel="stylesheet"
                   type="text/css"
                   href="/lasercom_2_13/static/src/css/sticky_list_header.css"/>
+            <script type="text/javascript"
+                    src="/lasercom_2_13/static/src/js/x_load_blank_row_class.js"/>
         </xpath>
     </template>
 

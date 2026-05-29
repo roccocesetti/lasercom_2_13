@@ -273,11 +273,12 @@
         attrs="{'invisible': [('id', '=', False)]}"/>
 
                     <group>
-                        <field name="x_load_id" options="{'no_create': True}"/>
+                        <field name="x_load_ids" options="{'no_create': True}" widget="many2many_tags"/>
                         <field name="price_subtotal_lav"  widget="monetary"/>
-                        <field name="date_module"  widget="date"/>
-                        <field name="date_installation" widget="month_year"/>
-                        <field name="date_installation_display" readonly="1"/>
+                        <field name="date_module"  />
+                        <field name="date_module_display" readonly="1"/>
+                        <field name="date_installation"/>
+                        <field name="date_installation_display" readonly="1" option="hide"/>
 
 
                         <!-- 16/02/20026 rocco
@@ -291,7 +292,7 @@
                     type="object"
                     string="Applica Caricamento (Sostituisci righe)"
                     class="oe_highlight"
-                    attrs="{'invisible': [('x_load_id','=',False)]}"/>
+                    attrs="{'invisible': [('x_load_ids','=',False)]}"/>
 
                     </group>
                     <field name="x_tag_warning_visible" invisible="1"/>
@@ -307,14 +308,16 @@
                                 colspan="4"
                                 limit="100"
                                widget="section_and_note_one2many"  >
-                            <tree editable="bottom" decoration-info="sale_line_id" limit="100" >
+                            <tree editable="bottom" decoration-info="sale_line_id" limit="100"
+
+                                  >
                                 <control>
                                     <create string="Aggiungi riga"/>
                                     <create string="Aggiungi sezione" context="{'default_display_type': 'line_section'}"/>
                                 </control>
 
 
-
+                                <field name="x_load_id" optional="hide" readonly="1"/>
                                 <field name="x_locked_by_tag"  optional="hide"/>
                                 <field name="sequence" widget="handle" optional="hide"/>
                                 <field name="sale_line_id" readonly="1" optional="hide"/>
@@ -328,8 +331,8 @@
                                 <field name="editable" optional="hide"/>
                                 <field name="etichetta_si"  optional="show" attrs="{'readonly': [('editable','=',False)]}"/>
                                 <field name="product_id"  attrs="{'readonly': ['|',('x_locked_by_tag', '=', True),('editable','=',False)]}" />
-                                <field name="x_lavorazione"
-       attrs="{'invisible': [('display_type','!=',False)]}" optional="hide"/>
+                                <field name="x_lavorazione" attrs="{'invisible': [('display_type','!=',False)]}" optional="hide"/>
+                                <field name="attachment_product" attrs="{'invisible': [('display_type','!=',False)]}" optional="hide"/>
                                 <field name="tipo_vetrina" optional="hide" attrs="{'readonly': ['|',('x_locked_by_tag', '=', True),('editable','=',False)]}"/>
                                 <field name="product_uom_qty" optional="show" attrs="{'readonly': ['|',('x_locked_by_tag', '=', True),('editable','=',False)]}"/>
                                 <field name="price_unit" optional="show" attrs="{'readonly': ['|',('x_locked_by_tag', '=', True),('editable','=',False)]}"/>
@@ -365,7 +368,7 @@
                         type="object"
                         string="Applica Caricamento"
                         class="oe_highlight"
-                        attrs="{'invisible': [('x_load_id','=',False)]}"/>
+                        attrs="{'invisible': [('x_load_ids','=',False)]}"/>
 
                 <button name="action_open_sale_order_standard_form"
                         type="object"
@@ -382,14 +385,15 @@
 
                 <group>
                     <group>
-                        <field name="x_load_id" options="{'no_create': True}"/>
+                        <field name="x_load_ids" options="{'no_create': True}" widget="many2many_tags"/>
                         <field name="price_subtotal_lav" widget="monetary"/>
                     </group>
 
                     <group>
-                        <field name="date_module" widget="date"/>
-                        <field name="date_installation" widget="month_year"/>
-                        <field name="date_installation_display" readonly="1"/>
+                        <field name="date_module" />
+                        <field name="date_module_display" readonly="1"/>
+                        <field name="date_installation" />
+                        <field name="date_installation_display" readonly="1" />
                     </group>
                 </group>
 
@@ -405,17 +409,17 @@
                 <field name="x_load_line_ids"
                        nolabel="1"
                        limit="100"
-                       widget="section_and_note_one2many" class="sticky_header_only_this_list">
+                       widget="section_and_note_one2many" class="sticky_header_only_this_list"  >
                     <tree editable="bottom"
                           decoration-info="sale_line_id"
-                          limit="100"  >
+                          limit="100" >
 
                         <control>
                             <create string="Aggiungi riga"/>
                             <create string="Aggiungi sezione"
                                     context="{'default_display_type': 'line_section'}"/>
                         </control>
-
+                        <field name="x_load_id" optional="hide" readonly="1"/>
                         <field name="x_locked_by_tag" optional="hide"/>
                         <field name="sequence" widget="handle" optional="hide"/>
                         <field name="sale_line_id" readonly="1" optional="hide"/>
@@ -452,7 +456,7 @@
                                        ('editable','=',False)
                                    ]
                                }"/>
-
+                        <field name="attachment_product" attrs="{'invisible': [('display_type','!=',False)]}" optional="hide"/>
                         <field name="x_lavorazione"
                                optional="hide"
                                attrs="{'invisible': [('display_type','!=',False)]}"/>

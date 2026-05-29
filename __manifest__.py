@@ -36,7 +36,8 @@
         'report/sale_report_templates.xml',
         'report/sale_report.xml',
         'views/sale_order_tab_lav_view.xml',
-        'wizard/wizard_import_load_lines_views.xml'
+        'wizard/wizard_import_load_lines_views.xml',
+        'views/product_template_views.xml',
 
         
     ],

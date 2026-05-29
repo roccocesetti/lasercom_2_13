@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- FORM PRODOTTO: aggiunta tab "Caricamento Prodotti" -->
+    <record id="view_product_template_form_inherit_x_product_load" model="ir.ui.view">
+        <field name="name">product.template.form.inherit.x.product.load</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="product.product_template_only_form_view"/>
+        <field name="arch" type="xml">
+
+            <xpath expr="//notebook" position="inside">
+                <page string="Caricamento Prodotti" name="x_product_load_page">
+                    <group>
+                        <group>
+                            <field name="x_load_id"
+                                   options="{'no_create_edit': False}"
+                                   placeholder="Seleziona un modulo di caricamento prodotti"/>
+                        </group>
+                    </group>
+                </page>
+            </xpath>
+
+        </field>
+    </record>
+
+
+    <!-- LISTA PRODOTTI: aggiunta campo Modulo Caricamento Prodotti -->
+    <record id="view_product_template_tree_inherit_x_product_load" model="ir.ui.view">
+        <field name="name">product.template.tree.inherit.x.product.load</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="product.product_template_tree_view"/>
+        <field name="arch" type="xml">
+
+            <!-- Lo metto dopo il nome prodotto -->
+            <xpath expr="//tree/field[@name='name']" position="after">
+                <field name="x_load_id" optional="show"/>
+            </xpath>
+
+        </field>
+    </record>
+
+
+    <!-- FORM VARIANTE PRODOTTO -->
+    <record id="product_product_form_inherit_x_load_id" model="ir.ui.view">
+        <field name="name">product.product.form.inherit.x.load.id</field>
+        <field name="model">product.product</field>
+        <field name="inherit_id" ref="product.product_normal_form_view"/>
+        <field name="arch" type="xml">
+
+            <xpath expr="//notebook" position="inside">
+                <page string="Caricamento Prodotti" name="x_product_load_page">
+                    <group>
+                        <field name="x_load_id" options="{'no_create': True}"/>
+                    </group>
+                </page>
+            </xpath>
+
+        </field>
+    </record>
+
+
+    <!-- LISTA VARIANTI PRODOTTO -->
+    <record id="product_product_tree_inherit_x_load_id" model="ir.ui.view">
+        <field name="name">product.product.tree.inherit.x.load.id</field>
+        <field name="model">product.product</field>
+        <field name="inherit_id" ref="product.product_product_tree_view"/>
+        <field name="arch" type="xml">
+
+            <xpath expr="//tree" position="inside">
+                <field name="x_load_id" optional="show"/>
+            </xpath>
+
+        </field>
+    </record>
+
+</odoo>

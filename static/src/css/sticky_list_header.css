@@ -60,14 +60,15 @@
     position: sticky !important;
     top: 0 !important;
     z-index: 9999 !important;
-    background-color: #ffffff !important;
+    background-color: #f3f3f3 !important;
+    border-bottom: 1px solid #cfcfcf !important;
     box-shadow: 0 2px 3px rgba(0, 0, 0, 0.15) !important;
 }
 
 
 /* Titolo interno colonne */
 .o_field_widget.o_field_one2many[name="x_load_line_ids"] .o_list_table thead th .o_column_title {
-    background-color: #ffffff !important;
+    background-color: #f3f3f3 !important;
 }
 
 
@@ -89,7 +90,7 @@
     max-width: 36px !important;
 
     z-index: 10050 !important;
-    background-color: #ffffff !important;
+    background-color: #f3f3f3 !important;
     text-align: center !important;
     cursor: pointer !important;
 
@@ -156,4 +157,44 @@
 .o_field_widget.o_field_one2many[name="x_load_line_ids"] .o_list_table tbody td {
     position: relative;
     z-index: 1;
+}
+
+/* ============================================================
+   RIGA BLANK - classe aggiunta via JS
+   ============================================================ */
+
+.o_field_widget.o_field_one2many[name="x_load_line_ids"]
+.o_list_view .o_list_table tbody > tr.x_row_text_white > td,
+.o_field_widget.o_field_one2many[name="x_load_line_ids"]
+.o_list_view .o_list_table tbody > tr.x_row_text_white > td * {
+    color: transparent !important;
+    -webkit-text-fill-color: transparent !important;
+    text-shadow: none !important;
+}
+
+/* Nasconde badge/tag */
+.o_field_widget.o_field_one2many[name="x_load_line_ids"]
+.o_list_view .o_list_table tbody > tr.x_row_text_white .badge,
+.o_field_widget.o_field_one2many[name="x_load_line_ids"]
+.o_list_view .o_list_table tbody > tr.x_row_text_white .o_tag {
+    color: transparent !important;
+    -webkit-text-fill-color: transparent !important;
+    background-color: transparent !important;
+    border-color: transparent !important;
+}
+
+/* Nasconde input in edit */
+.o_field_widget.o_field_one2many[name="x_load_line_ids"]
+.o_list_view .o_list_table tbody > tr.x_row_text_white input,
+.o_field_widget.o_field_one2many[name="x_load_line_ids"]
+.o_list_view .o_list_table tbody > tr.x_row_text_white textarea,
+.o_field_widget.o_field_one2many[name="x_load_line_ids"]
+.o_list_view .o_list_table tbody > tr.x_row_text_white select,
+.o_field_widget.o_field_one2many[name="x_load_line_ids"]
+.o_list_view .o_list_table tbody > tr.x_row_text_white .o_input {
+    color: transparent !important;
+    -webkit-text-fill-color: transparent !important;
+    background-color: transparent !important;
+    border-color: transparent !important;
+    box-shadow: none !important;
 }
