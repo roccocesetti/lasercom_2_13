@@ -334,7 +334,7 @@
                                 <field name="product_id"  attrs="{'readonly': ['|',('x_locked_by_tag', '=', True),('editable','=',False)]}" />
                                 <field name="x_lavorazione" attrs="{'invisible': [('display_type','!=',False)]}" optional="hide"/>
                                 <field name="attachment_product" attrs="{'invisible': [('display_type','!=',False)]}" optional="hide"/>
-                                <field name="tipo_vetrina" optional="hide" attrs="{'readonly': ['|',('x_locked_by_tag', '=', True),('editable','=',False)]}"/>
+                                <field name="tipo_vetrina"  class="x_tipo_vetrina_anchor" optional="hide" attrs="{'readonly': ['|',('x_locked_by_tag', '=', True),('editable','=',False)]}"/>
                                 <field name="product_uom_qty" optional="show" attrs="{'readonly': ['|',('x_locked_by_tag', '=', True),('editable','=',False)]}"/>
                                 <field name="price_unit" optional="show" attrs="{'readonly': ['|',('x_locked_by_tag', '=', True),('editable','=',False)]}"/>
                                 <field name="price_extra" optional="show" attrs="{'readonly': ['|',('x_locked_by_tag', '=', True),('editable','=',False)]}"/>
@@ -466,6 +466,7 @@
                                attrs="{'invisible': [('display_type','!=',False)]}"/>
 
                         <field name="tipo_vetrina"
+                                class="x_tipo_vetrina_anchor"
                                optional="hide"
                                attrs="{
                                    'readonly': [

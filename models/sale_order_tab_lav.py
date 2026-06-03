@@ -217,9 +217,14 @@ class SaleOrder(models.Model):
                 return fields.Date.to_string(datetime.now() + timedelta(days))
         return False
 
-
-
-    @api.depends('x_load_line_ids')
+    @api.depends(
+        'x_load_line_ids',
+        'x_load_line_ids.etichetta_si',
+        'x_load_line_ids.price_subtotal',
+        'x_load_line_ids.product_uom_qty',
+        'x_load_line_ids.price_unit',
+        'x_load_line_ids.price_extra',
+    )
     def _compute_amount_lav(self):
         """
         Compute the amounts of the SO line.
@@ -229,9 +234,8 @@ class SaleOrder(models.Model):
             for line in order.x_load_line_ids:
                 if line.etichetta_si=="yes":
                         price_subtotal_lav+=line.price_subtotal
-            order.update({
-                            'price_subtotal_lav': price_subtotal_lav ,
-                        })
+
+            order.price_subtotal_lav = price_subtotal_lav
 
     x_load_ids = fields.Many2many(
         comodel_name="x.product.load",
@@ -602,10 +606,10 @@ class SaleOrderXLoadLine(models.Model):
         Compute the amounts of the SO line.
         """
         for line in self:
-            if 'price_subtotal' in line._fields:
-                 line.update({
-                    'price_subtotal': line.price_unit * line.product_uom_qty + line.price_extra,
-                })
+                line.price_subtotal = (
+                        (line.price_unit or 0.0) * (line.product_uom_qty or 0.0)
+                        + (line.price_extra or 0.0)
+                )
 
     @api.depends('product_id', 'order_id.state', 'qty_invoiced', 'qty_delivered')
     def _compute_product_updatable(self):

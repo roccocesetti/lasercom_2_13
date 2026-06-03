@@ -158,40 +158,64 @@
     position: relative;
     z-index: 1;
 }
-
 /* ============================================================
-   RIGA BLANK - classe aggiunta via JS
+   RIGA BLANK - sbianca SOLO i campi DOPO tipo_vetrina
+   Classe riga aggiunta via JS: tr.x_row_text_white
+   Campo ancora visibile fino a tipo_vetrina
    ============================================================ */
 
+/* Caso 1: la classe XML viene applicata direttamente al TD */
 .o_field_widget.o_field_one2many[name="x_load_line_ids"]
-.o_list_view .o_list_table tbody > tr.x_row_text_white > td,
+.o_list_view .o_list_table tbody > tr.x_row_text_white > td.x_tipo_vetrina_anchor ~ td,
 .o_field_widget.o_field_one2many[name="x_load_line_ids"]
-.o_list_view .o_list_table tbody > tr.x_row_text_white > td * {
+.o_list_view .o_list_table tbody > tr.x_row_text_white > td.x_tipo_vetrina_anchor ~ td * {
     color: transparent !important;
     -webkit-text-fill-color: transparent !important;
     text-shadow: none !important;
 }
 
-/* Nasconde badge/tag */
+/* Caso 2: la classe XML viene applicata a un elemento interno del TD */
 .o_field_widget.o_field_one2many[name="x_load_line_ids"]
-.o_list_view .o_list_table tbody > tr.x_row_text_white .badge,
+.o_list_view .o_list_table tbody > tr.x_row_text_white > td:has(.x_tipo_vetrina_anchor) ~ td,
 .o_field_widget.o_field_one2many[name="x_load_line_ids"]
-.o_list_view .o_list_table tbody > tr.x_row_text_white .o_tag {
+.o_list_view .o_list_table tbody > tr.x_row_text_white > td:has(.x_tipo_vetrina_anchor) ~ td * {
+    color: transparent !important;
+    -webkit-text-fill-color: transparent !important;
+    text-shadow: none !important;
+}
+
+/* Badge/tag dopo tipo_vetrina */
+.o_field_widget.o_field_one2many[name="x_load_line_ids"]
+.o_list_view .o_list_table tbody > tr.x_row_text_white > td.x_tipo_vetrina_anchor ~ td .badge,
+.o_field_widget.o_field_one2many[name="x_load_line_ids"]
+.o_list_view .o_list_table tbody > tr.x_row_text_white > td.x_tipo_vetrina_anchor ~ td .o_tag,
+.o_field_widget.o_field_one2many[name="x_load_line_ids"]
+.o_list_view .o_list_table tbody > tr.x_row_text_white > td:has(.x_tipo_vetrina_anchor) ~ td .badge,
+.o_field_widget.o_field_one2many[name="x_load_line_ids"]
+.o_list_view .o_list_table tbody > tr.x_row_text_white > td:has(.x_tipo_vetrina_anchor) ~ td .o_tag {
     color: transparent !important;
     -webkit-text-fill-color: transparent !important;
     background-color: transparent !important;
     border-color: transparent !important;
 }
 
-/* Nasconde input in edit */
+/* Input/edit mode dopo tipo_vetrina */
 .o_field_widget.o_field_one2many[name="x_load_line_ids"]
-.o_list_view .o_list_table tbody > tr.x_row_text_white input,
+.o_list_view .o_list_table tbody > tr.x_row_text_white > td.x_tipo_vetrina_anchor ~ td input,
 .o_field_widget.o_field_one2many[name="x_load_line_ids"]
-.o_list_view .o_list_table tbody > tr.x_row_text_white textarea,
+.o_list_view .o_list_table tbody > tr.x_row_text_white > td.x_tipo_vetrina_anchor ~ td textarea,
 .o_field_widget.o_field_one2many[name="x_load_line_ids"]
-.o_list_view .o_list_table tbody > tr.x_row_text_white select,
+.o_list_view .o_list_table tbody > tr.x_row_text_white > td.x_tipo_vetrina_anchor ~ td select,
 .o_field_widget.o_field_one2many[name="x_load_line_ids"]
-.o_list_view .o_list_table tbody > tr.x_row_text_white .o_input {
+.o_list_view .o_list_table tbody > tr.x_row_text_white > td.x_tipo_vetrina_anchor ~ td .o_input,
+.o_field_widget.o_field_one2many[name="x_load_line_ids"]
+.o_list_view .o_list_table tbody > tr.x_row_text_white > td:has(.x_tipo_vetrina_anchor) ~ td input,
+.o_field_widget.o_field_one2many[name="x_load_line_ids"]
+.o_list_view .o_list_table tbody > tr.x_row_text_white > td:has(.x_tipo_vetrina_anchor) ~ td textarea,
+.o_field_widget.o_field_one2many[name="x_load_line_ids"]
+.o_list_view .o_list_table tbody > tr.x_row_text_white > td:has(.x_tipo_vetrina_anchor) ~ td select,
+.o_field_widget.o_field_one2many[name="x_load_line_ids"]
+.o_list_view .o_list_table tbody > tr.x_row_text_white > td:has(.x_tipo_vetrina_anchor) ~ td .o_input {
     color: transparent !important;
     -webkit-text-fill-color: transparent !important;
     background-color: transparent !important;
