@@ -429,6 +429,7 @@ class SaleOrder(models.Model):
                         "price_extra": 0.0,
                         "name": so_line.name,
                         "editable": False,
+                        "etichetta_si": "yes",
                     })
                     sequence += 10
 
@@ -491,6 +492,7 @@ class SaleOrder(models.Model):
                         "product_uom_qty": (target_line.product_uom_qty or 0.0) + qty,
                     })
 
+            order._compute_amount_lav()
         return True
 
     def action_apply_product_load_old4(self, replace=True):
@@ -1432,8 +1434,8 @@ class SaleOrderXLoadLine(models.Model):
                 continue
             so_line = line.order_id.order_line.filtered(lambda l: l.product_id == line.product_id)[:1]
             line.sale_line_id = so_line
-            if so_line:
-                line.etichetta_si="yes"
+            #if so_line:
+            #    line.etichetta_si="yes"
     def write(self, vals):
         #only_toggle = set(vals.keys()) <= {"editable"}
 
