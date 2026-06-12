@@ -321,7 +321,7 @@
                                nolabel="1"
                                 colspan="4"
                                 limit="100"
-                               widget="section_and_note_one2many"  >
+                               widget="section_and_note_one2many" context="{'check_unique_si_tag_group': True}" >
                             <tree editable="bottom" decoration-info="sale_line_id" limit="100"
 
                                   >
@@ -426,7 +426,7 @@
                 <field name="x_load_line_ids"
                        nolabel="1"
                        limit="100"
-                       widget="section_and_note_one2many" class="sticky_header_only_this_list"  >
+                       widget="section_and_note_one2many" class="sticky_header_only_this_list"  context="{'check_unique_si_tag_group': True}">
                     <tree editable="bottom"
                           decoration-info="sale_line_id"
                           limit="100" >

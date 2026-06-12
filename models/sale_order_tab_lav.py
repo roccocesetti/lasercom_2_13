@@ -1095,6 +1095,45 @@ class SaleOrder(models.Model):
             },
         }
 
+    def _check_unique_si_per_tag_group_on_order(self):
+        """
+        Controlla che, per ogni gruppo tag, esista una sola riga con etichetta_si = 'yes'.
+        Controllo da eseguire sul salvataggio dell'ordine, non come constraint globale.
+        """
+        for order in self:
+            checked_tags = set()
+
+            lines = order.x_load_line_ids.filtered(
+                lambda l: not l.display_type
+                          and l.etichetta_si == 'yes'
+                          and l.tag_ids
+            )
+
+            for line in lines:
+                for tag in line.tag_ids:
+                    if tag.id in checked_tags:
+                        continue
+
+                    same_tag_yes_lines = lines.filtered(
+                        lambda l: tag in l.tag_ids
+                    )
+
+                    if len(same_tag_yes_lines) > 1:
+                        product_names = "\n".join(
+                            "- %s" % (l.product_id.display_name or l.name or _("Riga senza prodotto"))
+                            for l in same_tag_yes_lines
+                        )
+
+                        raise ValidationError(_(
+                            "Può esistere una sola riga con valore SI per lo stesso gruppo etichetta.\n\n"
+                            "Etichetta: %s\n"
+                            "Righe in conflitto:\n%s"
+                        ) % (
+                                                  tag.name,
+                                                  product_names,
+                                              ))
+
+                    checked_tags.add(tag.id)
 
 
 
@@ -1206,6 +1245,14 @@ class SaleOrder(models.Model):
                 form_view_initial_mode='edit',
             ),
         }
+
+    def write(self, vals):
+        res = super(SaleOrder, self).write(vals)
+
+        if 'x_load_line_ids' in vals and not self.env.context.get('skip_unique_si_tag_check'):
+            self._check_unique_si_per_tag_group_on_order()
+
+        return res
 class SaleOrderXLoadLine(models.Model):
     _name = "sale.order.x_load_line"
     _description = "Righe Caricamento su Ordine di Vendita"
@@ -1503,6 +1550,11 @@ class SaleOrderXLoadLine(models.Model):
 
     @api.constrains('etichetta_si', 'tag_ids', 'order_id', 'display_type')
     def _check_unique_si_per_tag_group(self):
+
+        return True
+        if not self.env.context.get('check_unique_si_tag_group'):
+            return
+
         for rec in self:
             if rec.display_type or not rec.order_id or not rec.tag_ids:
                 continue
