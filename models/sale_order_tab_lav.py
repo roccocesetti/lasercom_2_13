@@ -9,6 +9,7 @@ from odoo.osv import expression
 from odoo.tools import float_is_zero, float_compare
 from datetime import datetime, timedelta
 import logging
+from collections import defaultdict
 _logger = logging.getLogger(__name__)
 
 
@@ -25,7 +26,6 @@ class Producttemplate(models.Model):
     x_load_id = fields.Many2one(
         "x.product.load",
         string="Modulo Caricamento Prodotti",
-        default=lambda self: self.env.company.x_default_product_load_id,
     )
 
 
@@ -201,12 +201,18 @@ class SaleOrderLine(models.Model):
 
         for line in self:
             product_tmpl = line.product_id.product_tmpl_id if line.product_id else False
-            load = product_tmpl.x_load_id if product_tmpl and product_tmpl.x_load_id else False
+            if not product_tmpl:
+                line.x_load_id = False
+                continue
 
-            line.x_load_id = load
+            optional_products = getattr(product_tmpl, "optional_product_ids", False)
+
+            if optional_products and product_tmpl.x_load_id:
+                line.x_load_id = product_tmpl.x_load_id
+            else:
+                line.x_load_id = False
 
         return res
-
 class SaleOrder(models.Model):
     _inherit = "sale.order"
 
@@ -343,7 +349,541 @@ class SaleOrder(models.Model):
                     sequence += 10
 
             order.x_load_line_ids = commands
+
     def action_apply_product_load(self, replace=True):
+        SaleOrderXLoadLine = self.env["sale.order.x_load_line"]
+
+        for order in self:
+            if not order.id or not isinstance(order.id, int):
+                raise UserError(_("Salva prima il preventivo prima di applicare il caricamento prodotti."))
+
+            order_lines = order.order_line.filtered(
+                lambda l: not l.display_type and l.product_id
+            ).sorted(key=lambda l: (l.sequence, l.id))
+
+            if not order_lines:
+                raise UserError(_("Non sono presenti righe prodotto nell'ordine."))
+
+            def _get_optional_products(line):
+                template = line.product_id.product_tmpl_id if line.product_id else False
+                if not template:
+                    return self.env["product.product"]
+                return getattr(template, "optional_product_ids", self.env["product.product"])
+
+            def _get_line_load(line):
+                if line.x_load_id:
+                    return line.x_load_id
+
+                template = line.product_id.product_tmpl_id if line.product_id else False
+                if template and template.x_load_id:
+                    return template.x_load_id
+
+                return self.env["x.product.load"]
+
+            def _is_main_line(line):
+                return bool(_get_optional_products(line) and _get_line_load(line))
+
+            main_lines = order_lines.filtered(lambda l: _is_main_line(l))
+            if not main_lines:
+                raise UserError(_("Nessuna riga ordine contiene un prodotto principale con modulo di caricamento."))
+
+            if replace and order.x_load_line_ids:
+                order.x_load_line_ids.unlink()
+
+            sequence = 10
+            current_main_line = False
+            current_generated_by_product = {}
+            current_optional_counter = defaultdict(int)
+
+            for so_line in order_lines:
+                product = so_line.product_id
+                qty = so_line.product_uom_qty or 0.0
+
+                if qty <= 0.0:
+                    raise UserError(
+                        _("La quantità del prodotto '%s' deve essere maggiore di zero.") % product.display_name)
+
+                if _is_main_line(so_line):
+                    current_main_line = so_line
+                    current_generated_by_product = {}
+                    current_optional_counter = defaultdict(int)
+
+                    load = _get_line_load(so_line)
+
+                    if not load.line_ids:
+                        raise UserError(_(
+                            "Il modulo di caricamento '%s' collegato al prodotto '%s' non contiene righe."
+                        ) % (
+                                            load.display_name,
+                                            product.display_name,
+                                        ))
+
+                    # Riga testata prodotto principale
+                    SaleOrderXLoadLine.create({
+                        "order_id": order.id,
+                        "x_load_id": load.id,
+                        "sequence": sequence,
+                        "product_id": product.id,
+                        "product_uom_qty": qty,
+                        "price_unit": so_line.purchase_price or 0.0,
+                        "price_extra": 0.0,
+                        "name": so_line.name,
+                        "editable": False,
+                    })
+                    sequence += 10
+
+                    # Righe modulo caricamento
+                    for ll in load.line_ids.sorted(key=lambda l: (l.sequence, l.id)):
+                        vals = {
+                            "order_id": order.id,
+                            "x_load_id": load.id,
+                            "sequence": sequence,
+                            "display_type": ll.display_type,
+                            "name": ll.name or (ll.product_id.display_name if ll.product_id else False),
+                            "product_id": ll.product_id.id if ll.product_id and not ll.display_type else False,
+                            "product_uom_height": ll.product_uom_height,
+                            "product_uom_length": ll.product_uom_length,
+                            "product_uom_width": ll.product_uom_width,
+                            "product_uom_qty": 0.0 if ll.display_type else (ll.product_uom_qty or 0.0) * qty,
+                            "price_unit": 0.0 if ll.display_type else (ll.price_unit or 0.0),
+                            "price_extra": 0.0 if ll.display_type else (ll.price_extra or 0.0),
+                            "supplier_id": ll.supplier_id.id if ll.supplier_id and not ll.display_type else False,
+                            "editable": ll.editable,
+                            "tipo_vetrina": ll.tipo_vetrina,
+                            "note": ll.note,
+                            "x_lavorazione": ll.x_lavorazione,
+                            "tag_true": ll.tag_true,
+                            "tag_ids": [(6, 0, ll.tag_ids.ids)],
+                        }
+
+                        created_line = SaleOrderXLoadLine.create(vals)
+
+                        if created_line.product_id and not created_line.display_type:
+                            current_generated_by_product.setdefault(
+                                created_line.product_id.product_tmpl_id.id,
+                                created_line
+                            )
+
+                        sequence += 10
+
+                    continue
+
+                # Riga accessoria/successiva
+                if not current_main_line:
+                    continue
+
+                product_key = product.product_tmpl_id.id
+
+                current_optional_counter[product_key] += 1
+                if current_optional_counter[product_key] > 1:
+                    raise UserError(_(
+                        "Nel blocco del prodotto principale '%s' il prodotto '%s' "
+                        "è stato inserito più di una volta."
+                    ) % (
+                                        current_main_line.product_id.display_name,
+                                        product.display_name,
+                                    ))
+
+                target_line = current_generated_by_product.get(product_key)
+
+                if target_line:
+                    target_line.write({
+                        "product_uom_qty": (target_line.product_uom_qty or 0.0) + qty,
+                    })
+
+        return True
+
+    def action_apply_product_load_old4(self, replace=True):
+        """
+        Genera le righe sale.order.x_load_line partendo dalle righe ordine.
+
+        Regole:
+        - solo i prodotti principali generano il modulo;
+        - un prodotto principale è una riga con x_load_id e optional_product_ids;
+        - le righe successive non principali sommano quantità alle righe generate;
+        - se nello stesso blocco un prodotto successivo è ripetuto, viene bloccato.
+        """
+        SaleOrderXLoadLine = self.env["sale.order.x_load_line"]
+
+        for order in self:
+            if not order.id or not isinstance(order.id, int):
+                raise UserError(_("Salva prima il preventivo prima di applicare il caricamento prodotti."))
+
+            order_lines = order.order_line.filtered(
+                lambda l: not l.display_type and l.product_id
+            ).sorted(key=lambda l: (l.sequence, l.id))
+
+            if not order_lines:
+                raise UserError(_("Non sono presenti righe prodotto nell'ordine."))
+
+            def _get_optional_products(line):
+                template = line.product_id.product_tmpl_id if line.product_id else False
+                if not template:
+                    return self.env["product.product"]
+                return getattr(template, "optional_product_ids", self.env["product.product"])
+
+            def _get_line_load(line):
+                """
+                Recupera il modulo caricamento:
+                - prima dalla riga ordine;
+                - se vuoto, dal template prodotto.
+                Non scrive nulla sulla riga ordine.
+                """
+                if line.x_load_id:
+                    return line.x_load_id
+
+                template = line.product_id.product_tmpl_id if line.product_id else False
+                if template and template.x_load_id:
+                    return template.x_load_id
+
+                return self.env["x.product.load"]
+
+            def _is_main_line(line):
+                """
+                Riga principale = prodotto che contiene optional_product_ids
+                e che ha un modulo x_load_id, anche recuperato dal template.
+                """
+                return bool(_get_optional_products(line) and _get_line_load(line))
+
+
+
+
+
+
+            if replace and order.x_load_line_ids:
+                order.x_load_line_ids.unlink()
+
+            sequence = 10
+            current_main_line = False
+            current_generated_by_product = {}
+            current_optional_counter = defaultdict(int)
+
+            for so_line in order_lines:
+                product = so_line.product_id
+                qty = so_line.product_uom_qty or 0.0
+
+                if qty <= 0.0:
+                    raise UserError(
+                        _("La quantità del prodotto '%s' deve essere maggiore di zero.") % product.display_name)
+
+                if _is_main_line(so_line):
+                    current_main_line = so_line
+                    current_generated_by_product = {}
+                    current_optional_counter = defaultdict(int)
+
+                    load = so_line.x_load_id
+
+                    SaleOrderXLoadLine.create({
+                        "order_id": order.id,
+                        "x_load_id": load.id,
+                        "sequence": sequence,
+                        "product_id": product.id,
+                        "product_uom_qty": qty,
+                        "price_unit": so_line.purchase_price or 0.0,
+                        "price_extra": 0.0,
+                        "name": so_line.name,
+                        "editable": False,
+                    })
+                    sequence += 10
+
+                    for ll in load.line_ids.sorted(key=lambda l: (l.sequence, l.id)):
+                        vals = {
+                            "order_id": order.id,
+                            "x_load_id": load.id,
+                            "sequence": sequence,
+                            "display_type": ll.display_type,
+                            "name": ll.name or (ll.product_id.display_name if ll.product_id else False),
+                            "product_id": ll.product_id.id if ll.product_id and not ll.display_type else False,
+                            "product_uom_height": ll.product_uom_height,
+                            "product_uom_length": ll.product_uom_length,
+                            "product_uom_width": ll.product_uom_width,
+                            "product_uom_qty": 0.0 if ll.display_type else (ll.product_uom_qty or 0.0) * qty,
+                            "price_unit": 0.0 if ll.display_type else (ll.price_unit or 0.0),
+                            "price_extra": 0.0 if ll.display_type else (ll.price_extra or 0.0),
+                            "supplier_id": ll.supplier_id.id if ll.supplier_id and not ll.display_type else False,
+                            "editable": ll.editable,
+                            "tipo_vetrina": ll.tipo_vetrina,
+                            "note": ll.note,
+                            "x_lavorazione": ll.x_lavorazione,
+                            "tag_true": ll.tag_true,
+                            "tag_ids": [(6, 0, ll.tag_ids.ids)],
+                        }
+
+                        created_line = SaleOrderXLoadLine.create(vals)
+
+                        if created_line.product_id and not created_line.display_type:
+                            current_generated_by_product.setdefault(
+                                created_line.product_id.product_tmpl_id.id,
+                                created_line
+                            )
+
+                        sequence += 10
+
+                    continue
+
+                # Riga successiva/non principale.
+                if not current_main_line:
+                    continue
+
+                product_key = product.product_tmpl_id.id
+
+                current_optional_counter[product_key] += 1
+                if current_optional_counter[product_key] > 1:
+                    raise UserError(_(
+                        "Nel blocco del prodotto principale '%s' il prodotto '%s' "
+                        "è stato inserito più di una volta."
+                    ) % (
+                                        current_main_line.product_id.display_name,
+                                        product.display_name,
+                                    ))
+
+                target_line = current_generated_by_product.get(product_key)
+
+                if target_line:
+                    target_line.write({
+                        "product_uom_qty": (target_line.product_uom_qty or 0.0) + qty,
+                    })
+
+        return True
+    def action_apply_product_load_old3(self, replace=True):
+        """
+        Carica le righe di lavorazione su sale.order.x_load_line.
+
+        Regole:
+        - solo le righe ordine che hanno x_load_id generano il modulo;
+        - le righe ordine senza x_load_id non vengono aggiunte come righe nuove;
+        - le righe senza x_load_id incrementano la quantità della riga generata
+          con lo stesso product_id;
+        - il controllo duplicati viene fatto per blocco, cioè tra un prodotto
+          con x_load_id e il successivo prodotto con x_load_id.
+        """
+        SaleOrderXLoadLine = self.env["sale.order.x_load_line"]
+
+        for order in self:
+            if not order.id or not isinstance(order.id, int):
+                raise UserError(_("Salva prima il preventivo prima di applicare il caricamento prodotti."))
+
+            order_lines = order.order_line.filtered(
+                lambda l: not l.display_type and l.product_id
+            ).sorted(key=lambda l: (l.sequence, l.id))
+
+            if not order_lines:
+                raise UserError(_("Non sono presenti righe prodotto nell'ordine."))
+
+            # Recupero x_load_id dal prodotto, se non già valorizzato sulla riga ordine
+            for so_line in order_lines:
+                if not so_line.x_load_id and so_line.product_id.product_tmpl_id.x_load_id:
+                    so_line.x_load_id = so_line.product_id.product_tmpl_id.x_load_id
+
+            main_lines = order_lines.filtered(lambda l: l.x_load_id)
+            if not main_lines:
+                raise UserError(_(
+                    "Nessuna riga ordine contiene un modulo di caricamento prodotti."
+                ))
+
+            if replace and order.x_load_line_ids:
+                order.x_load_line_ids.unlink()
+
+            sequence = 10
+
+            current_main_line = False
+            current_generated_by_product = {}
+            current_optional_counter = defaultdict(int)
+
+            for so_line in order_lines:
+                product = so_line.product_id
+                qty = so_line.product_uom_qty or 0.0
+
+                if qty <= 0.0:
+                    raise UserError(_(
+                        "La quantità del prodotto '%s' deve essere maggiore di zero."
+                    ) % product.display_name)
+
+                # CASO 1: riga ordine principale, cioè con modulo x_load_id
+                if so_line.x_load_id:
+                    current_main_line = so_line
+                    current_generated_by_product = {}
+                    current_optional_counter = defaultdict(int)
+
+                    load = so_line.x_load_id
+
+                    # Riga testata del prodotto principale
+                    SaleOrderXLoadLine.create({
+                        "order_id": order.id,
+                        "x_load_id": load.id,
+                        "sequence": sequence,
+                        "product_id": product.id,
+                        "product_uom_qty": qty,
+                        "price_unit": so_line.purchase_price or 0.0,
+                        "price_extra": 0.0,
+                        "name": so_line.name,
+                        "editable": False,
+                    })
+                    sequence += 10
+
+                    # Righe del modulo caricamento
+                    for ll in load.line_ids.sorted(key=lambda l: (l.sequence, l.id)):
+                        vals = {
+                            "order_id": order.id,
+                            "x_load_id": load.id,
+                            "sequence": sequence,
+                            "display_type": ll.display_type,
+                            "name": ll.name or (ll.product_id.display_name if ll.product_id else False),
+                            "product_id": ll.product_id.id if ll.product_id and not ll.display_type else False,
+                            "product_uom_height": ll.product_uom_height,
+                            "product_uom_length": ll.product_uom_length,
+                            "product_uom_width": ll.product_uom_width,
+
+                            # Quantità base del modulo moltiplicata per la quantità della riga principale
+                            "product_uom_qty": 0.0 if ll.display_type else (ll.product_uom_qty or 0.0) * qty,
+
+                            "price_unit": 0.0 if ll.display_type else (ll.price_unit or 0.0),
+                            "price_extra": 0.0 if ll.display_type else (ll.price_extra or 0.0),
+                            "supplier_id": ll.supplier_id.id if ll.supplier_id and not ll.display_type else False,
+                            "editable": ll.editable,
+                            "tipo_vetrina": ll.tipo_vetrina,
+                            "note": ll.note,
+                            "x_lavorazione": ll.x_lavorazione,
+                            "tag_true": ll.tag_true,
+                            "tag_ids": [(6, 0, ll.tag_ids.ids)],
+                        }
+
+                        created_line = SaleOrderXLoadLine.create(vals)
+
+                        # Mappa prodotto -> riga generata.
+                        # Serve per sommare le quantità delle righe ordine senza x_load_id.
+                        if created_line.product_id and not created_line.display_type:
+                            current_generated_by_product.setdefault(
+                                created_line.product_id.id,
+                                created_line
+                            )
+
+                        sequence += 10
+
+                    continue
+
+                # CASO 2: riga ordine senza x_load_id.
+                # Non viene aggiunta come nuova riga: aggiorna solo quantità.
+                if not current_main_line:
+                    # Riga senza modulo prima di qualsiasi prodotto principale: la ignoro.
+                    # Se preferisci bloccarla, sostituisci con UserError.
+                    continue
+
+                current_optional_counter[product.id] += 1
+                if current_optional_counter[product.id] > 1:
+                    raise UserError(_(
+                        "Nel blocco del prodotto principale '%s' il prodotto '%s' "
+                        "è stato inserito più di una volta."
+                    ) % (
+                                        current_main_line.product_id.display_name,
+                                        product.display_name,
+                                    ))
+
+                target_line = current_generated_by_product.get(product.id)
+
+                if not target_line:
+                    raise UserError(_(
+                        "Il prodotto '%s' è presente nelle righe ordine senza modulo di caricamento, "
+                        "ma non esiste una riga corrispondente nel modulo '%s' del prodotto principale '%s'.\n"
+                        "Non è quindi possibile sommare la quantità."
+                    ) % (
+                                        product.display_name,
+                                        current_main_line.x_load_id.display_name,
+                                        current_main_line.product_id.display_name,
+                                    ))
+
+                target_line.write({
+                    "product_uom_qty": (target_line.product_uom_qty or 0.0) + qty,
+                })
+
+        return True
+
+    def action_apply_product_load_old2(self, replace=True):
+        SaleOrderXLoadLine = self.env["sale.order.x_load_line"]
+
+        for order in self:
+            if not order.id or not isinstance(order.id, int):
+                raise UserError(_("Salva prima il preventivo prima di applicare il caricamento prodotti."))
+
+            order_lines = order.order_line.filtered(
+                lambda l: not l.display_type and l.product_id
+            )
+
+            if not order_lines:
+                raise UserError(_("Non sono presenti righe prodotto nell'ordine."))
+
+            for so_line in order_lines:
+                if not so_line.x_load_id and so_line.product_id.product_tmpl_id.x_load_id:
+                    so_line.x_load_id = so_line.product_id.product_tmpl_id.x_load_id
+
+            missing_load_lines = order_lines.filtered(lambda l: not l.x_load_id)
+            if missing_load_lines:
+                products = "\n".join(
+                    "- %s" % (line.product_id.display_name or line.name)
+                    for line in missing_load_lines
+                )
+                raise UserError(_(
+                    "I seguenti prodotti dell'ordine non hanno un modulo di caricamento prodotti collegato:\n%s"
+                ) % products)
+
+            # NUOVO CONTROLLO PER BLOCCHI DI OPZIONALI
+            order._check_optional_product_blocks()
+
+            if replace and order.x_load_line_ids:
+                order.x_load_line_ids.unlink()
+
+            sequence = 10
+
+            for so_line in order_lines.sorted(key=lambda l: (l.sequence, l.id)):
+                load = so_line.x_load_id
+                multiplier_qty = so_line.product_uom_qty or 0.0
+
+                if multiplier_qty <= 0.0:
+                    raise UserError(_(
+                        "La quantità del prodotto '%s' deve essere maggiore di zero."
+                    ) % so_line.product_id.display_name)
+
+                SaleOrderXLoadLine.create({
+                    "order_id": order.id,
+                    "x_load_id": load.id,
+                    "sequence": sequence,
+                    "product_id": so_line.product_id.id,
+                    "product_uom_qty": multiplier_qty,
+                    "price_unit": so_line.purchase_price or 0.0,
+                    "price_extra": 0.0,
+                    "name": so_line.name,
+                    "editable": False,
+                })
+                sequence += 10
+
+                for ll in load.line_ids.sorted(key=lambda l: (l.sequence, l.id)):
+                    SaleOrderXLoadLine.create({
+                        "order_id": order.id,
+                        "x_load_id": load.id,
+                        "sequence": sequence,
+                        "display_type": ll.display_type,
+                        "name": ll.name or (ll.product_id.display_name if ll.product_id else False),
+                        "product_id": ll.product_id.id if ll.product_id and not ll.display_type else False,
+                        "product_uom_height": ll.product_uom_height,
+                        "product_uom_length": ll.product_uom_length,
+                        "product_uom_width": ll.product_uom_width,
+
+                        # quantità riga modulo moltiplicata per quantità riga ordine
+                        "product_uom_qty": 0.0 if ll.display_type else (ll.product_uom_qty or 0.0) * multiplier_qty,
+
+                        "price_unit": 0.0 if ll.display_type else (ll.price_unit or 0.0),
+                        "price_extra": 0.0 if ll.display_type else (ll.price_extra or 0.0),
+                        "supplier_id": ll.supplier_id.id if ll.supplier_id and not ll.display_type else False,
+                        "editable": ll.editable,
+                        "tipo_vetrina": ll.tipo_vetrina,
+                        "note": ll.note,
+                        "tag_true": ll.tag_true,
+                        "tag_ids": [(6, 0, ll.tag_ids.ids)],
+                    })
+                    sequence += 10
+
+        return True
+    def action_apply_product_load_old(self, replace=True):
         """
         Carica tutte le righe x.product.load.line in sale.order.line.
         replace=True  -> rimpiazza le righe ordine
@@ -415,6 +955,77 @@ class SaleOrder(models.Model):
 
         return True
 
+
+
+    def _check_optional_product_blocks(self):
+        """
+        Controlla le righe ordine per blocchi.
+
+        Un blocco inizia quando viene incontrato un prodotto che ha optional_product_ids.
+        Le righe successive, fino al prossimo prodotto con optional_product_ids,
+        sono considerate prodotti opzionali del prodotto principale precedente.
+
+        Regole:
+        - il prodotto opzionale deve appartenere agli optional_product_ids del prodotto principale;
+        - lo stesso prodotto opzionale non può comparire più di una volta nello stesso blocco.
+        """
+        for order in self:
+            current_main_line = False
+            current_allowed_optional_ids = set()
+            current_optional_counter = defaultdict(int)
+
+            def flush_current_block():
+                """
+                Valida il blocco corrente prima di aprirne uno nuovo.
+                """
+                if not current_main_line:
+                    return
+
+                duplicated_ids = [
+                    product_id
+                    for product_id, count in current_optional_counter.items()
+                    if count > 1
+                ]
+
+                if duplicated_ids:
+                    duplicated_products = self.env["product.product"].browse(duplicated_ids)
+                    duplicated_names = "\n".join(
+                        "- %s" % product.display_name
+                        for product in duplicated_products
+                    )
+                    raise UserError(_(
+                        "Nel blocco del prodotto principale '%s' ci sono prodotti opzionali ripetuti:\n%s"
+                    ) % (current_main_line.product_id.display_name, duplicated_names))
+
+            order_lines = order.order_line.filtered(
+                lambda l: not l.display_type and l.product_id
+            ).sorted(key=lambda l: (l.sequence, l.id))
+
+            for so_line in order_lines:
+                product = so_line.product_id
+                template = product.product_tmpl_id
+
+                optional_products = getattr(template, "optional_product_ids", False)
+
+                # Nuovo prodotto principale: chiudo il blocco precedente e apro il nuovo.
+                if optional_products:
+                    flush_current_block()
+
+                    current_main_line = so_line
+                    current_allowed_optional_ids = set(optional_products.ids)
+                    current_optional_counter = defaultdict(int)
+                    continue
+
+                # Se non c'è ancora un prodotto principale, ignoro il prodotto.
+                # In alternativa si può bloccare, ma per ora lo lasciamo passare.
+                if not current_main_line:
+                    continue
+
+
+                current_optional_counter[product.id] += 1
+
+            # Valido anche l'ultimo blocco
+            flush_current_block()
     x_load_line_ids = fields.One2many(
         "sale.order.x_load_line",
         "order_id",

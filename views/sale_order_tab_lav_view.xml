@@ -256,7 +256,19 @@
 
 
 
-
+    <record model="ir.ui.view" id="sale_string_price_sale_order_line_x_load_id">
+        <field name="name">sale.order.line.string_price.view.form</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_order_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='order_line']/form//field[@name='price_unit']" position="after">
+                 <field name="x_load_id" optional="hide" groups="base.group_user"/>
+            </xpath>
+            <xpath expr="//field[@name='order_line']/tree//field[@name='price_unit']" position="after">
+                   <field name="x_load_id" optional="hide" groups="base.group_user"/>
+            </xpath>
+        </field>
+    </record>
 
     <record id="view_sale_order_form_inherit_x_product_load" model="ir.ui.view">
 
@@ -264,6 +276,7 @@
         <field name="model">sale.order</field>
         <field name="inherit_id" ref="sale.view_order_form"/>
         <field name="arch" type="xml">
+
             <xpath expr="//notebook" position="inside">
                 <page string="Caricamento Prodotti" groups="sales_team.group_sale_manager,lasercom_2_13.group_admin_lav">
                     <button name="action_open_product_load_fullscreen"
