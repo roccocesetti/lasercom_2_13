@@ -445,7 +445,7 @@ class SaleOrder(models.Model):
                             "product_uom_length": ll.product_uom_length,
                             "product_uom_width": ll.product_uom_width,
                             "product_uom_qty": 0.0 if ll.display_type else (ll.product_uom_qty or 0.0) * qty,
-                            "price_unit": 0.0 if ll.display_type else (ll.price_unit or 0.0),
+                            "price_unit": 0.0 if ll.display_type else (ll.product_id.standard_price or 0.0),
                             "price_extra": 0.0 if ll.display_type else (ll.price_extra or 0.0),
                             "supplier_id": ll.supplier_id.id if ll.supplier_id and not ll.display_type else False,
                             "editable": ll.editable,
