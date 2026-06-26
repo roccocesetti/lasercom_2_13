@@ -489,7 +489,8 @@ class SaleOrder(models.Model):
 
                 if target_line:
                     target_line.write({
-                        "product_uom_qty": (target_line.product_uom_qty or 0.0) + qty,
+                        "product_uom_qty": (target_line.product_uom_qty or 0.0) * qty,
+                        "etichetta_si": "yes",
                     })
 
             order._compute_amount_lav()

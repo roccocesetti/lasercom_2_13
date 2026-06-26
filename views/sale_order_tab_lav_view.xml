@@ -67,17 +67,18 @@
         <field name="name">x.product.load.line.tree</field>
         <field name="model">x.product.load.line</field>
         <field name="arch" type="xml">
-            <tree string="prodotti selezionbili prodotti">
+            <tree string="prodotti selezionabili prodotti">
                 <field name="tag_true"   optional="show"/>
                 <field name="tag_ids" optional="show" widget="many2many_tags"/>
                 <field name="product_id"/>
                 <field name="x_lavorazione"/>
                 <field name="note"/>
                 <field name="uom_id" readonly="1"/>
+                <field name="product_uom_qty"/>
                 <field name="product_uom_height" optional="show" />
                 <field name="product_uom_length" optional="show" />
                 <field name="product_uom_width" optional="show" />
-                <field name="product_uom_qty"/>
+
                 <field name="price_unit"/>
                 <field name="price_extra" optional="show" />
                 <field name="tipo_vetrina" optional="show" />
@@ -108,9 +109,9 @@
                                 class="oe_highlight"/>
                             <field name="line_ids"
                                    context="{'default_load_id': active_id}"
-                                    limit="100"
+                                    limit="160"
                                    >
-                                <tree editable="bottom" limit="100"  >
+                                <tree editable="bottom" limit="160"  >
                                     <control>
                                         <create string="Aggiungi riga" />
 
@@ -134,14 +135,15 @@
                                            attrs="{'invisible': [('display_type','!=',False)]}"/>
                                     <field name="uom_id" readonly="1"
                                            attrs="{'invisible': [('display_type','!=',False)]}"/>
+                                    <field name="product_uom_qty"
+                                           attrs="{'invisible': [('display_type','!=',False)]}"/>
                                     <field name="product_uom_height" optional="show"
                                            attrs="{'invisible': [('display_type','!=',False)]}"/>
                                     <field name="product_uom_length" optional="show"
                                            attrs="{'invisible': [('display_type','!=',False)]}"/>
                                     <field name="product_uom_width" optional="show"
                                            attrs="{'invisible': [('display_type','!=',False)]}"/>
-                                    <field name="product_uom_qty"
-                                           attrs="{'invisible': [('display_type','!=',False)]}"/>
+
                                     <field name="price_unit"
                                            attrs="{'invisible': [('display_type','!=',False)]}"/>
                                     <field name="price_extra" optional="show"
@@ -320,9 +322,9 @@
                         <field name="x_load_line_ids"
                                nolabel="1"
                                 colspan="4"
-                                limit="100"
+                                limit="160"
                                widget="section_and_note_one2many" context="{'check_unique_si_tag_group': True}" >
-                            <tree editable="bottom" decoration-info="sale_line_id" limit="100"
+                            <tree editable="bottom" decoration-info="sale_line_id" limit="160"
 
                                   >
                                 <control>
@@ -426,11 +428,11 @@
 
                 <field name="x_load_line_ids"
                        nolabel="1"
-                       limit="100"
+                       limit="160"
                        widget="section_and_note_one2many" class="sticky_header_only_this_list"  context="{'check_unique_si_tag_group': True}">
                     <tree editable="bottom"
                           decoration-info="sale_line_id"
-                          limit="100" >
+                          limit="160" >
 
                         <control>
                             <create string="Aggiungi riga"/>
