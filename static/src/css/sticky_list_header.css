@@ -262,3 +262,61 @@
     border-color: transparent !important;
     box-shadow: none !important;
 }
+/* ============================================================
+   RIGA BLANK - celle marcate via JS anche in edit mode
+   ============================================================ */
+
+.o_field_widget.o_field_one2many[name="x_load_line_ids"]
+.o_list_view .o_list_table tbody > tr.x_row_text_white > td.x_blank_right_cell,
+.o_field_widget.o_field_one2many[name="x_load_line_ids"]
+.o_list_view .o_list_table tbody > tr.x_row_text_white > td.x_blank_right_cell * {
+    color: transparent !important;
+    -webkit-text-fill-color: transparent !important;
+    text-shadow: none !important;
+}
+
+/* Input in modalità edit inline */
+.o_field_widget.o_field_one2many[name="x_load_line_ids"]
+.o_list_view .o_list_table tbody > tr.x_row_text_white > td.x_blank_right_cell input,
+.o_field_widget.o_field_one2many[name="x_load_line_ids"]
+.o_list_view .o_list_table tbody > tr.x_row_text_white > td.x_blank_right_cell textarea,
+.o_field_widget.o_field_one2many[name="x_load_line_ids"]
+.o_list_view .o_list_table tbody > tr.x_row_text_white > td.x_blank_right_cell select,
+.o_field_widget.o_field_one2many[name="x_load_line_ids"]
+.o_list_view .o_list_table tbody > tr.x_row_text_white > td.x_blank_right_cell .o_input,
+.o_field_widget.o_field_one2many[name="x_load_line_ids"]
+.o_list_view .o_list_table tbody > tr.x_row_text_white > td.x_blank_right_cell .o_field_widget {
+    color: transparent !important;
+    -webkit-text-fill-color: transparent !important;
+    background-color: transparent !important;
+    border-color: transparent !important;
+    box-shadow: none !important;
+    caret-color: transparent !important;
+}
+
+/* Many2many tags / badge */
+.o_field_widget.o_field_one2many[name="x_load_line_ids"]
+.o_list_view .o_list_table tbody > tr.x_row_text_white > td.x_blank_right_cell .badge,
+.o_field_widget.o_field_one2many[name="x_load_line_ids"]
+.o_list_view .o_list_table tbody > tr.x_row_text_white > td.x_blank_right_cell .o_tag {
+    color: transparent !important;
+    -webkit-text-fill-color: transparent !important;
+    background-color: transparent !important;
+    border-color: transparent !important;
+}
+
+/* Link many2one in lettura */
+.o_field_widget.o_field_one2many[name="x_load_line_ids"]
+.o_list_view .o_list_table tbody > tr.x_row_text_white > td.x_blank_right_cell a {
+    color: transparent !important;
+    -webkit-text-fill-color: transparent !important;
+}
+
+/* Evita evidenziazione testo quando clicchi/selezioni */
+.o_field_widget.o_field_one2many[name="x_load_line_ids"]
+.o_list_view .o_list_table tbody > tr.x_row_text_white > td.x_blank_right_cell::selection,
+.o_field_widget.o_field_one2many[name="x_load_line_ids"]
+.o_list_view .o_list_table tbody > tr.x_row_text_white > td.x_blank_right_cell *::selection {
+    color: transparent !important;
+    background: transparent !important;
+}

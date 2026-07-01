@@ -251,6 +251,8 @@ class SaleOrder(models.Model):
         string="Caricamenti Prodotti",
 
     )
+    note_modulo_agente = fields.Char(string='Note agente ', required=False, copy=False, readonly=False, default='', )
+    note_modulo_installazione = fields.Char(string='Note installazione ', required=False, copy=False, readonly=False, default='', )
 
     def _sync_x_load_ids_from_order_lines(self):
         for order in self:
@@ -430,6 +432,7 @@ class SaleOrder(models.Model):
                         "name": so_line.name,
                         "editable": False,
                         "etichetta_si": "yes",
+                        "product_cassetti_slave": 0.0
                     })
                     sequence += 10
 
@@ -455,6 +458,7 @@ class SaleOrder(models.Model):
                             "x_lavorazione": ll.x_lavorazione,
                             "tag_true": ll.tag_true,
                             "tag_ids": [(6, 0, ll.tag_ids.ids)],
+                            "product_cassetti_slave":0.0
                         }
 
                         created_line = SaleOrderXLoadLine.create(vals)
@@ -1301,7 +1305,7 @@ class SaleOrderXLoadLine(models.Model):
     default_code = fields.Char(related="product_id.default_code", string="Codice", readonly=True, store=False)
     uom_id = fields.Many2one(related="product_id.uom_id", string="U.M.", readonly=True, store=False)
     price_subtotal = fields.Monetary(compute='_compute_amount', string='Tot.riga', readonly=True, store=True)
-
+    product_cassetti_slave = fields.Float(string="C.slave", default=0.0)
     sale_line_id = fields.Many2one(
         "sale.order.line",
         compute="_compute_sale_line_id",

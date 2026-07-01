@@ -299,7 +299,9 @@
                         <field name="date_module_display" readonly="1"/>
                         <field name="date_installation"/>
                         <field name="date_installation_display" readonly="1" option="hide"/>
-
+<label for="sale_acq_usage" string="Acquisto usato" attrs="{'invisible': [('sale_acq_usage', '&lt;=', 0)]}"/>
+                            <field name="sale_acq_usage" nolabel="1"  groups="base.group_user" />
+                          <field name="sale_val_usage"  groups="base.group_user" />
 
                         <!-- 16/02/20026 rocco
                         <button name="action_open_import_load_lines_wizard"
@@ -355,6 +357,8 @@
                                 <field name="price_unit" optional="show" attrs="{'readonly': ['|',('x_locked_by_tag', '=', True),('editable','=',False)]}"/>
                                 <field name="price_extra" optional="show" attrs="{'readonly': ['|',('x_locked_by_tag', '=', True),('editable','=',False)]}"/>
                                 <field name="price_subtotal" optional="hide" attrs="{'readonly': ['|',('x_locked_by_tag', '=', True),('editable','=',False)]}"/>
+                                <field name="product_cassetti_slave" optional="show" attrs="{'readonly': ['|',('x_locked_by_tag', '=', True),('editable','=',False)]}"/>
+
                                 <field name="uom_id" readonly="1" optional="hide" attrs="{'readonly': ['|',('x_locked_by_tag', '=', True),('editable','=',False)]}"/>
                                 <field name="product_uom_height" optional="show" attrs="{'readonly': ['|',('x_locked_by_tag', '=', True),('editable','=',False)]}"/>
                                 <field name="product_uom_length" optional="show" attrs="{'readonly': ['|',('x_locked_by_tag', '=', True),('editable','=',False)]}"/>
@@ -369,6 +373,15 @@
                     </group>
                 </page>
             </xpath>
+
+              <xpath expr="//notebook" position="inside">
+                <page string="Note modello" groups="sales_team.group_sale_manager,lasercom_2_13.group_admin_lav">
+                    <label for="note_modulo_installazione" string="note_modulo_installazione" />
+                      <field name="note_modulo_installazione" nolabel="1" />
+                    <label for="note_modulo_agente" string="note_modulo_agente" />
+                      <field name="note_modulo_agente" nolabel="1" />
+                </page>
+              </xpath>
         </field>
     </record>
 
@@ -414,6 +427,9 @@
                         <field name="date_module_display" readonly="1"/>
                         <field name="date_installation" />
                         <field name="date_installation_display" readonly="1" />
+                         <label for="sale_acq_usage" string="Acquisto usato" attrs="{'invisible': [('sale_acq_usage', '&lt;=', 0)]}"/>
+                            <field name="sale_acq_usage" nolabel="1"  groups="base.group_user" />
+                          <field name="sale_val_usage"  groups="base.group_user" />
                     </group>
                 </group>
 
@@ -501,6 +517,16 @@
                                        ('editable','=',False)
                                    ]
                                }"/>
+                        <field name="product_cassetti_slave"
+                               optional="show"
+                               attrs="{
+                                   'readonly': [
+                                       '|',
+                                       ('x_locked_by_tag', '=', True),
+                                       ('editable','=',False)
+                                   ]
+                               }"/>
+
 
                         <field name="price_unit"
                                optional="show"
