@@ -230,6 +230,7 @@ class SaleOrder(models.Model):
         'x_load_line_ids.product_uom_qty',
         'x_load_line_ids.price_unit',
         'x_load_line_ids.price_extra',
+        'sale_acq_usage'
     )
     def _compute_amount_lav(self):
         """
@@ -241,7 +242,8 @@ class SaleOrder(models.Model):
                 if line.etichetta_si=="yes":
                         price_subtotal_lav+=line.price_subtotal
 
-            order.price_subtotal_lav = price_subtotal_lav
+
+            order.price_subtotal_lav = price_subtotal_lav+order.sale_acq_usage
 
     x_load_ids = fields.Many2many(
         comodel_name="x.product.load",
@@ -495,6 +497,8 @@ class SaleOrder(models.Model):
                     target_line.write({
                         "product_uom_qty": (target_line.product_uom_qty or 0.0) * qty,
                         "etichetta_si": "yes",
+                        "tipo_vetrina": False,
+                        "editable": True,
                     })
 
             order._compute_amount_lav()
@@ -1354,6 +1358,7 @@ class SaleOrderXLoadLine(models.Model):
             else:
                 line.x_tag_visible = line.order_id.x_filter_tag_id in line.tag_ids
 
+
     @api.constrains('tag_true', 'tag_ids')
     def _check_tag_ids_required(self):
         for rec in self:
@@ -1507,11 +1512,53 @@ class SaleOrderXLoadLine(models.Model):
                 'price_extra'
             }
 
+        res = super(SaleOrderXLoadLine, self).write(vals)
 
+        if self.env.context.get("skip_force_same_tag_no"):
+            return res
 
-        return super(SaleOrderXLoadLine,self).write(vals)
+        if vals.get("etichetta_si") != "yes":
+            return res
 
+        selected_lines = self.filtered(
+            lambda l: l.etichetta_si == "yes"
+                      and l.order_id
+                      and not l.display_type
+                      and l.tag_ids
+        )
 
+        if not selected_lines:
+            return res
+
+        for order in selected_lines.mapped("order_id"):
+            order_selected_lines = selected_lines.filtered(lambda l: l.order_id == order)
+
+            selected_line_ids = set(order_selected_lines.ids)
+
+            selected_tag_ids = set()
+            for selected_line in order_selected_lines:
+                selected_tag_ids.update(selected_line.tag_ids.ids)
+
+            if not selected_tag_ids:
+                continue
+
+            lines_to_set_no = order.x_load_line_ids.filtered(
+                lambda other:
+                other.id not in selected_line_ids
+                and not other.display_type
+                and other.tag_ids
+                and bool(set(other.tag_ids.ids) & selected_tag_ids)
+            )
+
+            if lines_to_set_no:
+                lines_to_set_no.with_context(
+                    skip_force_same_tag_no=True,
+                    skip_unique_si_tag_check=True,
+                ).write({
+                    "etichetta_si": "no"
+                })
+
+        return res
 
 
 

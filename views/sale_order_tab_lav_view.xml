@@ -348,16 +348,16 @@
                                 <field name="default_code" readonly="1" optional="hide" />
                                 <field name="editable" optional="hide"/>
                                 <field name="etichetta_si"  optional="show" attrs="{'readonly': [('editable','=',False)]}"/>
+                                <field name="product_uom_qty" optional="show" attrs="{'readonly': ['|',('x_locked_by_tag', '=', True),('editable','=',False)]}"/>
                                 <field name="product_id"  attrs="{'readonly': ['|',('x_locked_by_tag', '=', True),('editable','=',False)]}" />
                                 <field name="x_lavorazione" attrs="{'invisible': [('display_type','!=',False)]}" optional="hide"/>
-                                <field name="attachment_product" attrs="{'invisible': [('display_type','!=',False)]}" optional="hide"/>
+                                <field name="attachment_product" attrs="{'invisible': [('display_type','!=',False)]}" optional="show"/>
                                 <field name="tipo_vetrina"  class="x_tipo_vetrina_anchor" optional="hide" attrs="{'readonly': ['|',('x_locked_by_tag', '=', True),('editable','=',False)]}"/>
                                 <field name="tipo_vetrina" invisible="1" readonly="1"/>
-                                <field name="product_uom_qty" optional="show" attrs="{'readonly': ['|',('x_locked_by_tag', '=', True),('editable','=',False)]}"/>
-                                <field name="price_unit" optional="show" attrs="{'readonly': ['|',('x_locked_by_tag', '=', True),('editable','=',False)]}"/>
+                                 <field name="price_unit" optional="show" attrs="{'readonly': ['|',('x_locked_by_tag', '=', True),('editable','=',False)]}"/>
                                 <field name="price_extra" optional="show" attrs="{'readonly': ['|',('x_locked_by_tag', '=', True),('editable','=',False)]}"/>
                                 <field name="price_subtotal" optional="hide" attrs="{'readonly': ['|',('x_locked_by_tag', '=', True),('editable','=',False)]}"/>
-                                <field name="product_cassetti_slave" optional="show" attrs="{'readonly': ['|',('x_locked_by_tag', '=', True),('editable','=',False)]}"/>
+                                <field name="product_cassetti_slave" optional="show"   attrs="{'readonly': ['|', '|', ('x_locked_by_tag', '=', True), ('editable', '=', False), ('tag_ids', '=', [])]}"/>
 
                                 <field name="uom_id" readonly="1" optional="hide" attrs="{'readonly': ['|',('x_locked_by_tag', '=', True),('editable','=',False)]}"/>
                                 <field name="product_uom_height" optional="show" attrs="{'readonly': ['|',('x_locked_by_tag', '=', True),('editable','=',False)]}"/>
@@ -375,11 +375,15 @@
             </xpath>
 
               <xpath expr="//notebook" position="inside">
-                <page string="Note modello" groups="sales_team.group_sale_manager,lasercom_2_13.group_admin_lav">
+                <page string="Note modello">
+                    <group  groups="sales_team.group_sale_manager,lasercom_2_13.group_admin_lav">
                     <label for="note_modulo_installazione" string="note_modulo_installazione" />
                       <field name="note_modulo_installazione" nolabel="1" />
+                    </group>
+                    <group  groups="sales_team.group_sale_salesman">
                     <label for="note_modulo_agente" string="note_modulo_agente" />
                       <field name="note_modulo_agente" nolabel="1" />
+                    </group>
                 </page>
               </xpath>
         </field>
@@ -483,7 +487,15 @@
                         <field name="etichetta_si"
                                optional="show"
                                attrs="{'readonly': [('editable','=',False)]}"/>
-
+                        <field name="product_uom_qty"
+                               optional="show"
+                               attrs="{
+                                   'readonly': [
+                                       '|',
+                                       ('x_locked_by_tag', '=', True),
+                                       ('editable','=',False)
+                                   ]
+                               }"/>
                         <field name="product_id"
                                attrs="{
                                    'readonly': [
@@ -508,24 +520,10 @@
                                    ]
                                }"/>
 <field name="tipo_vetrina" invisible="1" readonly="1"/>
-                        <field name="product_uom_qty"
-                               optional="show"
-                               attrs="{
-                                   'readonly': [
-                                       '|',
-                                       ('x_locked_by_tag', '=', True),
-                                       ('editable','=',False)
-                                   ]
-                               }"/>
+
                         <field name="product_cassetti_slave"
                                optional="show"
-                               attrs="{
-                                   'readonly': [
-                                       '|',
-                                       ('x_locked_by_tag', '=', True),
-                                       ('editable','=',False)
-                                   ]
-                               }"/>
+                                 attrs="{'readonly': ['|', '|', ('x_locked_by_tag', '=', True), ('editable', '=', False), ('tag_ids', '=', [])]}"/>
 
 
                         <field name="price_unit"
