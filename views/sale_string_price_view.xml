@@ -181,8 +181,8 @@
         <field name="inherit_id" ref="sale.view_order_form"/>
         <field name="arch" type="xml">
            <xpath expr="//field[@name='order_line']/tree//field[@name='price_unit']" position="replace">
-                <field name="price_unit" optional="hide" groups="base.group_user"/>
-               <field name="sale_string_price" optional="show" groups="base.group_user"/>
+                <field name="price_unit" optional="hide" groups="base.group_user" attrs="{'column_invisible': [('parent.x_show_manager_fields','=',False)]}"/>
+               <field name="sale_string_price" optional="show" groups="base.group_user" attrs="{'column_invisible': [('parent.x_show_manager_fields','=',False)]}"/>
                <field name="sale_string_subtotal" optional="show" groups="base.group_user"/>
             </xpath>
            <xpath expr="//field[@name='order_line']/tree//field[@name='price_unit']" position="attributes">
@@ -190,6 +190,7 @@
             </xpath>
            <xpath expr="//field[@name='order_line']/tree//field[@name='price_subtotal']" position="attributes">
                 <attribute name='optional'>hide</attribute>
+                <attribute name="attrs">{'column_invisible': [('parent.x_show_manager_fields','=',False)]}</attribute>
             </xpath>
         </field>
     </record>

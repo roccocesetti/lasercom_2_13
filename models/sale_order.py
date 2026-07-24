@@ -393,6 +393,21 @@ class SaleOrder(models.Model):
                 record.write({'attachment_url': record.attachment_url, 'attachment_link': record.attachment_link})
 
 
+    def _apply_product_load_on_numero_contratto(self):
+        """Lancia lo stesso metodo del bottone "Applica Caricamento
+        (Sostituisci righe)" nel momento in cui il numero_contratto viene
+        valorizzato (creazione o valorizzazione di data_contratto)."""
+        self.ensure_one()
+        if not self.order_line:
+            return
+        try:
+            self.action_apply_product_load()
+        except UserError as e:
+            _logger.warning(
+                "Applica Caricamento non eseguito automaticamente per l'ordine %s: %s",
+                self.display_name, e,
+            )
+
     def partner_control(self):
             errore=[]
             user = self.env.user
@@ -458,6 +473,7 @@ class SaleOrder(models.Model):
 
     @api.model
     def create(self, vals):
+        numero_contratto_valorizzato = False
         if vals.get('numero_contratto', _('New')) == _('New'):
             seq_date = None
             if 'data_contratto' in vals and vals['data_contratto'] :
@@ -471,6 +487,8 @@ class SaleOrder(models.Model):
                 else:
                     vals['numero_contratto'] = self.env['ir.sequence'].next_by_code('sale.order.contract', sequence_date=seq_date) or _('New')
                 self._recompute_attachment_url(vals['numero_contratto'])
+                if vals['numero_contratto'] != _('New'):
+                    numero_contratto_valorizzato = True
         vals.update({'note':'Prezzi iva esclusa' })
 
         company_id = vals.get("company_id") or self.env.company.id
@@ -482,6 +500,9 @@ class SaleOrder(models.Model):
         res=super(SaleOrder, self).create(vals)
         if len(res.order_line)>16:
             raise UserError(_('Superato il limite di righe da immettere: 16 invece di %s' % str(len(res.order_line)) ))
+
+        if numero_contratto_valorizzato:
+            res._apply_product_load_on_numero_contratto()
 
         return res
     @api.onchange("company_id")
@@ -499,6 +520,16 @@ class SaleOrder(models.Model):
 
             if len(order.order_line) > 16:
                 raise UserError(_('Superato il limite di righe da immettere: 16 invece di %s ' % str(len(order.order_line))))
+
+        if 'order_line' in vals:
+            for order in self:
+                if (
+                    order.numero_contratto
+                    and order.numero_contratto != _('New')
+                    and order.order_line
+                    and not order.x_load_line_ids
+                ):
+                    order._apply_product_load_on_numero_contratto()
         return res
     def _write(self, vals):
         """ Override of private write method in order to generate activities
@@ -508,6 +539,7 @@ class SaleOrder(models.Model):
         on the SO itself. We hence override the _write to catch the computation
         of invoice_status field. """
         mutable_vals = dict(vals)
+        orders_with_new_numero_contratto = self.browse()
         for order in self:
 
             if order.data_contratto:
@@ -528,8 +560,14 @@ class SaleOrder(models.Model):
                            numero_contratto= order.env['ir.sequence'].next_by_code('sale.order.contract', sequence_date=seq_date) or  _('New')
                            mutable_vals.update({'numero_contratto':numero_contratto})
                         self._recompute_attachment_url(numero_contratto)
+                        if numero_contratto != _('New'):
+                            orders_with_new_numero_contratto |= order
 
         res= super(SaleOrder, self)._write(mutable_vals)
+
+        for order in orders_with_new_numero_contratto:
+            order._apply_product_load_on_numero_contratto()
+
         return res
     @api.depends('amount_untaxed','amount_total','payment_direct_allordine','payment_direct_allaconsegna','payment_direct_num_titoli')
     def _amount_diretto(self):

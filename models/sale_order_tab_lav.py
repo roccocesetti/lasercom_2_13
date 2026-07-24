@@ -256,6 +256,19 @@ class SaleOrder(models.Model):
     note_modulo_agente = fields.Char(string='Note agente ', required=False, copy=False, readonly=False, default='', )
     note_modulo_installazione = fields.Char(string='Note installazione ', required=False, copy=False, readonly=False, default='', )
 
+    x_show_manager_fields = fields.Boolean(
+        string="Mostra campi riservati al manager",
+        compute="_compute_x_show_manager_fields",
+    )
+
+    def _compute_x_show_manager_fields(self):
+        is_manager = (
+            self.env.user.has_group('sales_team.group_sale_manager')
+            or self.env.user.has_group('lasercom_2_13.group_admin_lav')
+        )
+        for order in self:
+            order.x_show_manager_fields = is_manager
+
     def _sync_x_load_ids_from_order_lines(self):
         for order in self:
             load_ids = []
@@ -1041,7 +1054,7 @@ class SaleOrder(models.Model):
         "sale.order.x_load_line",
         "order_id",
         string="Righe Caricamento (in ordine)",
-        copy=True,
+        copy=False,
     )
 
 
@@ -1256,6 +1269,13 @@ class SaleOrder(models.Model):
                 form_view_initial_mode='edit',
             ),
         }
+
+    def action_open_sale_order_standard_form_note_modello(self):
+        self.ensure_one()
+
+        action = self.action_open_sale_order_standard_form()
+        action['context'] = dict(action['context'], open_notebook_tab='Note modello')
+        return action
 
     def write(self, vals):
         res = super(SaleOrder, self).write(vals)

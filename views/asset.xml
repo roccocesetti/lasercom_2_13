@@ -11,6 +11,8 @@
                   href="/lasercom_2_13/static/src/css/sticky_list_header.css"/>
             <script type="text/javascript"
                     src="/lasercom_2_13/static/src/js/x_load_blank_row_class.js"/>
+            <script type="text/javascript"
+                    src="/lasercom_2_13/static/src/js/goto_tab_widget.js"/>
         </xpath>
     </template>
 

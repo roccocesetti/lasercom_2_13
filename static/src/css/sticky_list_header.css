@@ -320,3 +320,23 @@
     color: transparent !important;
     background: transparent !important;
 }
+
+/* Colonna Nota più larga (almeno ~45 caratteri) nelle tree di Caricamento Prodotti.
+   Il th non riceve la classe del field (Odoo non la propaga all'header), quindi si
+   punta a th[data-name="note"] scoperto entro i widget one2many interessati; serve
+   !important perché Odoo imposta uno style inline width sul th. */
+.o_field_widget.o_field_one2many[name="x_load_line_ids"] .o_list_view .o_list_table th[data-name="note"],
+.o_field_widget.o_field_one2many[name="line_ids"] .o_list_view .o_list_table th[data-name="note"] {
+    min-width: 45ch !important;
+    width: 45ch !important;
+}
+.o_field_widget.o_field_one2many[name="x_load_line_ids"] .o_list_view .o_list_table td.x_note_wide,
+.o_field_widget.o_field_one2many[name="line_ids"] .o_list_view .o_list_table td.x_note_wide {
+    min-width: 45ch !important;
+}
+.o_field_widget.o_field_one2many[name="x_load_line_ids"] .o_list_view .o_list_table td.x_note_wide input,
+.o_field_widget.o_field_one2many[name="x_load_line_ids"] .o_list_view .o_list_table td.x_note_wide textarea,
+.o_field_widget.o_field_one2many[name="line_ids"] .o_list_view .o_list_table td.x_note_wide input,
+.o_field_widget.o_field_one2many[name="line_ids"] .o_list_view .o_list_table td.x_note_wide textarea {
+    min-width: 45ch !important;
+}
