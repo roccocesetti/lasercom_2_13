@@ -340,3 +340,13 @@
 .o_field_widget.o_field_one2many[name="line_ids"] .o_list_view .o_list_table td.x_note_wide textarea {
     min-width: 45ch !important;
 }
+
+/* Linee verticali tra le colonne nella griglia "Caricamento Prodotti" */
+.o_field_widget.o_field_one2many[name="x_load_line_ids"] .o_list_view .o_list_table > thead > tr > th,
+.o_field_widget.o_field_one2many[name="x_load_line_ids"] .o_list_view .o_list_table > tbody > tr > td {
+    border-right: 1px solid #dee2e6 !important;
+}
+.o_field_widget.o_field_one2many[name="x_load_line_ids"] .o_list_view .o_list_table > thead > tr > th:last-child,
+.o_field_widget.o_field_one2many[name="x_load_line_ids"] .o_list_view .o_list_table > tbody > tr > td:last-child {
+    border-right: none !important;
+}
