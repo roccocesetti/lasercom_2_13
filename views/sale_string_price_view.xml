@@ -25,6 +25,7 @@
                     <field name="data_contratto" groups="base.group_user" />
                    <field name="numero_contratto"  groups="base.group_user" />
                    <field name="sale_caparra"  groups="base.group_user" />
+                   <field name="x_show_manager_fields" invisible="1"/>
 
                    <field name="sale_string_price"  groups="base.group_user" />
                    <field name="sale_string_margin_has_dash" invisible="1"/>
