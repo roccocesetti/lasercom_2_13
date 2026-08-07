@@ -389,6 +389,10 @@
                     </group>
                 </page>
               </xpath>
+
+            <xpath expr="//button[@name='action_cancel']" position="attributes">
+                <attribute name="groups">lasercom_2_13.group_admin_lav,base.group_system</attribute>
+            </xpath>
         </field>
     </record>
 
