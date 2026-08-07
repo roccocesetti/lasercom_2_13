@@ -47,6 +47,8 @@
                         <strong>Mese previsto per l'installazione:</strong>
                         <p class="m-0" t-field="doc.date_installation_display"/>
                     </div>
+                </div>
+                <div class="row m-0 mb32" id="informations_modulo_importi">
                     <div t-if="doc.price_aggiunt_inst" class="col-auto mw-100 mb-2">
                         <strong>Costo aggiuntivo installazione:</strong>
                         <p class="m-0" t-field="doc.price_aggiunt_inst" t-options="{&quot;widget&quot;: &quot;monetary&quot;, &quot;display_currency&quot;: doc.currency_id}"/>
