@@ -438,7 +438,7 @@
                         attrs="{'invisible': [('x_load_ids','=',False)]}"/>
 
                         <field name="price_subtotal_lav" widget="monetary"/>
-                        <field name="price_aggiunt_inst" widget="monetary" groups="sales_team.group_sale_salesman_all_leads"/>
+                        <field name="price_aggiunt_inst" widget="monetary" groups="sales_team.group_sale_manager,sales_team.group_sale_salesman_all_leads"/>
                     </group>
 
                     <group>
