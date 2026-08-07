@@ -354,7 +354,7 @@
                                 <field name="default_code" readonly="1" optional="hide" attrs="{'column_invisible': [('parent.x_show_manager_fields','=',False)]}"/>
                                 <field name="editable" optional="hide" attrs="{'column_invisible': [('parent.x_show_manager_fields','=',False)]}"/>
                                 <field name="etichetta_si"  optional="show" attrs="{'readonly': [('editable','=',False)]}"/>
-                                <field name="product_uom_qty" optional="show" attrs="{'readonly': ['|',('x_locked_by_tag', '=', True),('editable','=',False)]}"/>
+                                <field name="product_uom_qty" optional="show" attrs="{'readonly': ['|','|',('x_locked_by_tag', '=', True),('editable','=',False),'&amp;',('x_lavorazione','=',True),('parent.x_show_manager_fields','=',False)]}"/>
                                 <field name="product_id"  attrs="{'readonly': ['|',('x_locked_by_tag', '=', True),('editable','=',False)]}" />
                                 <field name="x_lavorazione" optional="hide" attrs="{'invisible': [('display_type','!=',False)],'column_invisible': [('parent.x_show_manager_fields','=',False)]}"/>
                                 <field name="attachment_product" widget="image" options="{'size': [40, 40]}" attrs="{'invisible': [('display_type','!=',False)]}" optional="show"/>
@@ -502,9 +502,12 @@
                                optional="show"
                                attrs="{
                                    'readonly': [
-                                       '|',
+                                       '|', '|',
                                        ('x_locked_by_tag', '=', True),
-                                       ('editable','=',False)
+                                       ('editable','=',False),
+                                       '&amp;',
+                                       ('x_lavorazione','=',True),
+                                       ('parent.x_show_manager_fields','=',False)
                                    ]
                                }"/>
                         <field name="product_id"
