@@ -230,7 +230,6 @@ class SaleOrder(models.Model):
         'x_load_line_ids.product_uom_qty',
         'x_load_line_ids.price_unit',
         'x_load_line_ids.price_extra',
-        'sale_acq_usage'
     )
     def _compute_amount_lav(self):
         """
@@ -243,7 +242,7 @@ class SaleOrder(models.Model):
                         price_subtotal_lav+=line.price_subtotal
 
 
-            order.price_subtotal_lav = price_subtotal_lav+order.sale_acq_usage
+            order.price_subtotal_lav = price_subtotal_lav
 
     x_load_ids = fields.Many2many(
         comodel_name="x.product.load",
