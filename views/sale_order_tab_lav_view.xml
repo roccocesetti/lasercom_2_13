@@ -380,9 +380,10 @@
 
               <xpath expr="//notebook" position="inside">
                 <page string="Note modello">
-                    <group  groups="sales_team.group_sale_manager,sales_team.group_sale_salesman_all_leads,lasercom_2_13.group_admin_lav">
+                    <group  groups="sales_team.group_sale_salesman,lasercom_2_13.group_admin_lav">
                     <label for="note_modulo_installazione" string="note_modulo_installazione" />
-                      <field name="note_modulo_installazione" nolabel="1" />
+                      <field name="x_note_installazione_editable" invisible="1"/>
+                      <field name="note_modulo_installazione" nolabel="1" attrs="{'readonly': [('x_note_installazione_editable','=',False)]}"/>
                     </group>
                     <group  groups="sales_team.group_sale_salesman">
                     <label for="note_modulo_agente" string="note_modulo_agente" />

@@ -269,6 +269,19 @@ class SaleOrder(models.Model):
         for order in self:
             order.x_show_manager_fields = is_manager
 
+    x_note_installazione_editable = fields.Boolean(
+        string="Note installazione modificabile",
+        compute="_compute_x_note_installazione_editable",
+    )
+
+    def _compute_x_note_installazione_editable(self):
+        can_edit = (
+            self.env.user.has_group('sales_team.group_sale_salesman_all_leads')
+            or self.env.user.has_group('lasercom_2_13.group_admin_lav')
+        )
+        for order in self:
+            order.x_note_installazione_editable = can_edit
+
     def _sync_x_load_ids_from_order_lines(self):
         for order in self:
             load_ids = []
