@@ -1384,6 +1384,28 @@ class SaleOrderXLoadLine(models.Model):
         for rec in self:
             if rec.tag_true and not rec.tag_ids:
                 raise ValidationError(_("Il campo Tags è obbligatorio quando Edit è attivo."))
+
+    @api.onchange('etichetta_si', 'tag_ids')
+    def _onchange_etichetta_si_force_same_tag_no(self):
+        """
+        Aggiorna subito le altre righe con la stessa etichetta a NO,
+        senza attendere il salvataggio: così l'utente vede l'effetto
+        in tabella restando sulla riga che sta modificando.
+        """
+        for line in self:
+            if line.display_type or line.etichetta_si != 'yes' or not line.tag_ids or not line.order_id:
+                continue
+
+            siblings = (line.order_id.x_load_line_ids - line).filtered(
+                lambda other: not other.display_type
+                              and other.tag_ids
+                              and (other.tag_ids & line.tag_ids)
+            )
+
+            for sibling in siblings:
+                if sibling.etichetta_si != 'no':
+                    sibling.etichetta_si = 'no'
+
     @api.onchange('uom_id', 'product_uom_height', 'product_uom_length')
     def product_uom_change(self):
         if not self.uom_id or not self.product_id:
