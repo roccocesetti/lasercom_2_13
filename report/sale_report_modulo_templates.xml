@@ -30,6 +30,46 @@
                     </t>
                 </div>
 
+                <div class="row m-0 mb32" id="informations_modulo">
+                    <div t-if="doc.date_module" class="col-auto mw-100 mb-2">
+                        <strong>Consegna Richiesta dal Cliente:</strong>
+                        <p class="m-0" t-field="doc.date_module" t-options="{&quot;widget&quot;: &quot;date&quot;}"/>
+                    </div>
+                    <div t-if="doc.date_module_display" class="col-auto mw-100 mb-2">
+                        <strong>Mese previsto per la consegna:</strong>
+                        <p class="m-0" t-field="doc.date_module_display"/>
+                    </div>
+                    <div t-if="doc.date_installation" class="col-auto mw-100 mb-2">
+                        <strong>Installazione prevista il:</strong>
+                        <p class="m-0" t-field="doc.date_installation" t-options="{&quot;widget&quot;: &quot;date&quot;}"/>
+                    </div>
+                    <div t-if="doc.date_installation_display" class="col-auto mw-100 mb-2">
+                        <strong>Mese previsto per l'installazione:</strong>
+                        <p class="m-0" t-field="doc.date_installation_display"/>
+                    </div>
+                    <div t-if="doc.price_aggiunt_inst" class="col-auto mw-100 mb-2">
+                        <strong>Costo aggiuntivo installazione:</strong>
+                        <p class="m-0" t-field="doc.price_aggiunt_inst" t-options="{&quot;widget&quot;: &quot;monetary&quot;, &quot;display_currency&quot;: doc.currency_id}"/>
+                    </div>
+                    <div t-if="doc.sale_acq_usage &gt; 0" class="col-auto mw-100 mb-2">
+                        <strong>Acquisto usato:</strong>
+                        <p class="m-0" t-field="doc.sale_acq_usage" t-options="{&quot;widget&quot;: &quot;monetary&quot;, &quot;display_currency&quot;: doc.currency_id}"/>
+                    </div>
+                    <div t-if="doc.sale_val_usage &gt; 0" class="col-auto mw-100 mb-2">
+                        <strong>Valutazione usato:</strong>
+                        <p class="m-0" t-field="doc.sale_val_usage" t-options="{&quot;widget&quot;: &quot;monetary&quot;, &quot;display_currency&quot;: doc.currency_id}"/>
+                    </div>
+                </div>
+
+                <div t-if="doc.note_modulo_installazione" class="alert alert-info mt-2" role="alert">
+                    <strong>Note installazione:</strong>
+                    <p class="m-0" t-field="doc.note_modulo_installazione"/>
+                </div>
+                <div t-if="doc.note_modulo_agente" class="alert alert-info mt-2" role="alert">
+                    <strong>Note agente:</strong>
+                    <p class="m-0" t-field="doc.note_modulo_agente"/>
+                </div>
+
                 <h3>Modulo Installazione</h3>
 
                 <t t-set="modulo_lines" t-value="doc.x_load_line_ids.filtered(lambda l: not l.display_type and l.etichetta_si == 'yes' and l.product_uom_qty)"/>
