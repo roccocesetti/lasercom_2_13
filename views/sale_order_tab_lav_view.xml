@@ -364,7 +364,7 @@
                                  <field name="price_unit" optional="show" attrs="{'readonly': ['|',('x_locked_by_tag', '=', True),('editable','=',False)],'column_invisible': [('parent.x_show_manager_fields','=',False)]}"/>
                                 <field name="price_extra" optional="show" attrs="{'readonly': ['|',('x_locked_by_tag', '=', True),('editable','=',False)],'column_invisible': [('parent.x_show_manager_fields','=',False)]}"/>
                                 <field name="price_subtotal" optional="hide" attrs="{'readonly': ['|',('x_locked_by_tag', '=', True),('editable','=',False)],'column_invisible': [('parent.x_show_manager_fields','=',False)]}"/>
-                                <field name="product_cassetti_slave" optional="show"/>
+                                <field name="product_cassetti_slave" optional="show" attrs="{'readonly': [('etichetta_si','!=','yes')]}"/>
 
                                 <field name="uom_id" readonly="1" optional="hide" attrs="{'readonly': ['|',('x_locked_by_tag', '=', True),('editable','=',False)],'column_invisible': [('parent.x_show_manager_fields','=',False)]}"/>
                                 <field name="product_uom_height" optional="show" attrs="{'readonly': ['|',('x_locked_by_tag', '=', True),('editable','=',False)]}"/>
@@ -560,7 +560,8 @@
 <field name="tipo_vetrina" invisible="1" readonly="1"/>
 
                         <field name="product_cassetti_slave"
-                               optional="show"/>
+                               optional="show"
+                               attrs="{'readonly': [('etichetta_si','!=','yes')]}"/>
 
 
                         <field name="price_unit"
