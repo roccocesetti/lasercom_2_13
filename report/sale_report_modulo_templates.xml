@@ -81,7 +81,12 @@
                             <tr>
                                 <th name="th_description" class="text-left bordo-inferiore">Descrizione</th>
                                 <th name="th_quantity" class="text-right bordo-inferiore">Quantità</th>
+                                <th name="th_config" class="text-right bordo-inferiore">Config.</th>
+                                <th name="th_height" class="text-right bordo-inferiore">Alt</th>
+                                <th name="th_length" class="text-right bordo-inferiore">Lung</th>
+                                <th name="th_width" class="text-right bordo-inferiore">Prof</th>
                                 <th name="th_priceunit" class="text-right bordo-inferiore">Prezzo Unitario</th>
+                                <th name="th_priceextra" class="text-right bordo-inferiore">P.Extra</th>
                                 <th name="th_subtotal" class="text-right bordo-inferiore">Totale riga</th>
                             </tr>
                         </thead>
@@ -94,8 +99,23 @@
                                 <td name="td_quantity" class="text-right">
                                     <span t-field="line.product_uom_qty"/>
                                 </td>
+                                <td name="td_config" class="text-right">
+                                    <span t-field="line.product_cassetti_slave"/>
+                                </td>
+                                <td name="td_height" class="text-right">
+                                    <span t-field="line.product_uom_height"/>
+                                </td>
+                                <td name="td_length" class="text-right">
+                                    <span t-field="line.product_uom_length"/>
+                                </td>
+                                <td name="td_width" class="text-right">
+                                    <span t-field="line.product_uom_width"/>
+                                </td>
                                 <td name="td_priceunit" class="text-right">
                                     <span t-field="line.price_unit" t-options="{&quot;widget&quot;: &quot;monetary&quot;, &quot;display_currency&quot;: doc.currency_id}"/>
+                                </td>
+                                <td name="td_priceextra" class="text-right">
+                                    <span t-field="line.price_extra" t-options="{&quot;widget&quot;: &quot;monetary&quot;, &quot;display_currency&quot;: doc.currency_id}"/>
                                 </td>
                                 <td name="td_subtotal" class="text-right">
                                     <span t-field="line.price_subtotal" t-options="{&quot;widget&quot;: &quot;monetary&quot;, &quot;display_currency&quot;: doc.currency_id}"/>
@@ -104,7 +124,7 @@
                         </tbody>
                         <tfoot>
                             <tr class="border-black">
-                                <td colspan="3" class="text-right"><strong>Totale</strong></td>
+                                <td colspan="8" class="text-right"><strong>Totale</strong></td>
                                 <td class="text-right">
                                     <strong>
                                         <span t-esc="modulo_total" t-options="{&quot;widget&quot;: &quot;monetary&quot;, &quot;display_currency&quot;: doc.currency_id}"/>
