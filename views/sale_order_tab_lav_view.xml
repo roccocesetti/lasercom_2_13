@@ -300,6 +300,7 @@
                     groups="sales_team.group_sale_manager,lasercom_2_13.group_admin_lav"
                     attrs="{'invisible': [('x_load_ids','=',False)]}"/>
                         <field name="price_subtotal_lav"  widget="monetary"/>
+                        <field name="price_aggiunt_inst" widget="monetary" groups="sales_team.group_sale_salesman_all_leads"/>
                         <field name="date_module"  />
                         <field name="date_module_display" readonly="1"/>
                         <field name="date_installation"/>
@@ -436,6 +437,7 @@
                         attrs="{'invisible': [('x_load_ids','=',False)]}"/>
 
                         <field name="price_subtotal_lav" widget="monetary"/>
+                        <field name="price_aggiunt_inst" widget="monetary" groups="sales_team.group_sale_salesman_all_leads"/>
                     </group>
 
                     <group>

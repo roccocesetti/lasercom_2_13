@@ -1059,6 +1059,7 @@ class SaleOrder(models.Model):
 
 
     price_subtotal_lav = fields.Monetary(compute='_compute_amount_lav', string='Totale costi installazione', readonly=True, store=True)
+    price_aggiunt_inst = fields.Monetary(string='Costo aggiuntivo installazione', digits='Product Price', default=0.0)
     date_module = fields.Date(string='Consegna Richiesta dal Cliente',  copy=False,
                                 default=_default_validity_date_2)
     date_installation = fields.Date(string='Installazione prevista il',  copy=False,
