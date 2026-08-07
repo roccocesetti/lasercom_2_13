@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <template id="report_saleorder_document_laser_modulo">
+        <t t-call="web.external_layout">
+            <link rel="stylesheet" type="text/css" href="/lasercom_2_13/static/src/css/custom.css"/>
+
+            <div class="page custom-mt12">
+                <div class="oe_structure"/>
+
+                <div class="row m-0 mb32" id="informations">
+                    <div class="col-auto mw-100 mb-2" style="text-align:left; white-space: nowrap;">
+                        <strong>Preventivo:</strong>
+                        <span t-field="doc.name"/>
+                    </div>
+                    <div t-if="doc.date_order" class="col-auto mw-100 mb-2">
+                        <strong>Data:</strong>
+                        <p class="m-0" t-field="doc.date_order" t-options="{&quot;widget&quot;: &quot;date&quot;}"/>
+                    </div>
+                    <div t-if="doc.user_id.name" class="col-auto mw-100 mb-2">
+                        <strong>Venditore:</strong>
+                        <p class="m-0" t-field="doc.user_id"/>
+                    </div>
+                    <div class="col-auto mw-100 mb-2">
+                        <strong>Cliente:</strong>
+                        <p class="m-0" t-field="doc.partner_id.name"/>
+                    </div>
+                    <t t-set="address">
+                        <div t-field="doc.partner_id" t-options="{&quot;widget&quot;: &quot;contact&quot;, &quot;fields&quot;: [&quot;address&quot;, &quot;name&quot;], &quot;no_marker&quot;: True}"/>
+                    </t>
+                </div>
+
+                <h3>Modulo Installazione</h3>
+
+                <t t-set="modulo_lines" t-value="doc.x_load_line_ids.filtered(lambda l: not l.display_type and l.etichetta_si == 'yes' and l.product_uom_qty)"/>
+
+                <div class="row m-0 mb32 avoid-page-break" id="dettaglio">
+                    <table class="table table-sm o_main_table avoid-page-break">
+                        <thead>
+                            <tr>
+                                <th name="th_description" class="text-left bordo-inferiore">Descrizione</th>
+                                <th name="th_quantity" class="text-right bordo-inferiore">Quantità</th>
+                            </tr>
+                        </thead>
+                        <tbody class="sale_tbody">
+                            <tr t-foreach="modulo_lines" t-as="line">
+                                <td name="td_name">
+                                    <span t-if="line.product_id" t-esc="line.product_id.display_name"/>
+                                    <span t-if="not line.product_id" t-field="line.name"/>
+                                </td>
+                                <td name="td_quantity" class="text-right">
+                                    <span t-field="line.product_uom_qty"/>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </t>
+    </template>
+
+    <template id="report_saleorder_laser_modulo">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="doc">
+                <t t-call="lasercom_2_13.report_saleorder_document_laser_modulo" t-lang="doc.partner_id.lang">
+                    <t t-set="company" t-value="doc.company_id"/>
+                </t>
+            </t>
+        </t>
+    </template>
+
+</odoo>

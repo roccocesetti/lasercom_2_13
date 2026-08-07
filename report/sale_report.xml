@@ -28,6 +28,15 @@
 			name="lasercom_2_13.report_saleorder_laser_preventivo_contratto"
 			print_report_name="(object.state in ('draft', 'sent') and 'Preventivo - %s' % (object.name)) or 'Preventivo - %s' % (object.name)"
 		/>
+		<report
+			id="action_report_saleorder_laser_modulo"
+			string="Modulo Installazione"
+			model="sale.order"
+			report_type="qweb-pdf"
+			file="lasercom_2_13.report_saleorder_laser_modulo"
+			name="lasercom_2_13.report_saleorder_laser_modulo"
+			print_report_name="'Modulo Installazione - %s' % (object.name)"
+		/>
 
 		<!--
 		<report
