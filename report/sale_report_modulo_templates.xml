@@ -33,6 +33,7 @@
                 <h3>Modulo Installazione</h3>
 
                 <t t-set="modulo_lines" t-value="doc.x_load_line_ids.filtered(lambda l: not l.display_type and l.etichetta_si == 'yes' and l.product_uom_qty)"/>
+                <t t-set="modulo_total" t-value="sum(modulo_lines.mapped('price_subtotal'))"/>
 
                 <div class="row m-0 mb32 avoid-page-break" id="dettaglio">
                     <table class="table table-sm o_main_table avoid-page-break">
@@ -40,6 +41,8 @@
                             <tr>
                                 <th name="th_description" class="text-left bordo-inferiore">Descrizione</th>
                                 <th name="th_quantity" class="text-right bordo-inferiore">Quantità</th>
+                                <th name="th_priceunit" class="text-right bordo-inferiore">Prezzo Unitario</th>
+                                <th name="th_subtotal" class="text-right bordo-inferiore">Totale riga</th>
                             </tr>
                         </thead>
                         <tbody class="sale_tbody">
@@ -51,8 +54,24 @@
                                 <td name="td_quantity" class="text-right">
                                     <span t-field="line.product_uom_qty"/>
                                 </td>
+                                <td name="td_priceunit" class="text-right">
+                                    <span t-field="line.price_unit" t-options="{&quot;widget&quot;: &quot;monetary&quot;, &quot;display_currency&quot;: doc.currency_id}"/>
+                                </td>
+                                <td name="td_subtotal" class="text-right">
+                                    <span t-field="line.price_subtotal" t-options="{&quot;widget&quot;: &quot;monetary&quot;, &quot;display_currency&quot;: doc.currency_id}"/>
+                                </td>
                             </tr>
                         </tbody>
+                        <tfoot>
+                            <tr class="border-black">
+                                <td colspan="3" class="text-right"><strong>Totale</strong></td>
+                                <td class="text-right">
+                                    <strong>
+                                        <span t-esc="modulo_total" t-options="{&quot;widget&quot;: &quot;monetary&quot;, &quot;display_currency&quot;: doc.currency_id}"/>
+                                    </strong>
+                                </td>
+                            </tr>
+                        </tfoot>
                     </table>
                 </div>
             </div>
