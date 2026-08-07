@@ -368,7 +368,7 @@ class SaleOrder(models.Model):
             order.x_load_line_ids = commands
 
     def action_apply_product_load(self, replace=True):
-        SaleOrderXLoadLine = self.env["sale.order.x_load_line"]
+        SaleOrderXLoadLine = self.env["sale.order.x_load_line"].sudo()
 
         for order in self:
             if not order.id or not isinstance(order.id, int):

@@ -38,7 +38,7 @@ class ImportLoadLinesWizard(models.TransientModel):
             if existing:
                 existing[0].product_uom_qty += ll.product_uom_qty or 0.0
             else:
-                self.env["sale.order.x_load_line"].create({
+                self.env["sale.order.x_load_line"].sudo().create({
                     "order_id": order.id,
                     "product_id": ll.product_id.id,
                     "product_uom_qty": ll.product_uom_qty,
