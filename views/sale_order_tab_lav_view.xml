@@ -348,7 +348,7 @@
                                 <field name="sale_line_id" readonly="1" optional="hide" attrs="{'column_invisible': [('parent.x_show_manager_fields','=',False)]}"/>
                                 <field name="display_type" invisible="1"/>
 
-                                <field name="name" widget="section_and_note_text" attrs="{'readonly': [('display_type','=',False)],'invisible': [('display_type','=',False)],'column_invisible': [('parent.x_show_manager_fields','=',False)]}"/>
+                                <field name="name" widget="section_and_note_text" attrs="{'readonly': [('display_type','=',False)],'invisible': [('display_type','=',False)]}"/>
                                 <field name="tag_true" optional="hide" attrs="{'readonly':True,'column_invisible': [('parent.x_show_manager_fields','=',False)]}"/>
                                  <field name="tag_ids" widget="many2many_tags" optional="show"
        attrs="{'required': [('tag_true', '=', True)],'column_invisible': [('parent.x_show_manager_fields','=',False)]}"/>
@@ -502,8 +502,7 @@
                                widget="section_and_note_text"
                                attrs="{
                                    'readonly': [('display_type','=',False)],
-                                   'invisible': [('display_type','=',False)],
-                                   'column_invisible': [('parent.x_show_manager_fields','=',False)]
+                                   'invisible': [('display_type','=',False)]
                                }"/>
 
                         <field name="tag_true"
