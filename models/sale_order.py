@@ -398,15 +398,16 @@ class SaleOrder(models.Model):
         (Sostituisci righe)" nel momento in cui il numero_contratto viene
         valorizzato (creazione o valorizzazione di data_contratto)."""
         self.ensure_one()
-        if not self.order_line:
-            return
-        try:
-            self.action_apply_product_load()
-        except UserError as e:
-            _logger.warning(
-                "Applica Caricamento non eseguito automaticamente per l'ordine %s: %s",
-                self.display_name, e,
-            )
+        return
+        #if not self.order_line:
+        #    return
+        #try:
+        #    self.action_apply_product_load()
+        #except UserError as e:
+        #    _logger.warning(
+        #        "Applica Caricamento non eseguito automaticamente per l'ordine %s: %s",
+        #        self.display_name, e,
+        #    )
 
     def partner_control(self):
             errore=[]

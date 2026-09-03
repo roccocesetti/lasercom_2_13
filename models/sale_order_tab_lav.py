@@ -10,6 +10,7 @@ from odoo.tools import float_is_zero, float_compare
 from datetime import datetime, timedelta
 import logging
 from collections import defaultdict
+import base64
 _logger = logging.getLogger(__name__)
 
 
@@ -379,6 +380,24 @@ class SaleOrder(models.Model):
 
             order.x_load_line_ids = commands
 
+    def action_apply_product_load_if_empty(self):
+        """Bottone "Applica Caricamento" nell'header, usato dai venditori.
+
+        Se le righe di caricamento sono gia' valorizzate salta la generazione,
+        cosi' il venditore non puo' sovrascrivere il lavoro fatto sulle righe.
+        La sostituzione resta possibile agli amministratori con i bottoni
+        della tab Caricamento Prodotti, che chiamano direttamente
+        action_apply_product_load."""
+        for order in self:
+            if order.x_load_line_ids:
+                _logger.info(
+                    "Applica Caricamento saltato per l'ordine %s: righe di caricamento gia' presenti.",
+                    order.display_name,
+                )
+                continue
+            order.action_apply_product_load()
+        return True
+
     def action_apply_product_load(self, replace=True):
         SaleOrderXLoadLine = self.env["sale.order.x_load_line"].sudo()
 
@@ -608,6 +627,19 @@ class SaleOrder(models.Model):
         copy=False,
     )
 
+    x_has_load_line = fields.Boolean(
+        string='Caricamento gia valorizzato',
+        compute='_compute_x_has_load_line',
+        store=False,
+        help="Usato per nascondere il bottone Applica Caricamento nell'header "
+             "quando le righe di caricamento sono gia' presenti."
+    )
+
+    @api.depends('x_load_line_ids')
+    def _compute_x_has_load_line(self):
+        for order in self:
+            order.x_has_load_line = bool(order.x_load_line_ids)
+
 
     price_subtotal_lav = fields.Monetary(compute='_compute_amount_lav', string='Totale costi installazione', readonly=True, store=True)
     price_aggiunt_inst = fields.Monetary(string='Costo aggiuntivo installazione', digits='Product Price', default=0.0)
@@ -836,6 +868,50 @@ class SaleOrder(models.Model):
             self._check_unique_si_per_tag_group_on_order()
 
         return res
+
+
+    def action_confirm(self):
+        res = super(SaleOrder, self).action_confirm()
+
+        for order in self:
+            order._generate_installation_module_pdf()
+
+        return res
+
+    def _generate_installation_module_pdf(self):
+        self.ensure_one()
+
+        report = self.env.ref(
+            'lasercom_2_13.action_report_saleorder_laser_modulo'
+        )
+
+        pdf_content, content_type = report.render_qweb_pdf([self.id])
+
+        filename = 'Modulo Installazione - %s.pdf' % self.name
+
+        # Cerca un eventuale allegato già esistente
+        attachment = self.env['ir.attachment'].search([
+            ('res_model', '=', 'sale.order'),
+            ('res_id', '=', self.id),
+            ('name', '=', filename),
+        ], limit=1)
+
+        vals = {
+            'name': filename,
+            'type': 'binary',
+            'datas': base64.b64encode(pdf_content),
+            'mimetype': 'application/pdf',
+            'res_model': 'sale.order',
+            'res_id': self.id,
+        }
+
+        if attachment:
+            attachment.write(vals)
+        else:
+            self.env['ir.attachment'].create(vals)
+
+        return True
+
 class SaleOrderXLoadLine(models.Model):
     _name = "sale.order.x_load_line"
     _description = "Righe Caricamento su Ordine di Vendita"
