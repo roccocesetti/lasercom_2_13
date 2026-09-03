@@ -77,7 +77,7 @@
                 <t t-set="modulo_lines" t-value="doc._get_modulo_installazione_lines()"/>
 
                 <div class="row m-0 mb32 avoid-page-break" id="dettaglio">
-                    <table class="table table-sm o_main_table avoid-page-break">
+                    <table class="table table-sm o_main_table avoid-page-break x_modulo_table">
                         <thead>
                             <tr>
                                 <th name="th_description" class="text-left bordo-inferiore">Descrizione</th>
