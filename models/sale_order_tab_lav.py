@@ -1270,8 +1270,60 @@ class SaleOrderXLoadLine(models.Model):
                     "supplier_id": False,
                     "editable": False,
                 })
+            else:
+                self._apply_lavorazione_qty_on_vals(vals)
 
         return super().create(vals_list)
+
+    @api.model
+    def _apply_lavorazione_qty_on_vals(self, vals):
+        """Quantita' delle lavorazioni = Altezza * Lunghezza, calcolata qui in
+        creazione.
+
+        L'onchange product_uom_change fa lo stesso calcolo in interfaccia, ma
+        per chi non e' manager il campo Quantita' e' readonly (vista
+        Caricamento Prodotti) e il client non invia i campi readonly al
+        salvataggio: la riga finiva salvata con il default 1 al posto del
+        valore calcolato. Se la quantita' arriva esplicitamente nei vals la
+        rispetto, cosi' il manager puo' ancora forzarla a mano."""
+        if "product_uom_qty" in vals:
+            return
+
+        if not vals.get("product_id"):
+            return
+
+        product = self.env["product.product"].browse(vals["product_id"])
+        if not product.categ_id.x_lavorazione:
+            return
+
+        qty = (vals.get("product_uom_height") or 0.0) * (vals.get("product_uom_length") or 0.0)
+        if qty:
+            vals["product_uom_qty"] = qty
+
+    def _sync_lavorazione_qty_after_write(self, vals):
+        """Riallinea Quantita' = Altezza * Lunghezza sulle righe di lavorazione
+        quando vengono modificate le dimensioni.
+
+        Stesso motivo di _apply_lavorazione_qty_on_vals: la Quantita' e'
+        readonly per chi non e' manager e non arriva dal client. Se la
+        quantita' e' nei vals non tocco niente, cosi' resta forzabile a mano.
+        La write annidata contiene solo product_uom_qty, quindi esce subito da
+        questo metodo e non ricorre."""
+        if "product_uom_qty" in vals:
+            return
+
+        if "product_uom_height" not in vals and "product_uom_length" not in vals:
+            return
+
+        for line in self:
+            if line.display_type or not line.x_lavorazione:
+                continue
+
+            qty = (line.product_uom_height or 0.0) * (line.product_uom_length or 0.0)
+
+            if qty and float_compare(qty, line.product_uom_qty, precision_rounding=0.01) != 0:
+                line.write({"product_uom_qty": qty})
+
     def write(self, vals):
         if vals.get("display_type") == "line_section":
             vals.update({
@@ -1294,6 +1346,8 @@ class SaleOrderXLoadLine(models.Model):
             }
 
         res = super(SaleOrderXLoadLine, self).write(vals)
+
+        self._sync_lavorazione_qty_after_write(vals)
 
         if self.env.context.get("skip_force_same_tag_no"):
             return res
