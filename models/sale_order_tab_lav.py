@@ -951,12 +951,42 @@ class SaleOrder(models.Model):
                 product_names,
             ))
 
+    def _get_modulo_installazione_lines(self):
+        """
+        Righe da stampare sul Modulo Installazione: le righe di caricamento
+        con SI e quantita' valorizzata, piu' le righe Sezione che le
+        contengono. Le sezioni senza righe da stampare vengono omesse.
+        """
+        self.ensure_one()
+
+        lines = self.x_load_line_ids.sorted(key=lambda l: (l.sequence, l.id))
+
+        line_ids = []
+        pending_section_id = False
+
+        for line in lines:
+            if line.display_type == 'line_section':
+                pending_section_id = line.id
+                continue
+
+            if line.etichetta_si != 'yes' or not line.product_uom_qty:
+                continue
+
+            if pending_section_id:
+                line_ids.append(pending_section_id)
+                pending_section_id = False
+
+            line_ids.append(line.id)
+
+        return self.env['sale.order.x_load_line'].browse(line_ids)
+
     def _generate_installation_module_pdf(self):
         self.ensure_one()
 
         report = self.env.ref(
             'lasercom_2_13.action_report_saleorder_laser_modulo'
         )
+
 
         pdf_content, content_type = report.render_qweb_pdf([self.id])
 

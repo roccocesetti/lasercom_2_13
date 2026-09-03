@@ -74,8 +74,8 @@
 
                 <h3>Modulo Installazione</h3>
 
-                <t t-set="modulo_lines" t-value="doc.x_load_line_ids.filtered(lambda l: not l.display_type and l.etichetta_si == 'yes' and l.product_uom_qty)"/>
-                <t t-set="modulo_total" t-value="sum(modulo_lines.mapped('price_subtotal'))"/>
+                <t t-set="modulo_lines" t-value="doc._get_modulo_installazione_lines()"/>
+                <t t-set="modulo_total" t-value="sum(modulo_lines.filtered(lambda l: not l.display_type).mapped('price_subtotal'))"/>
 
                 <div class="row m-0 mb32 avoid-page-break" id="dettaglio">
                     <table class="table table-sm o_main_table avoid-page-break">
@@ -93,35 +93,43 @@
                             </tr>
                         </thead>
                         <tbody class="sale_tbody">
-                            <tr t-foreach="modulo_lines" t-as="line">
-                                <td name="td_name">
-                                    <span t-if="line.product_id" t-esc="line.product_id.display_name"/>
-                                    <span t-if="not line.product_id" t-field="line.name"/>
-                                </td>
-                                <td name="td_quantity" class="text-right">
-                                    <span t-field="line.product_uom_qty"/>
-                                </td>
-                                <td name="td_config" class="text-right">
-                                    <span t-field="line.product_cassetti_slave"/>
-                                </td>
-                                <td name="td_height" class="text-right">
-                                    <span t-field="line.product_uom_height"/>
-                                </td>
-                                <td name="td_length" class="text-right">
-                                    <span t-field="line.product_uom_length"/>
-                                </td>
-                                <td name="td_width" class="text-right">
-                                    <span t-field="line.product_uom_width"/>
-                                </td>
-                                <td name="td_priceunit" class="text-right">
-                                    <span t-field="line.price_unit" t-options="{&quot;widget&quot;: &quot;monetary&quot;, &quot;display_currency&quot;: doc.currency_id}"/>
-                                </td>
-                                <td name="td_priceextra" class="text-right">
-                                    <span t-field="line.price_extra" t-options="{&quot;widget&quot;: &quot;monetary&quot;, &quot;display_currency&quot;: doc.currency_id}"/>
-                                </td>
-                                <td name="td_subtotal" class="text-right">
-                                    <span t-field="line.price_subtotal" t-options="{&quot;widget&quot;: &quot;monetary&quot;, &quot;display_currency&quot;: doc.currency_id}"/>
-                                </td>
+                            <tr t-foreach="modulo_lines" t-as="line"
+                                t-att-class="'bg-200 font-weight-bold o_line_section' if line.display_type == 'line_section' else ''">
+                                <t t-if="line.display_type == 'line_section'">
+                                    <td name="td_section_line" colspan="99">
+                                        <span t-field="line.name"/>
+                                    </td>
+                                </t>
+                                <t t-if="not line.display_type">
+                                    <td name="td_name">
+                                        <span t-if="line.product_id" t-esc="line.product_id.display_name"/>
+                                        <span t-if="not line.product_id" t-field="line.name"/>
+                                    </td>
+                                    <td name="td_quantity" class="text-right">
+                                        <span t-field="line.product_uom_qty"/>
+                                    </td>
+                                    <td name="td_config" class="text-right">
+                                        <span t-field="line.product_cassetti_slave"/>
+                                    </td>
+                                    <td name="td_height" class="text-right">
+                                        <span t-field="line.product_uom_height"/>
+                                    </td>
+                                    <td name="td_length" class="text-right">
+                                        <span t-field="line.product_uom_length"/>
+                                    </td>
+                                    <td name="td_width" class="text-right">
+                                        <span t-field="line.product_uom_width"/>
+                                    </td>
+                                    <td name="td_priceunit" class="text-right">
+                                        <span t-field="line.price_unit" t-options="{&quot;widget&quot;: &quot;monetary&quot;, &quot;display_currency&quot;: doc.currency_id}"/>
+                                    </td>
+                                    <td name="td_priceextra" class="text-right">
+                                        <span t-field="line.price_extra" t-options="{&quot;widget&quot;: &quot;monetary&quot;, &quot;display_currency&quot;: doc.currency_id}"/>
+                                    </td>
+                                    <td name="td_subtotal" class="text-right">
+                                        <span t-field="line.price_subtotal" t-options="{&quot;widget&quot;: &quot;monetary&quot;, &quot;display_currency&quot;: doc.currency_id}"/>
+                                    </td>
+                                </t>
                             </tr>
                         </tbody>
                         <tfoot>
