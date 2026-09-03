@@ -87,9 +87,7 @@
                                 <th name="th_height" class="text-right bordo-inferiore">Alt</th>
                                 <th name="th_length" class="text-right bordo-inferiore">Lung</th>
                                 <th name="th_width" class="text-right bordo-inferiore">Prof</th>
-                                <th name="th_priceunit" class="text-right bordo-inferiore">Prezzo Unitario</th>
-                                <th name="th_priceextra" class="text-right bordo-inferiore">P.Extra</th>
-                                <th name="th_subtotal" class="text-right bordo-inferiore">Totale riga</th>
+                                <th name="th_note" class="text-left bordo-inferiore">Note</th>
                             </tr>
                         </thead>
                         <tbody class="sale_tbody">
@@ -120,23 +118,17 @@
                                     <td name="td_width" class="text-right">
                                         <span t-field="line.product_uom_width"/>
                                     </td>
-                                    <td name="td_priceunit" class="text-right">
-                                        <span t-field="line.price_unit" t-options="{&quot;widget&quot;: &quot;monetary&quot;, &quot;display_currency&quot;: doc.currency_id}"/>
-                                    </td>
-                                    <td name="td_priceextra" class="text-right">
-                                        <span t-field="line.price_extra" t-options="{&quot;widget&quot;: &quot;monetary&quot;, &quot;display_currency&quot;: doc.currency_id}"/>
-                                    </td>
-                                    <td name="td_subtotal" class="text-right">
-                                        <span t-field="line.price_subtotal" t-options="{&quot;widget&quot;: &quot;monetary&quot;, &quot;display_currency&quot;: doc.currency_id}"/>
+                                    <td name="td_note" class="text-left">
+                                        <span t-field="line.note"/>
                                     </td>
                                 </t>
                             </tr>
                         </tbody>
                         <tfoot>
                             <tr class="border-black">
-                                <td colspan="8" class="text-right"><strong>Totale</strong></td>
-                                <td class="text-right">
-                                    <strong>
+                                <td colspan="7" class="text-right">
+                                    <strong>Totale</strong>
+                                    <strong class="ml-2">
                                         <span t-esc="modulo_total" t-options="{&quot;widget&quot;: &quot;monetary&quot;, &quot;display_currency&quot;: doc.currency_id}"/>
                                     </strong>
                                 </td>
