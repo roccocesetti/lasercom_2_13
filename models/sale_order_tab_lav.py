@@ -871,12 +871,45 @@ class SaleOrder(models.Model):
 
 
     def action_confirm(self):
+        self._check_etichetta_si_on_editable_load_lines()
+
         res = super(SaleOrder, self).action_confirm()
 
         for order in self:
             order._generate_installation_module_pdf()
 
         return res
+
+    def _check_etichetta_si_on_editable_load_lines(self):
+        """
+        Alla conferma dell'ordine ogni riga editabile del Caricamento Prodotti
+        deve avere il campo SI/NO valorizzato: il venditore deve aver deciso
+        esplicitamente se la riga va installata (SI) oppure no (NO).
+        """
+        for order in self:
+            missing = order.x_load_line_ids.filtered(
+                lambda l: not l.display_type
+                          and l.editable
+                          and l.etichetta_si not in ('yes', 'no')
+            )
+
+            if not missing:
+                continue
+
+            product_names = "\n".join(
+                "- %s" % (l.product_id.display_name or l.name or _("Riga senza prodotto"))
+                for l in missing
+            )
+
+            raise UserError(_(
+                "Tutte le righe editabili del Caricamento Prodotti devono avere "
+                "il campo SI/NO valorizzato prima di confermare l'ordine.\n\n"
+                "Ordine: %s\n"
+                "Righe da completare:\n%s"
+            ) % (
+                order.display_name,
+                product_names,
+            ))
 
     def _generate_installation_module_pdf(self):
         self.ensure_one()
