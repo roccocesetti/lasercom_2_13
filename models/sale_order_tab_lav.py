@@ -10,6 +10,7 @@ from odoo.tools import float_is_zero, float_compare
 from datetime import datetime, timedelta
 import logging
 from collections import defaultdict
+import base64
 _logger = logging.getLogger(__name__)
 
 
@@ -379,6 +380,24 @@ class SaleOrder(models.Model):
 
             order.x_load_line_ids = commands
 
+    def action_apply_product_load_if_empty(self):
+        """Bottone "Applica Caricamento" nell'header, usato dai venditori.
+
+        Se le righe di caricamento sono gia' valorizzate salta la generazione,
+        cosi' il venditore non puo' sovrascrivere il lavoro fatto sulle righe.
+        La sostituzione resta possibile agli amministratori con i bottoni
+        della tab Caricamento Prodotti, che chiamano direttamente
+        action_apply_product_load."""
+        for order in self:
+            if order.x_load_line_ids:
+                _logger.info(
+                    "Applica Caricamento saltato per l'ordine %s: righe di caricamento gia' presenti.",
+                    order.display_name,
+                )
+                continue
+            order.action_apply_product_load()
+        return True
+
     def action_apply_product_load(self, replace=True):
         SaleOrderXLoadLine = self.env["sale.order.x_load_line"].sudo()
 
@@ -608,6 +627,19 @@ class SaleOrder(models.Model):
         copy=False,
     )
 
+    x_has_load_line = fields.Boolean(
+        string='Caricamento gia valorizzato',
+        compute='_compute_x_has_load_line',
+        store=False,
+        help="Usato per nascondere il bottone Applica Caricamento nell'header "
+             "quando le righe di caricamento sono gia' presenti."
+    )
+
+    @api.depends('x_load_line_ids')
+    def _compute_x_has_load_line(self):
+        for order in self:
+            order.x_has_load_line = bool(order.x_load_line_ids)
+
 
     price_subtotal_lav = fields.Monetary(compute='_compute_amount_lav', string='Totale costi installazione', readonly=True, store=True)
     price_aggiunt_inst = fields.Monetary(string='Costo aggiuntivo installazione', digits='Product Price', default=0.0)
@@ -836,6 +868,153 @@ class SaleOrder(models.Model):
             self._check_unique_si_per_tag_group_on_order()
 
         return res
+
+
+    def action_confirm(self):
+        self._check_etichetta_si_on_editable_load_lines()
+        self._check_lavorazione_si_price_subtotal()
+
+        res = super(SaleOrder, self).action_confirm()
+
+        for order in self:
+            order._generate_installation_module_pdf()
+
+        return res
+
+    def _check_etichetta_si_on_editable_load_lines(self):
+        """
+        Alla conferma dell'ordine ogni riga editabile del Caricamento Prodotti
+        deve avere il campo SI/NO valorizzato: il venditore deve aver deciso
+        esplicitamente se la riga va installata (SI) oppure no (NO).
+        """
+        for order in self:
+            missing = order.x_load_line_ids.filtered(
+                lambda l: not l.display_type
+                          and l.editable
+                          and l.etichetta_si not in ('yes', 'no')
+            )
+
+            if not missing:
+                continue
+
+            product_names = "\n".join(
+                "- %s" % (l.product_id.display_name or l.name or _("Riga senza prodotto"))
+                for l in missing
+            )
+
+            raise UserError(_(
+                "Tutte le righe editabili del Caricamento Prodotti devono avere "
+                "il campo SI/NO valorizzato prima di confermare l'ordine.\n\n"
+                "Ordine: %s\n"
+                "Righe da completare:\n%s"
+            ) % (
+                order.display_name,
+                product_names,
+            ))
+
+    def _check_lavorazione_si_price_subtotal(self):
+        """
+        Alla conferma dell'ordine ogni riga di lavorazione con SI deve avere
+        il Tot.riga maggiore di zero: una lavorazione da eseguire non puo'
+        restare senza importo.
+        """
+        for order in self:
+            rounding = order.currency_id.rounding or 0.01
+
+            missing = order.x_load_line_ids.filtered(
+                lambda l: not l.display_type
+                          and l.x_lavorazione
+                          and l.etichetta_si == 'yes'
+                          and float_compare(
+                              l.price_subtotal, 0.0, precision_rounding=rounding
+                          ) <= 0
+            )
+
+            if not missing:
+                continue
+
+            product_names = "\n".join(
+                "- %s (Tot.riga: %s)" % (
+                    l.product_id.display_name or l.name or _("Riga senza prodotto"),
+                    l.price_subtotal,
+                )
+                for l in missing
+            )
+
+            raise UserError(_(
+                "Tutte le lavorazioni con SI devono avere il Tot.riga maggiore "
+                "di zero prima di confermare l'ordine.\n\n"
+                "Ordine: %s\n"
+                "Righe da completare:\n%s"
+            ) % (
+                order.display_name,
+                product_names,
+            ))
+
+    def _get_modulo_installazione_lines(self):
+        """
+        Righe da stampare sul Modulo Installazione: le righe di caricamento
+        con SI e quantita' valorizzata, piu' le righe Sezione che le
+        contengono. Le sezioni senza righe da stampare vengono omesse.
+        """
+        self.ensure_one()
+
+        lines = self.x_load_line_ids.sorted(key=lambda l: (l.sequence, l.id))
+
+        line_ids = []
+        pending_section_id = False
+
+        for line in lines:
+            if line.display_type == 'line_section':
+                pending_section_id = line.id
+                continue
+
+            if line.etichetta_si != 'yes' or not line.product_uom_qty:
+                continue
+
+            if pending_section_id:
+                line_ids.append(pending_section_id)
+                pending_section_id = False
+
+            line_ids.append(line.id)
+
+        return self.env['sale.order.x_load_line'].browse(line_ids)
+
+    def _generate_installation_module_pdf(self):
+        self.ensure_one()
+
+        report = self.env.ref(
+            'lasercom_2_13.action_report_saleorder_laser_modulo'
+        )
+
+
+        pdf_content, content_type = report.render_qweb_pdf([self.id])
+
+        filename = 'Modulo Installazione - %s.pdf' % self.name
+
+        # Cerca un eventuale allegato già esistente
+        attachment = self.env['ir.attachment'].search([
+            ('res_model', '=', 'sale.order'),
+            ('res_id', '=', self.id),
+            ('name', '=', filename),
+        ], limit=1)
+
+        vals = {
+            'name': filename,
+            'type': 'binary',
+            'datas': base64.b64encode(pdf_content),
+            'mimetype': 'application/pdf',
+            'res_model': 'sale.order',
+            'res_id': self.id,
+        }
+
+        if attachment:
+            attachment.write(vals)
+        else:
+            self.env['ir.attachment'].create(vals)
+
+        return True
+
 class SaleOrderXLoadLine(models.Model):
     _name = "sale.order.x_load_line"
     _description = "Righe Caricamento su Ordine di Vendita"
@@ -1091,8 +1270,60 @@ class SaleOrderXLoadLine(models.Model):
                     "supplier_id": False,
                     "editable": False,
                 })
+            else:
+                self._apply_lavorazione_qty_on_vals(vals)
 
         return super().create(vals_list)
+
+    @api.model
+    def _apply_lavorazione_qty_on_vals(self, vals):
+        """Quantita' delle lavorazioni = Altezza * Lunghezza, calcolata qui in
+        creazione.
+
+        L'onchange product_uom_change fa lo stesso calcolo in interfaccia, ma
+        per chi non e' manager il campo Quantita' e' readonly (vista
+        Caricamento Prodotti) e il client non invia i campi readonly al
+        salvataggio: la riga finiva salvata con il default 1 al posto del
+        valore calcolato. Se la quantita' arriva esplicitamente nei vals la
+        rispetto, cosi' il manager puo' ancora forzarla a mano."""
+        if "product_uom_qty" in vals:
+            return
+
+        if not vals.get("product_id"):
+            return
+
+        product = self.env["product.product"].browse(vals["product_id"])
+        if not product.categ_id.x_lavorazione:
+            return
+
+        qty = (vals.get("product_uom_height") or 0.0) * (vals.get("product_uom_length") or 0.0)
+        if qty:
+            vals["product_uom_qty"] = qty
+
+    def _sync_lavorazione_qty_after_write(self, vals):
+        """Riallinea Quantita' = Altezza * Lunghezza sulle righe di lavorazione
+        quando vengono modificate le dimensioni.
+
+        Stesso motivo di _apply_lavorazione_qty_on_vals: la Quantita' e'
+        readonly per chi non e' manager e non arriva dal client. Se la
+        quantita' e' nei vals non tocco niente, cosi' resta forzabile a mano.
+        La write annidata contiene solo product_uom_qty, quindi esce subito da
+        questo metodo e non ricorre."""
+        if "product_uom_qty" in vals:
+            return
+
+        if "product_uom_height" not in vals and "product_uom_length" not in vals:
+            return
+
+        for line in self:
+            if line.display_type or not line.x_lavorazione:
+                continue
+
+            qty = (line.product_uom_height or 0.0) * (line.product_uom_length or 0.0)
+
+            if qty and float_compare(qty, line.product_uom_qty, precision_rounding=0.01) != 0:
+                line.write({"product_uom_qty": qty})
+
     def write(self, vals):
         if vals.get("display_type") == "line_section":
             vals.update({
@@ -1115,6 +1346,8 @@ class SaleOrderXLoadLine(models.Model):
             }
 
         res = super(SaleOrderXLoadLine, self).write(vals)
+
+        self._sync_lavorazione_qty_after_write(vals)
 
         if self.env.context.get("skip_force_same_tag_no"):
             return res

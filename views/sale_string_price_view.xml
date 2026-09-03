@@ -227,6 +227,7 @@
         <data>
             <xpath expr="//form/header" position="inside">
                 <field name="force_show_min_price_banner" invisible="1"/>
+                <field name="x_has_load_line" invisible="1"/>
 
                 <button name="action_toggle_min_price_banner"
                         type="object"
@@ -240,13 +241,13 @@
                         class="btn-secondary"
                         attrs="{'invisible': [('force_show_min_price_banner','=',False)]}"/>
 
-                <button name="action_apply_product_load"
+                <button name="action_apply_product_load_if_empty"
                         type="object"
                         string="Applica Caricamento"
                         class="btn-secondary"
-                        confirm="Le righe di caricamento prodotti verranno eliminate e rigenerate dalle righe dell'ordine. Confermi?"
+                        confirm="Le righe di caricamento prodotti verranno generate dalle righe dell'ordine. Confermi?"
                         groups="sales_team.group_sale_manager,sales_team.group_sale_salesman,lasercom_2_13.group_admin_lav"
-                        attrs="{'invisible': ['|', ('x_load_ids','=',False), ('id','=',False)]}"/>
+                        attrs="{'invisible': ['|', '|', ('x_load_ids','=',False), ('id','=',False), ('x_has_load_line','=',True)]}"/>
             </xpath>
             <xpath expr="//sheet" position="inside">
                 <field name="show_banner_min_price" invisible="1"/>
