@@ -876,6 +876,7 @@ class SaleOrder(models.Model):
 
 
     def action_confirm(self):
+        self._check_data_contratto()
         self._check_etichetta_si_on_editable_load_lines()
         self._check_lavorazione_si_price_subtotal()
 
@@ -885,6 +886,23 @@ class SaleOrder(models.Model):
             order._generate_installation_module_pdf()
 
         return res
+
+    def _check_data_contratto(self):
+        """
+        Alla conferma dell'ordine la Data contratto deve essere valorizzata.
+        Va controllata prima degli altri controlli perche' il campo diventa
+        readonly appena l'ordine esce dagli stati bozza/inviato: se la
+        conferma passasse senza data, non sarebbe piu' possibile inserirla.
+        """
+        missing = self.filtered(lambda o: not o.data_contratto)
+
+        if not missing:
+            return
+
+        raise UserError(_(
+            "Inserire la Data contratto prima di confermare l'ordine.\n\n"
+            "Ordini senza Data contratto:\n%s"
+        ) % "\n".join("- %s" % order.display_name for order in missing))
 
     def _check_etichetta_si_on_editable_load_lines(self):
         """
