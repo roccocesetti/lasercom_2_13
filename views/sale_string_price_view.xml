@@ -245,7 +245,7 @@
                         string="Applica Caricamento"
                         class="btn-secondary"
                         confirm="Le righe di caricamento prodotti verranno eliminate e rigenerate dalle righe dell'ordine. Confermi?"
-                        groups="sales_team.group_sale_manager,lasercom_2_13.group_admin_lav"
+                        groups="sales_team.group_sale_manager,sales_team.group_sale_salesman,lasercom_2_13.group_admin_lav"
                         attrs="{'invisible': ['|', ('x_load_ids','=',False), ('id','=',False)]}"/>
             </xpath>
             <xpath expr="//sheet" position="inside">
