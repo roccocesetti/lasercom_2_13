@@ -75,7 +75,6 @@
                 <h3>Modulo Installazione</h3>
 
                 <t t-set="modulo_lines" t-value="doc._get_modulo_installazione_lines()"/>
-                <t t-set="modulo_total" t-value="sum(modulo_lines.filtered(lambda l: not l.display_type).mapped('price_subtotal'))"/>
 
                 <div class="row m-0 mb32 avoid-page-break" id="dettaglio">
                     <table class="table table-sm o_main_table avoid-page-break">
@@ -124,16 +123,6 @@
                                 </t>
                             </tr>
                         </tbody>
-                        <tfoot>
-                            <tr class="border-black">
-                                <td colspan="7" class="text-right">
-                                    <strong>Totale</strong>
-                                    <strong class="ml-2">
-                                        <span t-esc="modulo_total" t-options="{&quot;widget&quot;: &quot;monetary&quot;, &quot;display_currency&quot;: doc.currency_id}"/>
-                                    </strong>
-                                </td>
-                            </tr>
-                        </tfoot>
                     </table>
                 </div>
             </div>
