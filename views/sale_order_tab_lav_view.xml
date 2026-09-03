@@ -334,7 +334,7 @@
                                 limit="160"
                                widget="section_and_note_one2many" context="{'check_unique_si_tag_group': True}" >
                             <tree editable="bottom" decoration-info="sale_line_id" limit="160"
-
+                                  decoration-danger="editable and not etichetta_si and not display_type"
                                   >
                                 <control>
                                     <create string="Aggiungi riga"/>
@@ -486,6 +486,7 @@
                        widget="section_and_note_one2many" class="sticky_header_only_this_list"  context="{'check_unique_si_tag_group': True}">
                     <tree editable="bottom"
                           decoration-info="sale_line_id"
+                          decoration-danger="editable and not etichetta_si and not display_type"
                           limit="160" >
 
                         <control>
