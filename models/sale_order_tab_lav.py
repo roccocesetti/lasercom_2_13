@@ -495,7 +495,12 @@ class SaleOrder(models.Model):
                             "product_uom_length": ll.product_uom_length,
                             "product_uom_width": ll.product_uom_width,
                             "product_uom_qty": 0.0 if ll.display_type else (ll.product_uom_qty or 0.0) * qty,
-                            "price_unit": 0.0 if ll.display_type else (ll.product_id.standard_price or 0.0),
+                            # Prima il prezzo della riga del modulo di caricamento,
+                            # standard_price solo come fallback: prima si prendeva
+                            # sempre standard_price e il prezzo configurato sul
+                            # modulo veniva perso, mentre il price_extra della
+                            # stessa riga arrivava regolarmente.
+                            "price_unit": 0.0 if ll.display_type else (ll.price_unit or ll.product_id.standard_price or 0.0),
                             "price_extra": 0.0 if ll.display_type else (ll.price_extra or 0.0),
                             "supplier_id": ll.supplier_id.id if ll.supplier_id and not ll.display_type else False,
                             "editable": ll.editable,
@@ -871,15 +876,33 @@ class SaleOrder(models.Model):
 
 
     def action_confirm(self):
+
         self._check_etichetta_si_on_editable_load_lines()
         self._check_lavorazione_si_price_subtotal()
-
+        self._check_data_contratto()
         res = super(SaleOrder, self).action_confirm()
 
         for order in self:
             order._generate_installation_module_pdf()
 
         return res
+
+    def _check_data_contratto(self):
+        """
+        Alla conferma dell'ordine la Data contratto deve essere valorizzata.
+        Va controllata prima degli altri controlli perche' il campo diventa
+        readonly appena l'ordine esce dagli stati bozza/inviato: se la
+        conferma passasse senza data, non sarebbe piu' possibile inserirla.
+        """
+        missing = self.filtered(lambda o: not o.data_contratto)
+
+        if not missing:
+            return
+
+        raise UserError(_(
+            "Inserire la Data contratto prima di confermare l'ordine.\n\n"
+            "Ordini senza Data contratto:\n%s"
+        ) % "\n".join("- %s" % order.display_name for order in missing))
 
     def _check_etichetta_si_on_editable_load_lines(self):
         """
@@ -1151,7 +1174,13 @@ class SaleOrderXLoadLine(models.Model):
 
         if self.x_lavorazione:
             self.product_uom_qty=self.product_uom_height*self.product_uom_length
-        self.price_unit=self.product_id.standard_price
+
+        # Il prezzo si tocca solo se la riga non ne ha ancora uno: altrimenti
+        # ogni modifica di Altezza/Lunghezza lo riportava a standard_price,
+        # azzerando il prezzo che arriva dal modulo di caricamento (o messo a
+        # mano) e con esso il Tot.riga. Stessa regola di _onchange_product_id.
+        if not self.price_unit:
+            self.price_unit=self.product_id.standard_price
     @api.onchange("product_id")
     def _onchange_product_id(self):
             for line in self:

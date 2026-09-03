@@ -334,7 +334,7 @@
                                 limit="160"
                                widget="section_and_note_one2many" context="{'check_unique_si_tag_group': True}" >
                             <tree editable="bottom" decoration-info="sale_line_id" limit="160"
-
+                                  decoration-danger="editable and not etichetta_si and not display_type"
                                   >
                                 <control>
                                     <create string="Aggiungi riga"/>
@@ -416,7 +416,8 @@
                 <button name="%(lasercom_2_13.action_report_saleorder_laser_modulo)d"
                         type="action"
                         string="Stampa Modulo Installazione"
-                        class="btn-secondary"/>
+                        class="btn-secondary"
+                        groups="sales_team.group_sale_manager,lasercom_2_13.group_admin_lav"/>
                 <button name="action_open_sale_order_standard_form_note_modello"
                         type="object"
                         string="Vai a Note modello"
@@ -436,7 +437,7 @@
 
                               <button name="action_apply_product_load"
                         type="object"
-                        string="Applica Caricamento"
+                        string="Caricamento modulo di installazione"
                         class="oe_highlight"
                         groups="sales_team.group_sale_manager,lasercom_2_13.group_admin_lav"
                         attrs="{'invisible': [('x_load_ids','=',False)]}"/>
@@ -485,6 +486,7 @@
                        widget="section_and_note_one2many" class="sticky_header_only_this_list"  context="{'check_unique_si_tag_group': True}">
                     <tree editable="bottom"
                           decoration-info="sale_line_id"
+                          decoration-danger="editable and not etichetta_si and not display_type"
                           limit="160" >
 
                         <control>
