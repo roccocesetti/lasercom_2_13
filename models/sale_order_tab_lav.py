@@ -872,6 +872,7 @@ class SaleOrder(models.Model):
 
     def action_confirm(self):
         self._check_etichetta_si_on_editable_load_lines()
+        self._check_lavorazione_si_price_subtotal()
 
         res = super(SaleOrder, self).action_confirm()
 
@@ -904,6 +905,45 @@ class SaleOrder(models.Model):
             raise UserError(_(
                 "Tutte le righe editabili del Caricamento Prodotti devono avere "
                 "il campo SI/NO valorizzato prima di confermare l'ordine.\n\n"
+                "Ordine: %s\n"
+                "Righe da completare:\n%s"
+            ) % (
+                order.display_name,
+                product_names,
+            ))
+
+    def _check_lavorazione_si_price_subtotal(self):
+        """
+        Alla conferma dell'ordine ogni riga di lavorazione con SI deve avere
+        il Tot.riga maggiore di zero: una lavorazione da eseguire non puo'
+        restare senza importo.
+        """
+        for order in self:
+            rounding = order.currency_id.rounding or 0.01
+
+            missing = order.x_load_line_ids.filtered(
+                lambda l: not l.display_type
+                          and l.x_lavorazione
+                          and l.etichetta_si == 'yes'
+                          and float_compare(
+                              l.price_subtotal, 0.0, precision_rounding=rounding
+                          ) <= 0
+            )
+
+            if not missing:
+                continue
+
+            product_names = "\n".join(
+                "- %s (Tot.riga: %s)" % (
+                    l.product_id.display_name or l.name or _("Riga senza prodotto"),
+                    l.price_subtotal,
+                )
+                for l in missing
+            )
+
+            raise UserError(_(
+                "Tutte le lavorazioni con SI devono avere il Tot.riga maggiore "
+                "di zero prima di confermare l'ordine.\n\n"
                 "Ordine: %s\n"
                 "Righe da completare:\n%s"
             ) % (
