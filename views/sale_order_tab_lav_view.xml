@@ -437,7 +437,7 @@
 
                               <button name="action_apply_product_load"
                         type="object"
-                        string="Applica Caricamento"
+                        string="Caricamento modulo di installazione"
                         class="oe_highlight"
                         groups="sales_team.group_sale_manager,lasercom_2_13.group_admin_lav"
                         attrs="{'invisible': [('x_load_ids','=',False)]}"/>

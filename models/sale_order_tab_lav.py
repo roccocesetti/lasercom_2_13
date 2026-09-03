@@ -876,10 +876,10 @@ class SaleOrder(models.Model):
 
 
     def action_confirm(self):
-        self._check_data_contratto()
+
         self._check_etichetta_si_on_editable_load_lines()
         self._check_lavorazione_si_price_subtotal()
-
+        self._check_data_contratto()
         res = super(SaleOrder, self).action_confirm()
 
         for order in self:
