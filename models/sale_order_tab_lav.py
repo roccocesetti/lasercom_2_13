@@ -231,6 +231,9 @@ class SaleOrder(models.Model):
         'x_load_line_ids.product_uom_qty',
         'x_load_line_ids.price_unit',
         'x_load_line_ids.price_extra',
+        'x_load_line_deduction_ids.price_subtotal',
+        'x_load_line_deduction_ids.product_uom_qty',
+        'x_load_line_deduction_ids.price_unit',
     )
     def _compute_amount_lav(self):
         """
@@ -242,6 +245,7 @@ class SaleOrder(models.Model):
                 if line.etichetta_si=="yes":
                         price_subtotal_lav+=line.price_subtotal
 
+            price_subtotal_lav -= sum(order.x_load_line_deduction_ids.mapped('price_subtotal'))
 
             order.price_subtotal_lav = price_subtotal_lav
 
@@ -634,6 +638,13 @@ class SaleOrder(models.Model):
         "sale.order.x_load_line",
         "order_id",
         string="Righe Caricamento (in ordine)",
+        copy=False,
+    )
+
+    x_load_line_deduction_ids = fields.One2many(
+        "sale.order.x_load_line_deduction",
+        "order_id",
+        string="Righe Sottrazione Caricamento",
         copy=False,
     )
 
@@ -1491,6 +1502,42 @@ class SaleOrderXLoadLine(models.Model):
             if righe_conflitto:
                 raise ValidationError(
                     _("Può esistere una sola riga SI per gruppo con la stessa etichetta.")  )
+
+
+class SaleOrderXLoadLineDeduction(models.Model):
+    _name = "sale.order.x_load_line_deduction"
+    _description = "Righe Sottrazione Caricamento su Ordine di Vendita"
+    _order = "sequence,id asc"
+
+    order_id = fields.Many2one("sale.order", required=True, ondelete="cascade")
+    sequence = fields.Integer(string="Sequenza", default=10, index=True)
+    product_id = fields.Many2one("product.product", string="Prodotto", required=False)
+    default_code = fields.Char(related="product_id.default_code", string="Codice", readonly=True, store=False)
+    name = fields.Char(string="Descrizione")
+    product_uom_qty = fields.Float(string="Qta", default=1.0)
+    price_unit = fields.Float(string="P.Unitario", digits='Product Price')
+    currency_id = fields.Many2one(
+        'res.currency',
+        related='order_id.currency_id',
+        store=True,
+        readonly=True,
+    )
+    price_subtotal = fields.Monetary(compute='_compute_amount', string='Costo', store=True)
+
+    @api.depends('product_uom_qty', 'price_unit')
+    def _compute_amount(self):
+        for line in self:
+            line.price_subtotal = (line.price_unit or 0.0) * (line.product_uom_qty or 0.0)
+
+    @api.onchange('product_id')
+    def _onchange_product_id(self):
+        for line in self:
+            if not line.product_id:
+                continue
+            if not line.name:
+                line.name = line.product_id.display_name
+            if not line.price_unit:
+                line.price_unit = line.product_id.standard_price
 
 
 

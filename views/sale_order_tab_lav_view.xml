@@ -457,6 +457,21 @@
                     </group>
                 </group>
 
+                <div groups="sales_team.group_sale_manager,lasercom_2_13.group_admin_lav">
+                    <separator string="Prodotti in sottrazione"/>
+                    <field name="x_load_line_deduction_ids" nolabel="1" limit="160">
+                        <tree editable="bottom" limit="160">
+                            <field name="sequence" widget="handle"/>
+                            <field name="product_id"/>
+                            <field name="default_code" readonly="1"/>
+                            <field name="name" string="Nome"/>
+                            <field name="product_uom_qty" string="Qta"/>
+                            <field name="price_unit" string="Costo"/>
+                            <field name="price_subtotal" string="Tot."/>
+                        </tree>
+                    </field>
+                </div>
+
                 <div class="alert alert-info mt-2" role="alert" groups="sales_team.group_sale_salesman,lasercom_2_13.group_admin_lav">
                     <group>
                         <field name="x_note_installazione_editable" invisible="1"/>
