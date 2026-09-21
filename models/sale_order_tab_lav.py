@@ -399,6 +399,11 @@ class SaleOrder(models.Model):
         return True
 
     def action_apply_product_load(self, replace=True):
+        # Esegue in sudo: il venditore deve poter lanciare il caricamento
+        # anche se non ha (piu') accesso in scrittura ai moduli
+        # x.product.load / x.product.load.line, che restano di sola lettura
+        # per il suo gruppo.
+        self = self.sudo()
         SaleOrderXLoadLine = self.env["sale.order.x_load_line"].sudo()
 
         for order in self:
