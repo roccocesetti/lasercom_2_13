@@ -286,6 +286,64 @@ class SaleOrder(models.Model):
         for order in self:
             order.x_note_installazione_editable = can_edit
 
+    # Campi della tab Caricamento Prodotti che l'utente normale non puo' piu'
+    # toccare dopo la conferma dell'ordine.
+    # x_load_ids resta fuori: e' derivato dalle righe ordine tramite
+    # _onchange_order_line_sync_x_load_ids, quindi bloccarlo lato server
+    # impedirebbe anche le normali modifiche alle righe dell'ordine
+    # confermato. In vista e' comunque readonly quando l'ordine e' bloccato.
+    _X_LOAD_LOCKED_FIELDS = {
+        'x_load_line_ids',
+        'x_load_line_deduction_ids',
+        'note_modulo_installazione',
+        'note_modulo_agente',
+        'date_module',
+        'date_installation',
+        'price_aggiunt_inst',
+    }
+
+    x_load_locked = fields.Boolean(
+        string="Caricamento bloccato",
+        compute="_compute_x_load_locked",
+        help="Vero quando l'ordine e' gia' confermato e l'utente non e' "
+             "Sales Manager ne' Admin LAV: la tab Caricamento Prodotti "
+             "diventa di sola lettura.",
+    )
+
+    @api.depends('state')
+    def _compute_x_load_locked(self):
+        can_edit_confirmed = (
+            self.env.user.has_group('sales_team.group_sale_manager')
+            or self.env.user.has_group('lasercom_2_13.group_admin_lav')
+        )
+        for order in self:
+            order.x_load_locked = (
+                not can_edit_confirmed
+                and order.state not in ('draft', 'sent')
+            )
+
+    def _check_x_load_not_locked(self):
+        """Blocca le modifiche al Caricamento Prodotti sugli ordini confermati.
+
+        Il controllo lato vista (readonly) copre l'interfaccia, questo copre
+        import, chiamate RPC e ogni altra scrittura fatta dall'utente. Le
+        scritture interne del modulo girano in sudo (env.su) e non vengono
+        bloccate."""
+        if self.env.su or self.env.context.get('skip_x_load_lock'):
+            return
+
+        locked = self.filtered(lambda o: o.x_load_locked)
+
+        if not locked:
+            return
+
+        raise UserError(_(
+            "L'ordine e' gia' confermato: il Caricamento Prodotti non e' piu' "
+            "modificabile.\n\n"
+            "Ordini interessati:\n%s\n\n"
+            "Per variazioni rivolgersi a un Sales Manager o a un Admin LAV."
+        ) % "\n".join("- %s" % order.display_name for order in locked))
+
     def _sync_x_load_ids_from_order_lines(self):
         for order in self:
             load_ids = []
@@ -392,6 +450,8 @@ class SaleOrder(models.Model):
         La sostituzione resta possibile agli amministratori con i bottoni
         della tab Caricamento Prodotti, che chiamano direttamente
         action_apply_product_load."""
+        self._check_x_load_not_locked()
+
         for order in self:
             if order.x_load_line_ids:
                 _logger.info(
@@ -883,6 +943,9 @@ class SaleOrder(models.Model):
         return action
 
     def write(self, vals):
+        if set(vals) & self._X_LOAD_LOCKED_FIELDS:
+            self._check_x_load_not_locked()
+
         res = super(SaleOrder, self).write(vals)
 
         if 'x_load_line_ids' in vals and not self.env.context.get('skip_unique_si_tag_check'):
@@ -1285,7 +1348,13 @@ class SaleOrderXLoadLine(models.Model):
         #locked = self.filtered(lambda r: not r.editable)
         #if locked:
         #    raise UserError(_("Riga bloccata: abilita 'Edit' sulla singola riga per eliminarla."))
+        self._check_order_not_locked()
         return super().unlink()
+
+    def _check_order_not_locked(self):
+        """Nessuna modifica alle righe di caricamento di ordini gia' confermati
+        per chi non e' Sales Manager o Admin LAV."""
+        self.mapped("order_id")._check_x_load_not_locked()
 
 
 
@@ -1317,6 +1386,10 @@ class SaleOrderXLoadLine(models.Model):
                 })
             else:
                 self._apply_lavorazione_qty_on_vals(vals)
+
+        order_ids = [vals["order_id"] for vals in vals_list if vals.get("order_id")]
+        if order_ids:
+            self.env["sale.order"].browse(set(order_ids))._check_x_load_not_locked()
 
         return super().create(vals_list)
 
@@ -1370,6 +1443,8 @@ class SaleOrderXLoadLine(models.Model):
                 line.write({"product_uom_qty": qty})
 
     def write(self, vals):
+        self._check_order_not_locked()
+
         if vals.get("display_type") == "line_section":
             vals.update({
                 "product_id": False,

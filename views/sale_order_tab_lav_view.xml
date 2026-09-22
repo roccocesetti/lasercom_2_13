@@ -291,8 +291,15 @@
                         <widget name="goto_tab" target="Note modello" label="Vai a Note modello" class="oe_highlight ml-auto"/>
                     </div>
 
+                    <field name="x_load_locked" invisible="1"/>
+                    <div class="alert alert-warning mt-2" role="alert"
+                         attrs="{'invisible': [('x_load_locked','=',False)]}">
+                        Ordine confermato: il Caricamento Prodotti e' di sola lettura.
+                        Per variazioni rivolgersi a un Sales Manager o a un Admin LAV.
+                    </div>
+
                     <group>
-                        <field name="x_load_ids" options="{'no_create': True}" widget="many2many_tags"/>
+                        <field name="x_load_ids" options="{'no_create': True}" widget="many2many_tags" attrs="{'readonly': [('x_load_locked','=',True)]}"/>
                         <button name="action_apply_product_load"
                     type="object"
                     string="Applica Caricamento (Sostituisci righe)"
@@ -300,10 +307,10 @@
                     groups="sales_team.group_sale_manager,lasercom_2_13.group_admin_lav"
                     attrs="{'invisible': [('x_load_ids','=',False)]}"/>
                         <field name="price_subtotal_lav"  widget="monetary"/>
-                        <field name="price_aggiunt_inst" widget="monetary" groups="sales_team.group_sale_salesman,lasercom_2_13.group_admin_lav" attrs="{'readonly': [('x_note_installazione_editable','=',False)]}"/>
-                        <field name="date_module"  />
+                        <field name="price_aggiunt_inst" widget="monetary" groups="sales_team.group_sale_salesman,lasercom_2_13.group_admin_lav" attrs="{'readonly': ['|',('x_note_installazione_editable','=',False),('x_load_locked','=',True)]}"/>
+                        <field name="date_module" attrs="{'readonly': [('x_load_locked','=',True)]}"/>
                         <field name="date_module_display" readonly="1"/>
-                        <field name="date_installation"/>
+                        <field name="date_installation" attrs="{'readonly': [('x_load_locked','=',True)]}"/>
                         <field name="date_installation_display" readonly="1" option="hide"/>
 <label for="sale_acq_usage" string="Acquisto usato" attrs="{'invisible': [('sale_acq_usage', '&lt;=', 0)]}"/>
                             <field name="sale_acq_usage" nolabel="1"  groups="base.group_user" />
@@ -332,6 +339,7 @@
                                nolabel="1"
                                 colspan="4"
                                 limit="160"
+                               attrs="{'readonly': [('x_load_locked','=',True)]}"
                                widget="section_and_note_one2many" context="{'check_unique_si_tag_group': True}" >
                             <tree editable="bottom" decoration-info="sale_line_id" limit="160"
                                   decoration-danger="editable and not etichetta_si and not display_type"
@@ -380,14 +388,15 @@
 
               <xpath expr="//notebook" position="inside">
                 <page string="Note modello">
+                    <field name="x_load_locked" invisible="1"/>
                     <group  groups="sales_team.group_sale_salesman,lasercom_2_13.group_admin_lav">
                     <label for="note_modulo_installazione" string="note_modulo_installazione" />
                       <field name="x_note_installazione_editable" invisible="1"/>
-                      <field name="note_modulo_installazione" nolabel="1" attrs="{'readonly': [('x_note_installazione_editable','=',False)]}"/>
+                      <field name="note_modulo_installazione" nolabel="1" attrs="{'readonly': ['|',('x_note_installazione_editable','=',False),('x_load_locked','=',True)]}"/>
                     </group>
                     <group  groups="sales_team.group_sale_salesman">
                     <label for="note_modulo_agente" string="note_modulo_agente" />
-                      <field name="note_modulo_agente" nolabel="1" />
+                      <field name="note_modulo_agente" nolabel="1" attrs="{'readonly': [('x_load_locked','=',True)]}"/>
                     </group>
                 </page>
               </xpath>
@@ -431,9 +440,16 @@
                     </h1>
                 </div>
 
+                <field name="x_load_locked" invisible="1"/>
+                <div class="alert alert-warning mt-2" role="alert"
+                     attrs="{'invisible': [('x_load_locked','=',False)]}">
+                    Ordine confermato: il Caricamento Prodotti e' di sola lettura.
+                    Per variazioni rivolgersi a un Sales Manager o a un Admin LAV.
+                </div>
+
                 <group>
                     <group>
-                        <field name="x_load_ids" options="{'no_create': True}" widget="many2many_tags"/>
+                        <field name="x_load_ids" options="{'no_create': True}" widget="many2many_tags" attrs="{'readonly': [('x_load_locked','=',True)]}"/>
 
                               <button name="action_apply_product_load"
                         type="object"
@@ -443,13 +459,13 @@
                         attrs="{'invisible': [('x_load_ids','=',False)]}"/>
 
                         <field name="price_subtotal_lav" widget="monetary"/>
-                        <field name="price_aggiunt_inst" widget="monetary" groups="sales_team.group_sale_salesman,lasercom_2_13.group_admin_lav" attrs="{'readonly': [('x_note_installazione_editable','=',False)]}"/>
+                        <field name="price_aggiunt_inst" widget="monetary" groups="sales_team.group_sale_salesman,lasercom_2_13.group_admin_lav" attrs="{'readonly': ['|',('x_note_installazione_editable','=',False),('x_load_locked','=',True)]}"/>
                     </group>
 
                     <group>
-                        <field name="date_module" />
+                        <field name="date_module" attrs="{'readonly': [('x_load_locked','=',True)]}"/>
                         <field name="date_module_display" readonly="1"/>
-                        <field name="date_installation" />
+                        <field name="date_installation" attrs="{'readonly': [('x_load_locked','=',True)]}"/>
                         <field name="date_installation_display" readonly="1" />
                          <label for="sale_acq_usage" string="Acquisto usato" attrs="{'invisible': [('sale_acq_usage', '&lt;=', 0)]}"/>
                             <field name="sale_acq_usage" nolabel="1"  groups="base.group_user" />
@@ -459,7 +475,7 @@
 
                 <div groups="sales_team.group_sale_manager,lasercom_2_13.group_admin_lav">
                     <separator string="Prodotti in sottrazione"/>
-                    <field name="x_load_line_deduction_ids" nolabel="1" limit="160">
+                    <field name="x_load_line_deduction_ids" nolabel="1" limit="160" attrs="{'readonly': [('x_load_locked','=',True)]}">
                         <tree editable="bottom" limit="160">
                             <field name="sequence" widget="handle"/>
                             <field name="product_id"/>
@@ -475,12 +491,12 @@
                 <div class="alert alert-info mt-2" role="alert" groups="sales_team.group_sale_salesman,lasercom_2_13.group_admin_lav">
                     <group>
                         <field name="x_note_installazione_editable" invisible="1"/>
-                        <field name="note_modulo_installazione" string="Note installazione" attrs="{'readonly': [('x_note_installazione_editable','=',False)]}"/>
+                        <field name="note_modulo_installazione" string="Note installazione" attrs="{'readonly': ['|',('x_note_installazione_editable','=',False),('x_load_locked','=',True)]}"/>
                     </group>
                 </div>
                 <div class="alert alert-info mt-2" role="alert" groups="sales_team.group_sale_salesman">
                     <group>
-                        <field name="note_modulo_agente" string="Note agente"/>
+                        <field name="note_modulo_agente" string="Note agente" attrs="{'readonly': [('x_load_locked','=',True)]}"/>
                     </group>
                 </div>
 
@@ -498,6 +514,7 @@
                 <field name="x_load_line_ids"
                        nolabel="1"
                        limit="160"
+                       attrs="{'readonly': [('x_load_locked','=',True)]}"
                        widget="section_and_note_one2many" class="sticky_header_only_this_list"  context="{'check_unique_si_tag_group': True}">
                     <tree editable="bottom"
                           decoration-info="sale_line_id"
