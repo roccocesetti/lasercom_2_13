@@ -2,7 +2,7 @@
 <odoo>
 
     <template id="report_saleorder_document_laser_modulo">
-        <t t-call="web.external_layout">
+        <t t-call="web.basic_layout">
             <link rel="stylesheet" type="text/css" href="/lasercom_2_13/static/src/css/custom.css"/>
 
             <div class="page custom-mt12">
