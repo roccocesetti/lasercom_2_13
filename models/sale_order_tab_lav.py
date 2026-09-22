@@ -722,7 +722,7 @@ class SaleOrder(models.Model):
             order.x_has_load_line = bool(order.x_load_line_ids)
 
 
-    price_subtotal_lav = fields.Monetary(compute='_compute_amount_lav', string='Totale costi installazione', readonly=True, store=True)
+    price_subtotal_lav = fields.Monetary(compute='_compute_amount_lav', compute_sudo=True, string='Totale costi installazione', readonly=True, store=True)
     price_aggiunt_inst = fields.Monetary(string='Costo aggiuntivo installazione', digits='Product Price', default=0.0)
     date_module = fields.Date(string='Consegna Richiesta dal Cliente',  copy=False,
                                 default=_default_validity_date_2)
