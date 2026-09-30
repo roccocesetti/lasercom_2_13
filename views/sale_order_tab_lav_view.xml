@@ -341,7 +341,7 @@
                     <field name="x_load_locked" invisible="1"/>
                     <div class="alert alert-warning mt-2" role="alert"
                          attrs="{'invisible': [('x_load_locked','=',False)]}">
-                        Modulo o ordine confermato: il Caricamento Prodotti e' di sola lettura.
+                        Modulo confermato: il Caricamento Prodotti e' di sola lettura.
                         Per variazioni rivolgersi a un Sales Manager o a un Admin LAV.
                     </div>
 
@@ -413,7 +413,9 @@
                                 <field name="product_uom_qty" optional="show" attrs="{'readonly': ['|','|',('x_locked_by_tag', '=', True),('editable','=',False),'&amp;',('x_lavorazione','=',True),('parent.x_show_manager_fields','=',False)]}"/>
                                 <field name="product_id"  attrs="{'readonly': ['|','|',('x_locked_by_tag', '=', True),('editable','=',False),('parent.x_show_manager_fields','=',False)]}" />
                                 <field name="x_lavorazione" optional="hide" attrs="{'invisible': [('display_type','!=',False)],'column_invisible': [('parent.x_show_manager_fields','=',False)]}"/>
-                                <field name="attachment_product" widget="image" options="{'size': [40, 40]}" attrs="{'invisible': [('display_type','!=',False)]}" optional="show"/>
+                                <field name="attachment_product_name" invisible="1"/>
+                                <field name="attachment_product" widget="binary" filename="attachment_product_name" string="Allegato" attrs="{'invisible': [('display_type','!=',False)]}" optional="hide"/>
+                                <field name="attachment_product_preview" widget="image" options="{'size': [40, 40]}" attrs="{'invisible': [('display_type','!=',False)]}" optional="hide"/>
                                 <field name="tipo_vetrina"  class="x_tipo_vetrina_anchor" optional="hide" attrs="{'readonly': ['|',('x_locked_by_tag', '=', True),('editable','=',False)],'column_invisible': [('parent.x_show_manager_fields','=',False)]}"/>
                                 <field name="tipo_vetrina" invisible="1" readonly="1"/>
                                  <field name="price_unit" optional="show" attrs="{'readonly': ['|',('x_locked_by_tag', '=', True),('editable','=',False)],'column_invisible': [('parent.x_show_manager_fields','=',False)]}"/>
@@ -490,7 +492,7 @@
                 <field name="x_load_locked" invisible="1"/>
                 <div class="alert alert-warning mt-2" role="alert"
                      attrs="{'invisible': [('x_load_locked','=',False)]}">
-                    Modulo o ordine confermato: il Caricamento Prodotti e' di sola lettura.
+                    Modulo confermato: il Caricamento Prodotti e' di sola lettura.
                     Per variazioni rivolgersi a un Sales Manager o a un Admin LAV.
                 </div>
 
@@ -529,6 +531,7 @@
                             <field name="default_code" readonly="1"/>
                             <field name="name" string="Nome" attrs="{'readonly': [('parent.x_show_manager_fields','=',False)]}"/>
                             <field name="product_uom_qty" string="Qta"/>
+                            <field name="etichetta_si"/>
                             <field name="price_unit" string="Costo" attrs="{'column_invisible': [('parent.x_show_manager_fields','=',False)]}"/>
                             <field name="price_subtotal" string="Tot." attrs="{'column_invisible': [('parent.x_show_manager_fields','=',False)]}"/>
                         </tree>
@@ -622,7 +625,9 @@
                                        ('parent.x_show_manager_fields','=',False)
                                    ]
                                }"/>
-                        <field name="attachment_product" widget="image" options="{'size': [40, 40]}" attrs="{'invisible': [('display_type','!=',False)]}" optional="hide"/>
+                        <field name="attachment_product_name" invisible="1"/>
+                        <field name="attachment_product" widget="binary" filename="attachment_product_name" string="Allegato" attrs="{'invisible': [('display_type','!=',False)]}" optional="hide"/>
+                        <field name="attachment_product_preview" widget="image" options="{'size': [40, 40]}" attrs="{'invisible': [('display_type','!=',False)]}" optional="hide"/>
                         <field name="x_lavorazione"
                                optional="hide"
                                attrs="{'invisible': [('display_type','!=',False)], 'column_invisible': [('parent.x_show_manager_fields','=',False)]}"/>

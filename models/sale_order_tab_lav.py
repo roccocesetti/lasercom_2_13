@@ -232,6 +232,7 @@ class SaleOrder(models.Model):
         'x_load_line_ids.product_uom_qty',
         'x_load_line_ids.price_unit',
         'x_load_line_ids.price_extra',
+        'x_load_line_deduction_ids.etichetta_si',
         'x_load_line_deduction_ids.price_subtotal',
         'x_load_line_deduction_ids.product_uom_qty',
         'x_load_line_deduction_ids.price_unit',
@@ -246,7 +247,12 @@ class SaleOrder(models.Model):
                 if line.etichetta_si=="yes":
                         price_subtotal_lav+=line.price_subtotal
 
-            price_subtotal_lav -= sum(order.x_load_line_deduction_ids.mapped('price_subtotal'))
+            # Si sottraggono solo i prodotti in sottrazione impostati a SI.
+            price_subtotal_lav -= sum(
+                order.x_load_line_deduction_ids.filtered(
+                    lambda l: l.etichetta_si == 'yes'
+                ).mapped('price_subtotal')
+            )
 
             order.price_subtotal_lav = price_subtotal_lav
 
@@ -288,11 +294,11 @@ class SaleOrder(models.Model):
             order.x_note_installazione_editable = can_edit
 
     # Campi della tab Caricamento Prodotti che l'utente normale non puo' piu'
-    # toccare dopo la conferma del modulo (o dell'ordine).
+    # toccare dopo la conferma del modulo.
     # x_load_ids resta fuori: e' derivato dalle righe ordine tramite
     # _onchange_order_line_sync_x_load_ids, quindi bloccarlo lato server
     # impedirebbe anche le normali modifiche alle righe dell'ordine
-    # confermato. In vista e' comunque readonly quando l'ordine e' bloccato.
+    # confermato. In vista e' comunque readonly quando il modulo e' confermato.
     _X_LOAD_LOCKED_FIELDS = {
         'x_load_line_ids',
         'x_load_line_deduction_ids',
@@ -315,12 +321,14 @@ class SaleOrder(models.Model):
     x_load_locked = fields.Boolean(
         string="Caricamento bloccato",
         compute="_compute_x_load_locked",
-        help="Vero quando il modulo o l'ordine sono gia' confermati e "
-             "l'utente non e' Sales Manager ne' Admin LAV: la tab "
-             "Caricamento Prodotti diventa di sola lettura.",
+        help="Vero quando il modulo e' gia' confermato e l'utente non e' "
+             "Sales Manager ne' Admin LAV: la tab Caricamento Prodotti "
+             "diventa di sola lettura. La conferma dell'ordine non blocca: "
+             "il venditore deve poter applicare il caricamento e compilare "
+             "SI/NO prima di confermare il modulo.",
     )
 
-    @api.depends('state', 'x_modulo_confermato')
+    @api.depends('x_modulo_confermato')
     def _compute_x_load_locked(self):
         can_edit_confirmed = (
             self.env.user.has_group('sales_team.group_sale_manager')
@@ -328,15 +336,11 @@ class SaleOrder(models.Model):
         )
         for order in self:
             order.x_load_locked = (
-                not can_edit_confirmed
-                and (
-                    order.x_modulo_confermato
-                    or order.state not in ('draft', 'sent')
-                )
+                not can_edit_confirmed and order.x_modulo_confermato
             )
 
     def _check_x_load_not_locked(self):
-        """Blocca le modifiche al Caricamento Prodotti su modulo/ordine confermati.
+        """Blocca le modifiche al Caricamento Prodotti a modulo confermato.
 
         Il controllo lato vista (readonly) copre l'interfaccia, questo copre
         import, chiamate RPC e ogni altra scrittura fatta dall'utente. Le
@@ -351,7 +355,7 @@ class SaleOrder(models.Model):
             return
 
         raise UserError(_(
-            "Modulo o ordine gia' confermato: il Caricamento Prodotti non e' piu' "
+            "Modulo gia' confermato: il Caricamento Prodotti non e' piu' "
             "modificabile.\n\n"
             "Ordini interessati:\n%s\n\n"
             "Per variazioni rivolgersi a un Sales Manager o a un Admin LAV."
@@ -866,7 +870,7 @@ class SaleOrder(models.Model):
                         )
 
                         raise ValidationError(_(
-                            "Può esistere una sola riga con valore SI per lo stesso gruppo etichetta.\n\n"
+                            "Attenzione: per questo gruppo di etichette c'e' gia' un SI.\n\n"
                             "Etichetta: %s\n"
                             "Righe in conflitto:\n%s"
                         ) % (
@@ -998,7 +1002,10 @@ class SaleOrder(models.Model):
         if set(vals) & self._X_LOAD_LOCKED_FIELDS:
             self._check_x_load_not_locked()
 
-        res = super(SaleOrder, self).write(vals)
+        # Il controllo SI per gruppo etichetta si fa una volta sola a fine
+        # salvataggio: riga per riga fallirebbe se nello stesso salvataggio
+        # l'utente mette a NO la vecchia riga SI dopo aver messo a SI la nuova.
+        res = super(SaleOrder, self.with_context(x_defer_si_tag_check=True)).write(vals)
 
         if 'x_load_line_ids' in vals and not self.env.context.get('skip_unique_si_tag_check'):
             self._check_unique_si_per_tag_group_on_order()
@@ -1053,6 +1060,7 @@ class SaleOrder(models.Model):
         non manager. Non cambia lo stato dell'ordine: la conferma
         dell'ordine resta al tasto Conferma standard.
         """
+        self._check_conferma_modulo_allowed()
         self._check_etichetta_si_on_editable_load_lines()
         self._check_lavorazione_si_price_subtotal()
 
@@ -1062,6 +1070,29 @@ class SaleOrder(models.Model):
         self.write({'x_modulo_confermato': True})
 
         return True
+
+    def _check_conferma_modulo_allowed(self):
+        """
+        Stesse condizioni della visibilita' del tasto Conferma Modulo, ripetute
+        lato server per le chiamate RPC: ordine non annullato, modulo non
+        ancora confermato e Caricamento Prodotti gia' applicato.
+        """
+        errors = []
+
+        for order in self:
+            if order.state == 'cancel':
+                errors.append(_("- %s: ordine annullato") % order.display_name)
+            elif order.x_modulo_confermato:
+                errors.append(_("- %s: modulo gia' confermato") % order.display_name)
+            elif not order.x_load_line_ids:
+                errors.append(_("- %s: Caricamento Prodotti non applicato") % order.display_name)
+
+        if not errors:
+            return
+
+        raise UserError(_(
+            "Impossibile confermare il modulo.\n\n%s"
+        ) % "\n".join(errors))
 
     def action_confirm(self):
         self._check_data_contratto()
@@ -1304,6 +1335,14 @@ class SaleOrderXLoadLine(models.Model):
         string='SI/NO',default=''
     )
     attachment_product = fields.Binary("Allegato", Copy=False)
+    # Nome del file: serve al widget binary per scaricare l'allegato con
+    # nome ed estensione corretti.
+    attachment_product_name = fields.Char("Nome allegato", copy=False)
+    # Stesso file mostrato come miniatura in una colonna separata: un campo
+    # a parte permette di attivare/nascondere le due colonne indipendentemente.
+    attachment_product_preview = fields.Binary(
+        related="attachment_product", string="Anteprima", readonly=True
+    )
     x_locked_by_tag = fields.Boolean(
         string='Bloccata da etichetta',
         compute='_compute_x_locked_by_tag',
@@ -1324,27 +1363,6 @@ class SaleOrderXLoadLine(models.Model):
         for rec in self:
             if rec.tag_true and not rec.tag_ids:
                 raise ValidationError(_("Il campo Tags è obbligatorio quando Edit è attivo."))
-
-    @api.onchange('etichetta_si', 'tag_ids')
-    def _onchange_etichetta_si_force_same_tag_no(self):
-        """
-        Aggiorna subito le altre righe con la stessa etichetta a NO,
-        senza attendere il salvataggio: così l'utente vede l'effetto
-        in tabella restando sulla riga che sta modificando.
-        """
-        for line in self:
-            if line.display_type or line.etichetta_si != 'yes' or not line.tag_ids or not line.order_id:
-                continue
-
-            siblings = (line.order_id.x_load_line_ids - line).filtered(
-                lambda other: not other.display_type
-                              and other.tag_ids
-                              and (other.tag_ids & line.tag_ids)
-            )
-
-            for sibling in siblings:
-                if sibling.etichetta_si != 'no':
-                    sibling.etichetta_si = 'no'
 
     @api.onchange('uom_id', 'product_uom_height', 'product_uom_length','x_lavorazione')
     def product_uom_change(self):
@@ -1453,7 +1471,7 @@ class SaleOrderXLoadLine(models.Model):
         return super().unlink()
 
     def _check_order_not_locked(self):
-        """Nessuna modifica alle righe di caricamento di ordini gia' confermati
+        """Nessuna modifica alle righe di caricamento con modulo gia' confermato
         per chi non e' Sales Manager o Admin LAV."""
         self.mapped("order_id")._check_x_load_not_locked()
 
@@ -1494,7 +1512,19 @@ class SaleOrderXLoadLine(models.Model):
         if order_ids:
             self.env["sale.order"].browse(set(order_ids))._check_x_load_not_locked()
 
-        return super().create(vals_list)
+        lines = super().create(vals_list)
+        lines._check_unique_si_per_tag_group_by_user()
+        return lines
+
+    def _check_unique_si_per_tag_group_by_user(self):
+        """Scritture dell'utente fuori dal salvataggio dell'ordine (RPC,
+        import): se nel gruppo etichetta c'e' gia' un SI si blocca. Il
+        salvataggio dall'ordine lo controlla SaleOrder.write a fine scrittura;
+        le scritture interne in sudo (Applica Caricamento) mettono invece a
+        NO le altre righe del gruppo."""
+        if self.env.su or self.env.context.get('x_defer_si_tag_check'):
+            return
+        self.mapped('order_id')._check_unique_si_per_tag_group_on_order()
 
     @api.model
     def _apply_lavorazione_qty_on_vals(self, vals):
@@ -1632,6 +1662,12 @@ class SaleOrderXLoadLine(models.Model):
         if vals.get("etichetta_si") != "yes":
             return res
 
+        # Per l'utente niente NO automatico: se nel gruppo c'e' gia' un SI
+        # il salvataggio si blocca con un errore.
+        if not self.env.su:
+            self._check_unique_si_per_tag_group_by_user()
+            return res
+
         selected_lines = self.filtered(
             lambda l: l.etichetta_si == "yes"
                       and l.order_id
@@ -1763,6 +1799,16 @@ class SaleOrderXLoadLineDeduction(models.Model):
         readonly=True,
     )
     price_subtotal = fields.Monetary(compute='_compute_amount', string='Costo', store=True)
+    # Vuoto di default: il venditore sceglie esplicitamente SI o NO.
+    etichetta_si = fields.Selection(
+        [
+            ('yes', 'SI'),
+            ('no', 'NO'),
+        ],
+        string='SI/NO',
+        help="Solo le righe impostate a SI vengono sottratte dal Totale "
+             "costi installazione.",
+    )
 
     @api.depends('product_uom_qty', 'price_unit')
     def _compute_amount(self):
@@ -1770,10 +1816,10 @@ class SaleOrderXLoadLineDeduction(models.Model):
             line.price_subtotal = (line.price_unit or 0.0) * (line.product_uom_qty or 0.0)
 
     # Unici campi che il venditore puo' modificare sui prodotti in sottrazione.
-    _SALESMAN_WRITABLE_FIELDS = {'product_uom_qty'}
+    _SALESMAN_WRITABLE_FIELDS = {'product_uom_qty', 'etichetta_si'}
 
     def write(self, vals):
-        """Il venditore puo' modificare solo la Qta. Creazione ed
+        """Il venditore puo' modificare solo Qta e SI/NO. Creazione ed
         eliminazione sono gia' negate dai permessi d'accesso."""
         is_manager = (
             self.env.su
