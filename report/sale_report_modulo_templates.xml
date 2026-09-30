@@ -94,7 +94,7 @@
                                 </t>
                                 <t t-if="not line.display_type">
                                     <td name="td_name">
-                                        <span t-if="line.product_id" t-esc="line.product_id.display_name"/>
+                                        <span t-if="line.product_id" t-esc="line.product_id.with_context(display_default_code=False).display_name"/>
                                         <span t-if="not line.product_id" t-field="line.name"/>
                                     </td>
                                     <td name="td_quantity" class="text-right">

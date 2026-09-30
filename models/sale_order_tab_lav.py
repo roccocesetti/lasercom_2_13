@@ -11,6 +11,7 @@ from datetime import datetime, timedelta
 import logging
 from collections import defaultdict
 import base64
+from lxml import etree
 _logger = logging.getLogger(__name__)
 
 
@@ -287,7 +288,7 @@ class SaleOrder(models.Model):
             order.x_note_installazione_editable = can_edit
 
     # Campi della tab Caricamento Prodotti che l'utente normale non puo' piu'
-    # toccare dopo la conferma dell'ordine.
+    # toccare dopo la conferma del modulo (o dell'ordine).
     # x_load_ids resta fuori: e' derivato dalle righe ordine tramite
     # _onchange_order_line_sync_x_load_ids, quindi bloccarlo lato server
     # impedirebbe anche le normali modifiche alle righe dell'ordine
@@ -302,15 +303,24 @@ class SaleOrder(models.Model):
         'price_aggiunt_inst',
     }
 
+    x_modulo_confermato = fields.Boolean(
+        string="Modulo confermato",
+        readonly=True,
+        copy=False,
+        help="Impostato dal tasto Conferma Modulo dopo i controlli sul "
+             "Caricamento Prodotti e la generazione del PDF del Modulo "
+             "Installazione.",
+    )
+
     x_load_locked = fields.Boolean(
         string="Caricamento bloccato",
         compute="_compute_x_load_locked",
-        help="Vero quando l'ordine e' gia' confermato e l'utente non e' "
-             "Sales Manager ne' Admin LAV: la tab Caricamento Prodotti "
-             "diventa di sola lettura.",
+        help="Vero quando il modulo o l'ordine sono gia' confermati e "
+             "l'utente non e' Sales Manager ne' Admin LAV: la tab "
+             "Caricamento Prodotti diventa di sola lettura.",
     )
 
-    @api.depends('state')
+    @api.depends('state', 'x_modulo_confermato')
     def _compute_x_load_locked(self):
         can_edit_confirmed = (
             self.env.user.has_group('sales_team.group_sale_manager')
@@ -319,11 +329,14 @@ class SaleOrder(models.Model):
         for order in self:
             order.x_load_locked = (
                 not can_edit_confirmed
-                and order.state not in ('draft', 'sent')
+                and (
+                    order.x_modulo_confermato
+                    or order.state not in ('draft', 'sent')
+                )
             )
 
     def _check_x_load_not_locked(self):
-        """Blocca le modifiche al Caricamento Prodotti sugli ordini confermati.
+        """Blocca le modifiche al Caricamento Prodotti su modulo/ordine confermati.
 
         Il controllo lato vista (readonly) copre l'interfaccia, questo copre
         import, chiamate RPC e ogni altra scrittura fatta dall'utente. Le
@@ -338,7 +351,7 @@ class SaleOrder(models.Model):
             return
 
         raise UserError(_(
-            "L'ordine e' gia' confermato: il Caricamento Prodotti non e' piu' "
+            "Modulo o ordine gia' confermato: il Caricamento Prodotti non e' piu' "
             "modificabile.\n\n"
             "Ordini interessati:\n%s\n\n"
             "Per variazioni rivolgersi a un Sales Manager o a un Admin LAV."
@@ -619,8 +632,47 @@ class SaleOrder(models.Model):
                         "editable": True,
                     })
 
+            order._apply_deduction_templates(replace=replace)
+
             order._compute_amount_lav()
         return True
+
+    def _apply_deduction_templates(self, replace=True):
+        """Aggiunge ai Prodotti in sottrazione dell'ordine le righe del
+        template Prodotti in Sottrazione (x.product.load.deduction).
+
+        Le righe manuali non vengono toccate. Con replace le righe gia'
+        generate dal template vengono ricreate, altrimenti si aggiungono solo
+        quelle del template non ancora presenti sull'ordine."""
+        templates = self.env["x.product.load.deduction"].sudo().search([])
+        Deduction = self.env["sale.order.x_load_line_deduction"].sudo()
+
+        for order in self:
+            from_template = order.x_load_line_deduction_ids.filtered(
+                lambda l: l.deduction_template_id
+            )
+
+            if replace:
+                from_template.unlink()
+                existing_templates = self.env["x.product.load.deduction"]
+            else:
+                existing_templates = from_template.mapped("deduction_template_id")
+
+            sequence = max(
+                (order.x_load_line_deduction_ids.exists().mapped("sequence") or [0])
+            ) + 10
+
+            for template in templates - existing_templates:
+                Deduction.create({
+                    "order_id": order.id,
+                    "deduction_template_id": template.id,
+                    "sequence": sequence,
+                    "product_id": template.product_id.id,
+                    "name": template.name or template.product_id.display_name,
+                    "product_uom_qty": template.product_uom_qty,
+                    "price_unit": template.price_unit,
+                })
+                sequence += 10
 
 
 
@@ -954,24 +1006,73 @@ class SaleOrder(models.Model):
         return res
 
 
-    def action_confirm(self):
+    @api.model
+    def fields_view_get(self, view_id=None, view_type='form', toolbar=False, submenu=False):
+        """Per chi non e' Sales Manager ne' Admin LAV toglie i tasti
+        aggiungi/elimina dalle liste delle righe di caricamento e dei
+        prodotti in sottrazione: il venditore puo' solo modificare le righe
+        generate da Applica Caricamento."""
+        res = super(SaleOrder, self).fields_view_get(
+            view_id=view_id, view_type=view_type, toolbar=toolbar, submenu=submenu
+        )
 
+        if view_type != 'form':
+            return res
+
+        if (self.env.user.has_group('sales_team.group_sale_manager')
+                or self.env.user.has_group('lasercom_2_13.group_admin_lav')):
+            return res
+
+        locked_fields = ('x_load_line_ids', 'x_load_line_deduction_ids')
+
+        def _lock_tree(tree):
+            tree.set('create', 'false')
+            tree.set('delete', 'false')
+            for control in tree.xpath("./control"):
+                tree.remove(control)
+
+        doc = etree.XML(res['arch'])
+        for field_name in locked_fields:
+            for tree in doc.xpath("//field[@name='%s']/tree" % field_name):
+                _lock_tree(tree)
+        res['arch'] = etree.tostring(doc, encoding='unicode')
+
+        for field_name in locked_fields:
+            tree_view = res.get('fields', {}).get(field_name, {}).get('views', {}).get('tree')
+            if tree_view:
+                sub_doc = etree.XML(tree_view['arch'])
+                _lock_tree(sub_doc)
+                tree_view['arch'] = etree.tostring(sub_doc, encoding='unicode')
+
+        return res
+
+    def action_conferma_modulo(self):
+        """
+        Tasto Conferma Modulo: controlla il Caricamento Prodotti, genera il
+        PDF del Modulo Installazione e blocca il caricamento per gli utenti
+        non manager. Non cambia lo stato dell'ordine: la conferma
+        dell'ordine resta al tasto Conferma standard.
+        """
         self._check_etichetta_si_on_editable_load_lines()
         self._check_lavorazione_si_price_subtotal()
-        self._check_data_contratto()
-        res = super(SaleOrder, self).action_confirm()
 
         for order in self:
             order._generate_installation_module_pdf()
 
-        return res
+        self.write({'x_modulo_confermato': True})
+
+        return True
+
+    def action_confirm(self):
+        self._check_data_contratto()
+        return super(SaleOrder, self).action_confirm()
 
     def _check_data_contratto(self):
         """
-        Alla conferma dell'ordine la Data contratto deve essere valorizzata.
-        Va controllata prima degli altri controlli perche' il campo diventa
-        readonly appena l'ordine esce dagli stati bozza/inviato: se la
-        conferma passasse senza data, non sarebbe piu' possibile inserirla.
+        Alla conferma dell'ordine la Data contratto deve essere valorizzata:
+        il campo diventa readonly appena l'ordine esce dagli stati
+        bozza/inviato, quindi se la conferma passasse senza data non sarebbe
+        piu' possibile inserirla.
         """
         missing = self.filtered(lambda o: not o.data_contratto)
 
@@ -985,7 +1086,7 @@ class SaleOrder(models.Model):
 
     def _check_etichetta_si_on_editable_load_lines(self):
         """
-        Alla conferma dell'ordine ogni riga editabile del Caricamento Prodotti
+        Alla conferma del modulo ogni riga editabile del Caricamento Prodotti
         deve avere il campo SI/NO valorizzato: il venditore deve aver deciso
         esplicitamente se la riga va installata (SI) oppure no (NO).
         """
@@ -1006,7 +1107,7 @@ class SaleOrder(models.Model):
 
             raise UserError(_(
                 "Tutte le righe editabili del Caricamento Prodotti devono avere "
-                "il campo SI/NO valorizzato prima di confermare l'ordine.\n\n"
+                "il campo SI/NO valorizzato prima di confermare il modulo.\n\n"
                 "Ordine: %s\n"
                 "Righe da completare:\n%s"
             ) % (
@@ -1016,7 +1117,7 @@ class SaleOrder(models.Model):
 
     def _check_lavorazione_si_price_subtotal(self):
         """
-        Alla conferma dell'ordine ogni riga di lavorazione con SI deve avere
+        Alla conferma del modulo ogni riga di lavorazione con SI deve avere
         il Tot.riga maggiore di zero: una lavorazione da eseguire non puo'
         restare senza importo.
         """
@@ -1045,7 +1146,7 @@ class SaleOrder(models.Model):
 
             raise UserError(_(
                 "Tutte le lavorazioni con SI devono avere il Tot.riga maggiore "
-                "di zero prima di confermare l'ordine.\n\n"
+                "di zero prima di confermare il modulo.\n\n"
                 "Ordine: %s\n"
                 "Righe da completare:\n%s"
             ) % (
@@ -1387,6 +1488,8 @@ class SaleOrderXLoadLine(models.Model):
             else:
                 self._apply_lavorazione_qty_on_vals(vals)
 
+        self._set_sequence_at_end_on_vals(vals_list)
+
         order_ids = [vals["order_id"] for vals in vals_list if vals.get("order_id")]
         if order_ids:
             self.env["sale.order"].browse(set(order_ids))._check_x_load_not_locked()
@@ -1442,8 +1545,62 @@ class SaleOrderXLoadLine(models.Model):
             if qty and float_compare(qty, line.product_uom_qty, precision_rounding=0.01) != 0:
                 line.write({"product_uom_qty": qty})
 
+    @api.model
+    def _set_sequence_at_end_on_vals(self, vals_list):
+        """La sequenza delle righe la decide Applica Caricamento (in sudo).
+        Le righe aggiunte a mano vanno sempre in fondo all'ordine, qualunque
+        sequenza arrivi dal client."""
+        if self.env.su:
+            return
+
+        next_sequence = {}
+
+        for vals in vals_list:
+            order_id = vals.get("order_id")
+            if not order_id:
+                continue
+
+            if order_id not in next_sequence:
+                existing = self.sudo().search(
+                    [("order_id", "=", order_id)], order="sequence desc", limit=1
+                )
+                next_sequence[order_id] = (existing.sequence or 0) + 10
+
+            vals["sequence"] = next_sequence[order_id]
+            next_sequence[order_id] += 10
+
+    def _check_sequence_not_changed(self, vals):
+        """La sequenza delle righe di caricamento non e' modificabile: resta
+        quella generata da Applica Caricamento."""
+        if "sequence" not in vals or self.env.su:
+            return
+
+        if any(line.sequence != vals["sequence"] for line in self):
+            raise UserError(_(
+                "La sequenza delle righe di caricamento non e' modificabile."
+            ))
+
+    def _check_product_not_changed_by_salesman(self, vals):
+        """Il prodotto delle righe di caricamento lo decide Applica
+        Caricamento (in sudo): chi non e' Sales Manager o Admin LAV non puo'
+        cambiarlo."""
+        if "product_id" not in vals or self.env.su:
+            return
+
+        if (self.env.user.has_group('sales_team.group_sale_manager')
+                or self.env.user.has_group('lasercom_2_13.group_admin_lav')):
+            return
+
+        new_product_id = vals["product_id"] or False
+        if any(line.product_id.id != new_product_id for line in self):
+            raise UserError(_(
+                "Il prodotto delle righe di caricamento non e' modificabile."
+            ))
+
     def write(self, vals):
         self._check_order_not_locked()
+        self._check_product_not_changed_by_salesman(vals)
+        self._check_sequence_not_changed(vals)
 
         if vals.get("display_type") == "line_section":
             vals.update({
@@ -1585,6 +1742,14 @@ class SaleOrderXLoadLineDeduction(models.Model):
     _order = "sequence,id asc"
 
     order_id = fields.Many2one("sale.order", required=True, ondelete="cascade")
+    deduction_template_id = fields.Many2one(
+        "x.product.load.deduction",
+        string="Da template",
+        ondelete="set null",
+        readonly=True,
+        help="Valorizzato quando la riga e' stata generata da Applica "
+             "Caricamento a partire dal template Prodotti in Sottrazione.",
+    )
     sequence = fields.Integer(string="Sequenza", default=10, index=True)
     product_id = fields.Many2one("product.product", string="Prodotto", required=False)
     default_code = fields.Char(related="product_id.default_code", string="Codice", readonly=True, store=False)
@@ -1604,6 +1769,25 @@ class SaleOrderXLoadLineDeduction(models.Model):
         for line in self:
             line.price_subtotal = (line.price_unit or 0.0) * (line.product_uom_qty or 0.0)
 
+    # Unici campi che il venditore puo' modificare sui prodotti in sottrazione.
+    _SALESMAN_WRITABLE_FIELDS = {'product_uom_qty'}
+
+    def write(self, vals):
+        """Il venditore puo' modificare solo la Qta. Creazione ed
+        eliminazione sono gia' negate dai permessi d'accesso."""
+        is_manager = (
+            self.env.su
+            or self.env.user.has_group('sales_team.group_sale_manager')
+            or self.env.user.has_group('lasercom_2_13.group_admin_lav')
+        )
+
+        if not is_manager and set(vals) - self._SALESMAN_WRITABLE_FIELDS:
+            raise UserError(_(
+                "Sui prodotti in sottrazione si puo' modificare solo la Qta."
+            ))
+
+        return super(SaleOrderXLoadLineDeduction, self).write(vals)
+
     @api.onchange('product_id')
     def _onchange_product_id(self):
         for line in self:
@@ -1615,4 +1799,29 @@ class SaleOrderXLoadLineDeduction(models.Model):
                 line.price_unit = line.product_id.standard_price
 
 
+class ProductLoadDeduction(models.Model):
+    """Template dei prodotti in sottrazione: elenco dei prodotti che possono
+    essere sottratti dal Caricamento Prodotti sull'ordine."""
+    _name = "x.product.load.deduction"
+    _description = "Template Prodotti in Sottrazione"
+    _order = "sequence,id asc"
+
+    sequence = fields.Integer(string="Sequenza", default=10, index=True)
+    active = fields.Boolean(default=True)
+    product_id = fields.Many2one("product.product", string="Prodotto", required=True)
+    default_code = fields.Char(related="product_id.default_code", string="Codice", readonly=True, store=False)
+    name = fields.Char(string="Descrizione")
+    product_uom_qty = fields.Float(string="Qta", default=1.0)
+    price_unit = fields.Float(string="Costo", digits='Product Price')
+    note = fields.Char(string="Nota")
+
+    @api.onchange('product_id')
+    def _onchange_product_id(self):
+        for line in self:
+            if not line.product_id:
+                continue
+            if not line.name:
+                line.name = line.product_id.display_name
+            if not line.price_unit:
+                line.price_unit = line.product_id.standard_price
 
