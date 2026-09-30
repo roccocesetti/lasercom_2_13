@@ -179,6 +179,41 @@
         <field name="view_mode">tree,form</field>
     </record>
 
+    <record id="view_x_product_load_deduction_tree" model="ir.ui.view">
+        <field name="name">x.product.load.deduction.tree</field>
+        <field name="model">x.product.load.deduction</field>
+        <field name="arch" type="xml">
+            <tree string="Prodotti in sottrazione" editable="bottom">
+                <field name="sequence" widget="handle"/>
+                <field name="product_id"/>
+                <field name="default_code" readonly="1"/>
+                <field name="name"/>
+                <field name="product_uom_qty"/>
+                <field name="price_unit"/>
+                <field name="note" class="x_note_wide" optional="show"/>
+                <field name="active" invisible="1"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="view_x_product_load_deduction_search" model="ir.ui.view">
+        <field name="name">x.product.load.deduction.search</field>
+        <field name="model">x.product.load.deduction</field>
+        <field name="arch" type="xml">
+            <search string="Prodotti in sottrazione">
+                <field name="product_id"/>
+                <field name="name"/>
+                <filter string="Archiviati" name="inactive" domain="[('active','=',False)]"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_x_product_load_deduction" model="ir.actions.act_window">
+        <field name="name">Prodotti in Sottrazione</field>
+        <field name="res_model">x.product.load.deduction</field>
+        <field name="view_mode">tree</field>
+    </record>
+
     <record id="action_x_product_load_tags" model="ir.actions.act_window">
         <field name="name">Etichette</field>
         <field name="res_model">x.product.load.tag</field>
@@ -197,6 +232,12 @@
               action="action_x_product_load"
               groups="sales_team.group_sale_manager,lasercom_2_13.group_admin_lav"
               sequence="10"/>
+    <menuitem id="menu_x_product_load_deduction"
+              name="Prodotti in Sottrazione"
+              parent="menu_x_product_load_root"
+              action="action_x_product_load_deduction"
+              groups="sales_team.group_sale_manager,lasercom_2_13.group_admin_lav"
+              sequence="20"/>
     <menuitem id="menu_x_product_load_tag"
               name="Etichette"
               parent="menu_x_product_load_root"
@@ -216,6 +257,12 @@
               action="action_x_product_load"
               groups="sales_team.group_sale_manager,lasercom_2_13.group_admin_lav"
               sequence="10"/>
+    <menuitem id="menu_x_product_load_deduction_2"
+              name="Prodotti in Sottrazione"
+              parent="menu_x_product_load_root_2"
+              action="action_x_product_load_deduction"
+              groups="sales_team.group_sale_manager,lasercom_2_13.group_admin_lav"
+              sequence="20"/>
     <menuitem id="menu_x_product_load_tag_2"
               name="Etichette"
               parent="menu_x_product_load_root_2"
@@ -291,8 +338,15 @@
                         <widget name="goto_tab" target="Note modello" label="Vai a Note modello" class="oe_highlight ml-auto"/>
                     </div>
 
+                    <field name="x_load_locked" invisible="1"/>
+                    <div class="alert alert-warning mt-2" role="alert"
+                         attrs="{'invisible': [('x_load_locked','=',False)]}">
+                        Modulo confermato: il Caricamento Prodotti e' di sola lettura.
+                        Per variazioni rivolgersi a un Sales Manager o a un Admin LAV.
+                    </div>
+
                     <group>
-                        <field name="x_load_ids" options="{'no_create': True}" widget="many2many_tags"/>
+                        <field name="x_load_ids" options="{'no_create': True}" widget="many2many_tags" attrs="{'readonly': [('x_load_locked','=',True)]}"/>
                         <button name="action_apply_product_load"
                     type="object"
                     string="Applica Caricamento (Sostituisci righe)"
@@ -300,10 +354,10 @@
                     groups="sales_team.group_sale_manager,lasercom_2_13.group_admin_lav"
                     attrs="{'invisible': [('x_load_ids','=',False)]}"/>
                         <field name="price_subtotal_lav"  widget="monetary"/>
-                        <field name="price_aggiunt_inst" widget="monetary" groups="sales_team.group_sale_salesman,lasercom_2_13.group_admin_lav" attrs="{'readonly': [('x_note_installazione_editable','=',False)]}"/>
-                        <field name="date_module"  />
+                        <field name="price_aggiunt_inst" widget="monetary" groups="sales_team.group_sale_salesman,lasercom_2_13.group_admin_lav" attrs="{'readonly': ['|',('x_note_installazione_editable','=',False),('x_load_locked','=',True)]}"/>
+                        <field name="date_module" attrs="{'readonly': [('x_load_locked','=',True)]}"/>
                         <field name="date_module_display" readonly="1"/>
-                        <field name="date_installation"/>
+                        <field name="date_installation" attrs="{'readonly': [('x_load_locked','=',True)]}"/>
                         <field name="date_installation_display" readonly="1" option="hide"/>
 <label for="sale_acq_usage" string="Acquisto usato" attrs="{'invisible': [('sale_acq_usage', '&lt;=', 0)]}"/>
                             <field name="sale_acq_usage" nolabel="1"  groups="base.group_user" />
@@ -332,9 +386,10 @@
                                nolabel="1"
                                 colspan="4"
                                 limit="160"
+                               attrs="{'readonly': [('x_load_locked','=',True)]}"
                                widget="section_and_note_one2many" context="{'check_unique_si_tag_group': True}" >
                             <tree editable="bottom" decoration-info="sale_line_id" limit="160"
-
+                                  decoration-danger="editable and not etichetta_si and not display_type"
                                   >
                                 <control>
                                     <create string="Aggiungi riga"/>
@@ -344,11 +399,11 @@
 
                                 <field name="x_load_id" optional="hide" readonly="1" attrs="{'column_invisible': [('parent.x_show_manager_fields','=',False)]}"/>
                                 <field name="x_locked_by_tag"  optional="hide" attrs="{'column_invisible': [('parent.x_show_manager_fields','=',False)]}"/>
-                                <field name="sequence" widget="handle" optional="hide" attrs="{'column_invisible': [('parent.x_show_manager_fields','=',False)]}"/>
+                                <field name="sequence" readonly="1" optional="hide" attrs="{'column_invisible': [('parent.x_show_manager_fields','=',False)]}"/>
                                 <field name="sale_line_id" readonly="1" optional="hide" attrs="{'column_invisible': [('parent.x_show_manager_fields','=',False)]}"/>
                                 <field name="display_type" invisible="1"/>
 
-                                <field name="name" widget="section_and_note_text" attrs="{'readonly': [('display_type','=',False)],'invisible': [('display_type','=',False)],'column_invisible': [('parent.x_show_manager_fields','=',False)]}"/>
+                                <field name="name" widget="section_and_note_text" attrs="{'readonly': [('display_type','=',False)],'invisible': [('display_type','=',False)]}"/>
                                 <field name="tag_true" optional="hide" attrs="{'readonly':True,'column_invisible': [('parent.x_show_manager_fields','=',False)]}"/>
                                  <field name="tag_ids" widget="many2many_tags" optional="show"
        attrs="{'required': [('tag_true', '=', True)],'column_invisible': [('parent.x_show_manager_fields','=',False)]}"/>
@@ -356,9 +411,11 @@
                                 <field name="editable" optional="hide" attrs="{'column_invisible': [('parent.x_show_manager_fields','=',False)]}"/>
                                 <field name="etichetta_si"  optional="show" attrs="{'readonly': [('editable','=',False)]}"/>
                                 <field name="product_uom_qty" optional="show" attrs="{'readonly': ['|','|',('x_locked_by_tag', '=', True),('editable','=',False),'&amp;',('x_lavorazione','=',True),('parent.x_show_manager_fields','=',False)]}"/>
-                                <field name="product_id"  attrs="{'readonly': ['|',('x_locked_by_tag', '=', True),('editable','=',False)]}" />
+                                <field name="product_id"  attrs="{'readonly': ['|','|',('x_locked_by_tag', '=', True),('editable','=',False),('parent.x_show_manager_fields','=',False)]}" />
                                 <field name="x_lavorazione" optional="hide" attrs="{'invisible': [('display_type','!=',False)],'column_invisible': [('parent.x_show_manager_fields','=',False)]}"/>
-                                <field name="attachment_product" widget="image" options="{'size': [40, 40]}" attrs="{'invisible': [('display_type','!=',False)]}" optional="show"/>
+                                <field name="attachment_product_name" invisible="1"/>
+                                <field name="attachment_product" widget="binary" filename="attachment_product_name" string="Allegato" attrs="{'invisible': [('display_type','!=',False)]}" optional="hide"/>
+                                <field name="attachment_product_preview" widget="image" options="{'size': [40, 40]}" attrs="{'invisible': [('display_type','!=',False)]}" optional="hide"/>
                                 <field name="tipo_vetrina"  class="x_tipo_vetrina_anchor" optional="hide" attrs="{'readonly': ['|',('x_locked_by_tag', '=', True),('editable','=',False)],'column_invisible': [('parent.x_show_manager_fields','=',False)]}"/>
                                 <field name="tipo_vetrina" invisible="1" readonly="1"/>
                                  <field name="price_unit" optional="show" attrs="{'readonly': ['|',('x_locked_by_tag', '=', True),('editable','=',False)],'column_invisible': [('parent.x_show_manager_fields','=',False)]}"/>
@@ -380,14 +437,15 @@
 
               <xpath expr="//notebook" position="inside">
                 <page string="Note modello">
+                    <field name="x_load_locked" invisible="1"/>
                     <group  groups="sales_team.group_sale_salesman,lasercom_2_13.group_admin_lav">
                     <label for="note_modulo_installazione" string="note_modulo_installazione" />
                       <field name="x_note_installazione_editable" invisible="1"/>
-                      <field name="note_modulo_installazione" nolabel="1" attrs="{'readonly': [('x_note_installazione_editable','=',False)]}"/>
+                      <field name="note_modulo_installazione" nolabel="1" attrs="{'readonly': ['|',('x_note_installazione_editable','=',False),('x_load_locked','=',True)]}"/>
                     </group>
                     <group  groups="sales_team.group_sale_salesman">
                     <label for="note_modulo_agente" string="note_modulo_agente" />
-                      <field name="note_modulo_agente" nolabel="1" />
+                      <field name="note_modulo_agente" nolabel="1" attrs="{'readonly': [('x_load_locked','=',True)]}"/>
                     </group>
                 </page>
               </xpath>
@@ -416,7 +474,8 @@
                 <button name="%(lasercom_2_13.action_report_saleorder_laser_modulo)d"
                         type="action"
                         string="Stampa Modulo Installazione"
-                        class="btn-secondary"/>
+                        class="btn-secondary"
+                        groups="sales_team.group_sale_manager,lasercom_2_13.group_admin_lav"/>
                 <button name="action_open_sale_order_standard_form_note_modello"
                         type="object"
                         string="Vai a Note modello"
@@ -430,25 +489,32 @@
                     </h1>
                 </div>
 
+                <field name="x_load_locked" invisible="1"/>
+                <div class="alert alert-warning mt-2" role="alert"
+                     attrs="{'invisible': [('x_load_locked','=',False)]}">
+                    Modulo confermato: il Caricamento Prodotti e' di sola lettura.
+                    Per variazioni rivolgersi a un Sales Manager o a un Admin LAV.
+                </div>
+
                 <group>
                     <group>
-                        <field name="x_load_ids" options="{'no_create': True}" widget="many2many_tags"/>
+                        <field name="x_load_ids" options="{'no_create': True}" widget="many2many_tags" attrs="{'readonly': [('x_load_locked','=',True)]}"/>
 
                               <button name="action_apply_product_load"
                         type="object"
-                        string="Applica Caricamento"
+                        string="Caricamento modulo di installazione"
                         class="oe_highlight"
                         groups="sales_team.group_sale_manager,lasercom_2_13.group_admin_lav"
                         attrs="{'invisible': [('x_load_ids','=',False)]}"/>
 
                         <field name="price_subtotal_lav" widget="monetary"/>
-                        <field name="price_aggiunt_inst" widget="monetary" groups="sales_team.group_sale_salesman,lasercom_2_13.group_admin_lav" attrs="{'readonly': [('x_note_installazione_editable','=',False)]}"/>
+                        <field name="price_aggiunt_inst" widget="monetary" groups="sales_team.group_sale_salesman,lasercom_2_13.group_admin_lav" attrs="{'readonly': ['|',('x_note_installazione_editable','=',False),('x_load_locked','=',True)]}"/>
                     </group>
 
                     <group>
-                        <field name="date_module" />
+                        <field name="date_module" attrs="{'readonly': [('x_load_locked','=',True)]}"/>
                         <field name="date_module_display" readonly="1"/>
-                        <field name="date_installation" />
+                        <field name="date_installation" attrs="{'readonly': [('x_load_locked','=',True)]}"/>
                         <field name="date_installation_display" readonly="1" />
                          <label for="sale_acq_usage" string="Acquisto usato" attrs="{'invisible': [('sale_acq_usage', '&lt;=', 0)]}"/>
                             <field name="sale_acq_usage" nolabel="1"  groups="base.group_user" />
@@ -456,15 +522,31 @@
                     </group>
                 </group>
 
+                <div groups="sales_team.group_sale_manager,sales_team.group_sale_salesman,lasercom_2_13.group_admin_lav">
+                    <separator string="Prodotti in sottrazione"/>
+                    <field name="x_load_line_deduction_ids" nolabel="1" limit="160" attrs="{'readonly': [('x_load_locked','=',True)]}">
+                        <tree editable="bottom" limit="160">
+                            <field name="sequence" widget="handle" attrs="{'column_invisible': [('parent.x_show_manager_fields','=',False)]}"/>
+                            <field name="product_id" attrs="{'readonly': [('parent.x_show_manager_fields','=',False)]}"/>
+                            <field name="default_code" readonly="1"/>
+                            <field name="name" string="Nome" attrs="{'readonly': [('parent.x_show_manager_fields','=',False)]}"/>
+                            <field name="product_uom_qty" string="Qta"/>
+                            <field name="etichetta_si"/>
+                            <field name="price_unit" string="Costo" attrs="{'column_invisible': [('parent.x_show_manager_fields','=',False)]}"/>
+                            <field name="price_subtotal" string="Tot." attrs="{'column_invisible': [('parent.x_show_manager_fields','=',False)]}"/>
+                        </tree>
+                    </field>
+                </div>
+
                 <div class="alert alert-info mt-2" role="alert" groups="sales_team.group_sale_salesman,lasercom_2_13.group_admin_lav">
                     <group>
                         <field name="x_note_installazione_editable" invisible="1"/>
-                        <field name="note_modulo_installazione" string="Note installazione" attrs="{'readonly': [('x_note_installazione_editable','=',False)]}"/>
+                        <field name="note_modulo_installazione" string="Note installazione" attrs="{'readonly': ['|',('x_note_installazione_editable','=',False),('x_load_locked','=',True)]}"/>
                     </group>
                 </div>
                 <div class="alert alert-info mt-2" role="alert" groups="sales_team.group_sale_salesman">
                     <group>
-                        <field name="note_modulo_agente" string="Note agente"/>
+                        <field name="note_modulo_agente" string="Note agente" attrs="{'readonly': [('x_load_locked','=',True)]}"/>
                     </group>
                 </div>
 
@@ -482,9 +564,11 @@
                 <field name="x_load_line_ids"
                        nolabel="1"
                        limit="160"
+                       attrs="{'readonly': [('x_load_locked','=',True)]}"
                        widget="section_and_note_one2many" class="sticky_header_only_this_list"  context="{'check_unique_si_tag_group': True}">
                     <tree editable="bottom"
                           decoration-info="sale_line_id"
+                          decoration-danger="editable and not etichetta_si and not display_type"
                           limit="160" >
 
                         <control>
@@ -494,7 +578,7 @@
                         </control>
                         <field name="x_load_id" optional="hide" readonly="1" attrs="{'column_invisible': [('parent.x_show_manager_fields','=',False)]}"/>
                         <field name="x_locked_by_tag" optional="hide" attrs="{'column_invisible': [('parent.x_show_manager_fields','=',False)]}"/>
-                        <field name="sequence" widget="handle" optional="hide" attrs="{'column_invisible': [('parent.x_show_manager_fields','=',False)]}"/>
+                        <field name="sequence" readonly="1" optional="hide" attrs="{'column_invisible': [('parent.x_show_manager_fields','=',False)]}"/>
                         <field name="sale_line_id" readonly="1" optional="hide" attrs="{'column_invisible': [('parent.x_show_manager_fields','=',False)]}"/>
                         <field name="display_type" invisible="1"/>
 
@@ -502,8 +586,7 @@
                                widget="section_and_note_text"
                                attrs="{
                                    'readonly': [('display_type','=',False)],
-                                   'invisible': [('display_type','=',False)],
-                                   'column_invisible': [('parent.x_show_manager_fields','=',False)]
+                                   'invisible': [('display_type','=',False)]
                                }"/>
 
                         <field name="tag_true"
@@ -536,12 +619,15 @@
                         <field name="product_id"
                                attrs="{
                                    'readonly': [
-                                       '|',
+                                       '|', '|',
                                        ('x_locked_by_tag', '=', True),
-                                       ('editable','=',False)
+                                       ('editable','=',False),
+                                       ('parent.x_show_manager_fields','=',False)
                                    ]
                                }"/>
-                        <field name="attachment_product" widget="image" options="{'size': [40, 40]}" attrs="{'invisible': [('display_type','!=',False)]}" optional="hide"/>
+                        <field name="attachment_product_name" invisible="1"/>
+                        <field name="attachment_product" widget="binary" filename="attachment_product_name" string="Allegato" attrs="{'invisible': [('display_type','!=',False)]}" optional="hide"/>
+                        <field name="attachment_product_preview" widget="image" options="{'size': [40, 40]}" attrs="{'invisible': [('display_type','!=',False)]}" optional="hide"/>
                         <field name="x_lavorazione"
                                optional="hide"
                                attrs="{'invisible': [('display_type','!=',False)], 'column_invisible': [('parent.x_show_manager_fields','=',False)]}"/>

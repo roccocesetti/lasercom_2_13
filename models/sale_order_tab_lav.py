@@ -10,6 +10,8 @@ from odoo.tools import float_is_zero, float_compare
 from datetime import datetime, timedelta
 import logging
 from collections import defaultdict
+import base64
+from lxml import etree
 _logger = logging.getLogger(__name__)
 
 
@@ -230,6 +232,10 @@ class SaleOrder(models.Model):
         'x_load_line_ids.product_uom_qty',
         'x_load_line_ids.price_unit',
         'x_load_line_ids.price_extra',
+        'x_load_line_deduction_ids.etichetta_si',
+        'x_load_line_deduction_ids.price_subtotal',
+        'x_load_line_deduction_ids.product_uom_qty',
+        'x_load_line_deduction_ids.price_unit',
     )
     def _compute_amount_lav(self):
         """
@@ -241,6 +247,12 @@ class SaleOrder(models.Model):
                 if line.etichetta_si=="yes":
                         price_subtotal_lav+=line.price_subtotal
 
+            # Si sottraggono solo i prodotti in sottrazione impostati a SI.
+            price_subtotal_lav -= sum(
+                order.x_load_line_deduction_ids.filtered(
+                    lambda l: l.etichetta_si == 'yes'
+                ).mapped('price_subtotal')
+            )
 
             order.price_subtotal_lav = price_subtotal_lav
 
@@ -280,6 +292,74 @@ class SaleOrder(models.Model):
         )
         for order in self:
             order.x_note_installazione_editable = can_edit
+
+    # Campi della tab Caricamento Prodotti che l'utente normale non puo' piu'
+    # toccare dopo la conferma del modulo.
+    # x_load_ids resta fuori: e' derivato dalle righe ordine tramite
+    # _onchange_order_line_sync_x_load_ids, quindi bloccarlo lato server
+    # impedirebbe anche le normali modifiche alle righe dell'ordine
+    # confermato. In vista e' comunque readonly quando il modulo e' confermato.
+    _X_LOAD_LOCKED_FIELDS = {
+        'x_load_line_ids',
+        'x_load_line_deduction_ids',
+        'note_modulo_installazione',
+        'note_modulo_agente',
+        'date_module',
+        'date_installation',
+        'price_aggiunt_inst',
+    }
+
+    x_modulo_confermato = fields.Boolean(
+        string="Modulo confermato",
+        readonly=True,
+        copy=False,
+        help="Impostato dal tasto Conferma Modulo dopo i controlli sul "
+             "Caricamento Prodotti e la generazione del PDF del Modulo "
+             "Installazione.",
+    )
+
+    x_load_locked = fields.Boolean(
+        string="Caricamento bloccato",
+        compute="_compute_x_load_locked",
+        help="Vero quando il modulo e' gia' confermato e l'utente non e' "
+             "Sales Manager ne' Admin LAV: la tab Caricamento Prodotti "
+             "diventa di sola lettura. La conferma dell'ordine non blocca: "
+             "il venditore deve poter applicare il caricamento e compilare "
+             "SI/NO prima di confermare il modulo.",
+    )
+
+    @api.depends('x_modulo_confermato')
+    def _compute_x_load_locked(self):
+        can_edit_confirmed = (
+            self.env.user.has_group('sales_team.group_sale_manager')
+            or self.env.user.has_group('lasercom_2_13.group_admin_lav')
+        )
+        for order in self:
+            order.x_load_locked = (
+                not can_edit_confirmed and order.x_modulo_confermato
+            )
+
+    def _check_x_load_not_locked(self):
+        """Blocca le modifiche al Caricamento Prodotti a modulo confermato.
+
+        Il controllo lato vista (readonly) copre l'interfaccia, questo copre
+        import, chiamate RPC e ogni altra scrittura fatta dall'utente. Le
+        scritture interne del modulo girano in sudo (env.su) e non vengono
+        bloccate."""
+        if self.env.su or self.env.context.get('skip_x_load_lock'):
+            return
+
+        locked = self.filtered(lambda o: o.x_load_locked)
+
+        if not locked:
+            return
+
+        raise UserError(_(
+            "Modulo gia' confermato: il Caricamento Prodotti non e' piu' "
+            "modificabile.\n\n"
+            "Ordini interessati:\n%s\n\n"
+            "Per variazioni rivolgersi a un Sales Manager o a un Admin LAV."
+        ) % "\n".join("- %s" % order.display_name for order in locked))
 
     def _sync_x_load_ids_from_order_lines(self):
         for order in self:
@@ -379,7 +459,32 @@ class SaleOrder(models.Model):
 
             order.x_load_line_ids = commands
 
+    def action_apply_product_load_if_empty(self):
+        """Bottone "Applica Caricamento" nell'header, usato dai venditori.
+
+        Se le righe di caricamento sono gia' valorizzate salta la generazione,
+        cosi' il venditore non puo' sovrascrivere il lavoro fatto sulle righe.
+        La sostituzione resta possibile agli amministratori con i bottoni
+        della tab Caricamento Prodotti, che chiamano direttamente
+        action_apply_product_load."""
+        self._check_x_load_not_locked()
+
+        for order in self:
+            if order.x_load_line_ids:
+                _logger.info(
+                    "Applica Caricamento saltato per l'ordine %s: righe di caricamento gia' presenti.",
+                    order.display_name,
+                )
+                continue
+            order.action_apply_product_load()
+        return True
+
     def action_apply_product_load(self, replace=True):
+        # Esegue in sudo: il venditore deve poter lanciare il caricamento
+        # anche se non ha (piu') accesso in scrittura ai moduli
+        # x.product.load / x.product.load.line, che restano di sola lettura
+        # per il suo gruppo.
+        self = self.sudo()
         SaleOrderXLoadLine = self.env["sale.order.x_load_line"].sudo()
 
         for order in self:
@@ -476,7 +581,12 @@ class SaleOrder(models.Model):
                             "product_uom_length": ll.product_uom_length,
                             "product_uom_width": ll.product_uom_width,
                             "product_uom_qty": 0.0 if ll.display_type else (ll.product_uom_qty or 0.0) * qty,
-                            "price_unit": 0.0 if ll.display_type else (ll.product_id.standard_price or 0.0),
+                            # Prima il prezzo della riga del modulo di caricamento,
+                            # standard_price solo come fallback: prima si prendeva
+                            # sempre standard_price e il prezzo configurato sul
+                            # modulo veniva perso, mentre il price_extra della
+                            # stessa riga arrivava regolarmente.
+                            "price_unit": 0.0 if ll.display_type else (ll.price_unit or ll.product_id.standard_price or 0.0),
                             "price_extra": 0.0 if ll.display_type else (ll.price_extra or 0.0),
                             "supplier_id": ll.supplier_id.id if ll.supplier_id and not ll.display_type else False,
                             "editable": ll.editable,
@@ -526,470 +636,48 @@ class SaleOrder(models.Model):
                         "editable": True,
                     })
 
+            order._apply_deduction_templates(replace=replace)
+
             order._compute_amount_lav()
         return True
 
-    def action_apply_product_load_old4(self, replace=True):
-        """
-        Genera le righe sale.order.x_load_line partendo dalle righe ordine.
+    def _apply_deduction_templates(self, replace=True):
+        """Aggiunge ai Prodotti in sottrazione dell'ordine le righe del
+        template Prodotti in Sottrazione (x.product.load.deduction).
 
-        Regole:
-        - solo i prodotti principali generano il modulo;
-        - un prodotto principale è una riga con x_load_id e optional_product_ids;
-        - le righe successive non principali sommano quantità alle righe generate;
-        - se nello stesso blocco un prodotto successivo è ripetuto, viene bloccato.
-        """
-        SaleOrderXLoadLine = self.env["sale.order.x_load_line"]
+        Le righe manuali non vengono toccate. Con replace le righe gia'
+        generate dal template vengono ricreate, altrimenti si aggiungono solo
+        quelle del template non ancora presenti sull'ordine."""
+        templates = self.env["x.product.load.deduction"].sudo().search([])
+        Deduction = self.env["sale.order.x_load_line_deduction"].sudo()
 
         for order in self:
-            if not order.id or not isinstance(order.id, int):
-                raise UserError(_("Salva prima il preventivo prima di applicare il caricamento prodotti."))
-
-            order_lines = order.order_line.filtered(
-                lambda l: not l.display_type and l.product_id
-            ).sorted(key=lambda l: (l.sequence, l.id))
-
-            if not order_lines:
-                raise UserError(_("Non sono presenti righe prodotto nell'ordine."))
-
-            def _get_optional_products(line):
-                template = line.product_id.product_tmpl_id if line.product_id else False
-                if not template:
-                    return self.env["product.product"]
-                return getattr(template, "optional_product_ids", self.env["product.product"])
-
-            def _get_line_load(line):
-                """
-                Recupera il modulo caricamento:
-                - prima dalla riga ordine;
-                - se vuoto, dal template prodotto.
-                Non scrive nulla sulla riga ordine.
-                """
-                if line.x_load_id:
-                    return line.x_load_id
-
-                template = line.product_id.product_tmpl_id if line.product_id else False
-                if template and template.x_load_id:
-                    return template.x_load_id
-
-                return self.env["x.product.load"]
-
-            def _is_main_line(line):
-                """
-                Riga principale = prodotto che contiene optional_product_ids
-                e che ha un modulo x_load_id, anche recuperato dal template.
-                """
-                return bool(_get_optional_products(line) and _get_line_load(line))
-
-
-
-
-
-
-            if replace and order.x_load_line_ids:
-                order.x_load_line_ids.unlink()
-
-            sequence = 10
-            current_main_line = False
-            current_generated_by_product = {}
-            current_optional_counter = defaultdict(int)
-
-            for so_line in order_lines:
-                product = so_line.product_id
-                qty = so_line.product_uom_qty or 0.0
-
-                if qty <= 0.0:
-                    raise UserError(
-                        _("La quantità del prodotto '%s' deve essere maggiore di zero.") % product.display_name)
-
-                if _is_main_line(so_line):
-                    current_main_line = so_line
-                    current_generated_by_product = {}
-                    current_optional_counter = defaultdict(int)
-
-                    load = so_line.x_load_id
-
-                    SaleOrderXLoadLine.create({
-                        "order_id": order.id,
-                        "x_load_id": load.id,
-                        "sequence": sequence,
-                        "product_id": product.id,
-                        "product_uom_qty": qty,
-                        "price_unit": so_line.purchase_price or 0.0,
-                        "price_extra": 0.0,
-                        "name": so_line.name,
-                        "editable": False,
-                    })
-                    sequence += 10
-
-                    for ll in load.line_ids.sorted(key=lambda l: (l.sequence, l.id)):
-                        vals = {
-                            "order_id": order.id,
-                            "x_load_id": load.id,
-                            "sequence": sequence,
-                            "display_type": ll.display_type,
-                            "name": ll.name or (ll.product_id.display_name if ll.product_id else False),
-                            "product_id": ll.product_id.id if ll.product_id and not ll.display_type else False,
-                            "product_uom_height": ll.product_uom_height,
-                            "product_uom_length": ll.product_uom_length,
-                            "product_uom_width": ll.product_uom_width,
-                            "product_uom_qty": 0.0 if ll.display_type else (ll.product_uom_qty or 0.0) * qty,
-                            "price_unit": 0.0 if ll.display_type else (ll.price_unit or 0.0),
-                            "price_extra": 0.0 if ll.display_type else (ll.price_extra or 0.0),
-                            "supplier_id": ll.supplier_id.id if ll.supplier_id and not ll.display_type else False,
-                            "editable": ll.editable,
-                            "tipo_vetrina": ll.tipo_vetrina,
-                            "note": ll.note,
-                            "x_lavorazione": ll.x_lavorazione,
-                            "tag_true": ll.tag_true,
-                            "tag_ids": [(6, 0, ll.tag_ids.ids)],
-                        }
-
-                        created_line = SaleOrderXLoadLine.create(vals)
-
-                        if created_line.product_id and not created_line.display_type:
-                            current_generated_by_product.setdefault(
-                                created_line.product_id.product_tmpl_id.id,
-                                created_line
-                            )
-
-                        sequence += 10
-
-                    continue
-
-                # Riga successiva/non principale.
-                if not current_main_line:
-                    continue
-
-                product_key = product.product_tmpl_id.id
-
-                current_optional_counter[product_key] += 1
-                if current_optional_counter[product_key] > 1:
-                    raise UserError(_(
-                        "Nel blocco del prodotto principale '%s' il prodotto '%s' "
-                        "è stato inserito più di una volta."
-                    ) % (
-                                        current_main_line.product_id.display_name,
-                                        product.display_name,
-                                    ))
-
-                target_line = current_generated_by_product.get(product_key)
-
-                if target_line:
-                    target_line.write({
-                        "product_uom_qty": (target_line.product_uom_qty or 0.0) + qty,
-                    })
-
-        return True
-    def action_apply_product_load_old3(self, replace=True):
-        """
-        Carica le righe di lavorazione su sale.order.x_load_line.
-
-        Regole:
-        - solo le righe ordine che hanno x_load_id generano il modulo;
-        - le righe ordine senza x_load_id non vengono aggiunte come righe nuove;
-        - le righe senza x_load_id incrementano la quantità della riga generata
-          con lo stesso product_id;
-        - il controllo duplicati viene fatto per blocco, cioè tra un prodotto
-          con x_load_id e il successivo prodotto con x_load_id.
-        """
-        SaleOrderXLoadLine = self.env["sale.order.x_load_line"]
-
-        for order in self:
-            if not order.id or not isinstance(order.id, int):
-                raise UserError(_("Salva prima il preventivo prima di applicare il caricamento prodotti."))
-
-            order_lines = order.order_line.filtered(
-                lambda l: not l.display_type and l.product_id
-            ).sorted(key=lambda l: (l.sequence, l.id))
-
-            if not order_lines:
-                raise UserError(_("Non sono presenti righe prodotto nell'ordine."))
-
-            # Recupero x_load_id dal prodotto, se non già valorizzato sulla riga ordine
-            for so_line in order_lines:
-                if not so_line.x_load_id and so_line.product_id.product_tmpl_id.x_load_id:
-                    so_line.x_load_id = so_line.product_id.product_tmpl_id.x_load_id
-
-            main_lines = order_lines.filtered(lambda l: l.x_load_id)
-            if not main_lines:
-                raise UserError(_(
-                    "Nessuna riga ordine contiene un modulo di caricamento prodotti."
-                ))
-
-            if replace and order.x_load_line_ids:
-                order.x_load_line_ids.unlink()
-
-            sequence = 10
-
-            current_main_line = False
-            current_generated_by_product = {}
-            current_optional_counter = defaultdict(int)
-
-            for so_line in order_lines:
-                product = so_line.product_id
-                qty = so_line.product_uom_qty or 0.0
-
-                if qty <= 0.0:
-                    raise UserError(_(
-                        "La quantità del prodotto '%s' deve essere maggiore di zero."
-                    ) % product.display_name)
-
-                # CASO 1: riga ordine principale, cioè con modulo x_load_id
-                if so_line.x_load_id:
-                    current_main_line = so_line
-                    current_generated_by_product = {}
-                    current_optional_counter = defaultdict(int)
-
-                    load = so_line.x_load_id
-
-                    # Riga testata del prodotto principale
-                    SaleOrderXLoadLine.create({
-                        "order_id": order.id,
-                        "x_load_id": load.id,
-                        "sequence": sequence,
-                        "product_id": product.id,
-                        "product_uom_qty": qty,
-                        "price_unit": so_line.purchase_price or 0.0,
-                        "price_extra": 0.0,
-                        "name": so_line.name,
-                        "editable": False,
-                    })
-                    sequence += 10
-
-                    # Righe del modulo caricamento
-                    for ll in load.line_ids.sorted(key=lambda l: (l.sequence, l.id)):
-                        vals = {
-                            "order_id": order.id,
-                            "x_load_id": load.id,
-                            "sequence": sequence,
-                            "display_type": ll.display_type,
-                            "name": ll.name or (ll.product_id.display_name if ll.product_id else False),
-                            "product_id": ll.product_id.id if ll.product_id and not ll.display_type else False,
-                            "product_uom_height": ll.product_uom_height,
-                            "product_uom_length": ll.product_uom_length,
-                            "product_uom_width": ll.product_uom_width,
-
-                            # Quantità base del modulo moltiplicata per la quantità della riga principale
-                            "product_uom_qty": 0.0 if ll.display_type else (ll.product_uom_qty or 0.0) * qty,
-
-                            "price_unit": 0.0 if ll.display_type else (ll.price_unit or 0.0),
-                            "price_extra": 0.0 if ll.display_type else (ll.price_extra or 0.0),
-                            "supplier_id": ll.supplier_id.id if ll.supplier_id and not ll.display_type else False,
-                            "editable": ll.editable,
-                            "tipo_vetrina": ll.tipo_vetrina,
-                            "note": ll.note,
-                            "x_lavorazione": ll.x_lavorazione,
-                            "tag_true": ll.tag_true,
-                            "tag_ids": [(6, 0, ll.tag_ids.ids)],
-                        }
-
-                        created_line = SaleOrderXLoadLine.create(vals)
-
-                        # Mappa prodotto -> riga generata.
-                        # Serve per sommare le quantità delle righe ordine senza x_load_id.
-                        if created_line.product_id and not created_line.display_type:
-                            current_generated_by_product.setdefault(
-                                created_line.product_id.id,
-                                created_line
-                            )
-
-                        sequence += 10
-
-                    continue
-
-                # CASO 2: riga ordine senza x_load_id.
-                # Non viene aggiunta come nuova riga: aggiorna solo quantità.
-                if not current_main_line:
-                    # Riga senza modulo prima di qualsiasi prodotto principale: la ignoro.
-                    # Se preferisci bloccarla, sostituisci con UserError.
-                    continue
-
-                current_optional_counter[product.id] += 1
-                if current_optional_counter[product.id] > 1:
-                    raise UserError(_(
-                        "Nel blocco del prodotto principale '%s' il prodotto '%s' "
-                        "è stato inserito più di una volta."
-                    ) % (
-                                        current_main_line.product_id.display_name,
-                                        product.display_name,
-                                    ))
-
-                target_line = current_generated_by_product.get(product.id)
-
-                if not target_line:
-                    raise UserError(_(
-                        "Il prodotto '%s' è presente nelle righe ordine senza modulo di caricamento, "
-                        "ma non esiste una riga corrispondente nel modulo '%s' del prodotto principale '%s'.\n"
-                        "Non è quindi possibile sommare la quantità."
-                    ) % (
-                                        product.display_name,
-                                        current_main_line.x_load_id.display_name,
-                                        current_main_line.product_id.display_name,
-                                    ))
-
-                target_line.write({
-                    "product_uom_qty": (target_line.product_uom_qty or 0.0) + qty,
-                })
-
-        return True
-
-    def action_apply_product_load_old2(self, replace=True):
-        SaleOrderXLoadLine = self.env["sale.order.x_load_line"]
-
-        for order in self:
-            if not order.id or not isinstance(order.id, int):
-                raise UserError(_("Salva prima il preventivo prima di applicare il caricamento prodotti."))
-
-            order_lines = order.order_line.filtered(
-                lambda l: not l.display_type and l.product_id
+            from_template = order.x_load_line_deduction_ids.filtered(
+                lambda l: l.deduction_template_id
             )
 
-            if not order_lines:
-                raise UserError(_("Non sono presenti righe prodotto nell'ordine."))
+            if replace:
+                from_template.unlink()
+                existing_templates = self.env["x.product.load.deduction"]
+            else:
+                existing_templates = from_template.mapped("deduction_template_id")
 
-            for so_line in order_lines:
-                if not so_line.x_load_id and so_line.product_id.product_tmpl_id.x_load_id:
-                    so_line.x_load_id = so_line.product_id.product_tmpl_id.x_load_id
+            sequence = max(
+                (order.x_load_line_deduction_ids.exists().mapped("sequence") or [0])
+            ) + 10
 
-            missing_load_lines = order_lines.filtered(lambda l: not l.x_load_id)
-            if missing_load_lines:
-                products = "\n".join(
-                    "- %s" % (line.product_id.display_name or line.name)
-                    for line in missing_load_lines
-                )
-                raise UserError(_(
-                    "I seguenti prodotti dell'ordine non hanno un modulo di caricamento prodotti collegato:\n%s"
-                ) % products)
-
-            # NUOVO CONTROLLO PER BLOCCHI DI OPZIONALI
-            order._check_optional_product_blocks()
-
-            if replace and order.x_load_line_ids:
-                order.x_load_line_ids.unlink()
-
-            sequence = 10
-
-            for so_line in order_lines.sorted(key=lambda l: (l.sequence, l.id)):
-                load = so_line.x_load_id
-                multiplier_qty = so_line.product_uom_qty or 0.0
-
-                if multiplier_qty <= 0.0:
-                    raise UserError(_(
-                        "La quantità del prodotto '%s' deve essere maggiore di zero."
-                    ) % so_line.product_id.display_name)
-
-                SaleOrderXLoadLine.create({
+            for template in templates - existing_templates:
+                Deduction.create({
                     "order_id": order.id,
-                    "x_load_id": load.id,
+                    "deduction_template_id": template.id,
                     "sequence": sequence,
-                    "product_id": so_line.product_id.id,
-                    "product_uom_qty": multiplier_qty,
-                    "price_unit": so_line.purchase_price or 0.0,
-                    "price_extra": 0.0,
-                    "name": so_line.name,
-                    "editable": False,
+                    "product_id": template.product_id.id,
+                    "name": template.name or template.product_id.display_name,
+                    "product_uom_qty": template.product_uom_qty,
+                    "price_unit": template.price_unit,
                 })
                 sequence += 10
 
-                for ll in load.line_ids.sorted(key=lambda l: (l.sequence, l.id)):
-                    SaleOrderXLoadLine.create({
-                        "order_id": order.id,
-                        "x_load_id": load.id,
-                        "sequence": sequence,
-                        "display_type": ll.display_type,
-                        "name": ll.name or (ll.product_id.display_name if ll.product_id else False),
-                        "product_id": ll.product_id.id if ll.product_id and not ll.display_type else False,
-                        "product_uom_height": ll.product_uom_height,
-                        "product_uom_length": ll.product_uom_length,
-                        "product_uom_width": ll.product_uom_width,
-
-                        # quantità riga modulo moltiplicata per quantità riga ordine
-                        "product_uom_qty": 0.0 if ll.display_type else (ll.product_uom_qty or 0.0) * multiplier_qty,
-
-                        "price_unit": 0.0 if ll.display_type else (ll.price_unit or 0.0),
-                        "price_extra": 0.0 if ll.display_type else (ll.price_extra or 0.0),
-                        "supplier_id": ll.supplier_id.id if ll.supplier_id and not ll.display_type else False,
-                        "editable": ll.editable,
-                        "tipo_vetrina": ll.tipo_vetrina,
-                        "note": ll.note,
-                        "tag_true": ll.tag_true,
-                        "tag_ids": [(6, 0, ll.tag_ids.ids)],
-                    })
-                    sequence += 10
-
-        return True
-    def action_apply_product_load_old(self, replace=True):
-        """
-        Carica tutte le righe x.product.load.line in sale.order.line.
-        replace=True  -> rimpiazza le righe ordine
-        replace=False -> aggiunge alle righe esistenti
-        """
-
-        for order in self:
-            #if not order.x_load_ids:
-            #   raise UserError(_("Seleziona un Caricamento Prodotti."))
-            if not order.id or not isinstance(order.id, int):
-                raise UserError(_("Salva prima il preventivo prima di applicare il caricamento prodotti."))
-            if replace:
-                if  order.x_load_line_ids:
-                    order.x_load_line_ids.unlink()
-
-            # Creazione righe ordine
-            testata = True
-            for x_load_id in order.x_load_ids:
-                for ll in x_load_id.line_ids:
-                    # usa new() + onchange per avere descrizione, tasse, uom coerenti con Odoo
-                    if self.order_line and testata:
-                        line = self.env["sale.order.x_load_line"].new({
-                            "order_id": order.id,
-                            "product_id": self.order_line[0].product_id.id,
-                            "product_uom_qty": 1.0,
-                            "price_unit": self.order_line[0].purchase_price,
-                            "x_load_id": x_load_id.id
-
-                        })
-                        line._onchange_product_id()
-                        vals = line._convert_to_write(line._cache)
-                        testata = False
-                        self.env["sale.order.x_load_line"].create(vals)
-                    line = self.env["sale.order.x_load_line"].new({
-                        "order_id": order.id,
-                        "x_load_id": x_load_id.id,
-                        "product_id": ll.product_id.id,
-                        "product_uom_qty": ll.product_uom_qty or 1.0,
-                        "product_uom_height": ll.product_uom_height,
-                        "product_uom_length": ll.product_uom_length,
-                        "product_uom_width": ll.product_uom_width,
-                        "price_unit": ll.price_unit,
-                        "price_extra": ll.price_extra,
-                        "supplier_id": ll.supplier_id,
-                        "editable": ll.editable,
-                        "tipo_vetrina": ll.tipo_vetrina,
-                        "note": ll.note,
-                        "display_type": ll.display_type,
-                        "name": ll.name,
-                        "x_lavorazione": ll.x_lavorazione,
-                        "tag_true": ll.tag_true,
-                        "tag_ids": [(6, 0, ll.tag_ids.ids)],
-                    })
-                    line._onchange_product_id()
-                    vals = line._convert_to_write(line._cache)
-
-                    # Override prezzo e nota da caricamento
-                    if ll.price_unit:
-                        vals["price_unit"] = ll.price_unit
-                    vals["note"] = ll.note or False
-
-                    # opzionale: se vuoi la nota anche nel testo riga:
-                    # if ll.note:
-                    #     vals["name"] = (vals.get("name") or "") + "\n" + ll.note
-
-                    vals["order_id"] = order.id
-                    vals['display_type']: ll.display_type
-                    self.env["sale.order.x_load_line"].create(vals)
-
-        return True
 
 
 
@@ -1069,8 +757,28 @@ class SaleOrder(models.Model):
         copy=False,
     )
 
+    x_load_line_deduction_ids = fields.One2many(
+        "sale.order.x_load_line_deduction",
+        "order_id",
+        string="Righe Sottrazione Caricamento",
+        copy=False,
+    )
 
-    price_subtotal_lav = fields.Monetary(compute='_compute_amount_lav', string='Totale costi installazione', readonly=True, store=True)
+    x_has_load_line = fields.Boolean(
+        string='Caricamento gia valorizzato',
+        compute='_compute_x_has_load_line',
+        store=False,
+        help="Usato per nascondere il bottone Applica Caricamento nell'header "
+             "quando le righe di caricamento sono gia' presenti."
+    )
+
+    @api.depends('x_load_line_ids')
+    def _compute_x_has_load_line(self):
+        for order in self:
+            order.x_has_load_line = bool(order.x_load_line_ids)
+
+
+    price_subtotal_lav = fields.Monetary(compute='_compute_amount_lav', compute_sudo=True, string='Totale costi installazione', readonly=True, store=True)
     price_aggiunt_inst = fields.Monetary(string='Costo aggiuntivo installazione', digits='Product Price', default=0.0)
     date_module = fields.Date(string='Consegna Richiesta dal Cliente',  copy=False,
                                 default=_default_validity_date_2)
@@ -1162,7 +870,7 @@ class SaleOrder(models.Model):
                         )
 
                         raise ValidationError(_(
-                            "Può esistere una sola riga con valore SI per lo stesso gruppo etichetta.\n\n"
+                            "Attenzione: per questo gruppo di etichette c'e' gia' un SI.\n\n"
                             "Etichetta: %s\n"
                             "Righe in conflitto:\n%s"
                         ) % (
@@ -1291,12 +999,256 @@ class SaleOrder(models.Model):
         return action
 
     def write(self, vals):
-        res = super(SaleOrder, self).write(vals)
+        if set(vals) & self._X_LOAD_LOCKED_FIELDS:
+            self._check_x_load_not_locked()
+
+        # Il controllo SI per gruppo etichetta si fa una volta sola a fine
+        # salvataggio: riga per riga fallirebbe se nello stesso salvataggio
+        # l'utente mette a NO la vecchia riga SI dopo aver messo a SI la nuova.
+        res = super(SaleOrder, self.with_context(x_defer_si_tag_check=True)).write(vals)
 
         if 'x_load_line_ids' in vals and not self.env.context.get('skip_unique_si_tag_check'):
             self._check_unique_si_per_tag_group_on_order()
 
         return res
+
+
+    @api.model
+    def fields_view_get(self, view_id=None, view_type='form', toolbar=False, submenu=False):
+        """Per chi non e' Sales Manager ne' Admin LAV toglie i tasti
+        aggiungi/elimina dalle liste delle righe di caricamento e dei
+        prodotti in sottrazione: il venditore puo' solo modificare le righe
+        generate da Applica Caricamento."""
+        res = super(SaleOrder, self).fields_view_get(
+            view_id=view_id, view_type=view_type, toolbar=toolbar, submenu=submenu
+        )
+
+        if view_type != 'form':
+            return res
+
+        if (self.env.user.has_group('sales_team.group_sale_manager')
+                or self.env.user.has_group('lasercom_2_13.group_admin_lav')):
+            return res
+
+        locked_fields = ('x_load_line_ids', 'x_load_line_deduction_ids')
+
+        def _lock_tree(tree):
+            tree.set('create', 'false')
+            tree.set('delete', 'false')
+            for control in tree.xpath("./control"):
+                tree.remove(control)
+
+        doc = etree.XML(res['arch'])
+        for field_name in locked_fields:
+            for tree in doc.xpath("//field[@name='%s']/tree" % field_name):
+                _lock_tree(tree)
+        res['arch'] = etree.tostring(doc, encoding='unicode')
+
+        for field_name in locked_fields:
+            tree_view = res.get('fields', {}).get(field_name, {}).get('views', {}).get('tree')
+            if tree_view:
+                sub_doc = etree.XML(tree_view['arch'])
+                _lock_tree(sub_doc)
+                tree_view['arch'] = etree.tostring(sub_doc, encoding='unicode')
+
+        return res
+
+    def action_conferma_modulo(self):
+        """
+        Tasto Conferma Modulo: controlla il Caricamento Prodotti, genera il
+        PDF del Modulo Installazione e blocca il caricamento per gli utenti
+        non manager. Non cambia lo stato dell'ordine: la conferma
+        dell'ordine resta al tasto Conferma standard.
+        """
+        self._check_conferma_modulo_allowed()
+        self._check_etichetta_si_on_editable_load_lines()
+        self._check_lavorazione_si_price_subtotal()
+
+        for order in self:
+            order._generate_installation_module_pdf()
+
+        self.write({'x_modulo_confermato': True})
+
+        return True
+
+    def _check_conferma_modulo_allowed(self):
+        """
+        Stesse condizioni della visibilita' del tasto Conferma Modulo, ripetute
+        lato server per le chiamate RPC: ordine non annullato, modulo non
+        ancora confermato e Caricamento Prodotti gia' applicato.
+        """
+        errors = []
+
+        for order in self:
+            if order.state == 'cancel':
+                errors.append(_("- %s: ordine annullato") % order.display_name)
+            elif order.x_modulo_confermato:
+                errors.append(_("- %s: modulo gia' confermato") % order.display_name)
+            elif not order.x_load_line_ids:
+                errors.append(_("- %s: Caricamento Prodotti non applicato") % order.display_name)
+
+        if not errors:
+            return
+
+        raise UserError(_(
+            "Impossibile confermare il modulo.\n\n%s"
+        ) % "\n".join(errors))
+
+    def action_confirm(self):
+        self._check_data_contratto()
+        return super(SaleOrder, self).action_confirm()
+
+    def _check_data_contratto(self):
+        """
+        Alla conferma dell'ordine la Data contratto deve essere valorizzata:
+        il campo diventa readonly appena l'ordine esce dagli stati
+        bozza/inviato, quindi se la conferma passasse senza data non sarebbe
+        piu' possibile inserirla.
+        """
+        missing = self.filtered(lambda o: not o.data_contratto)
+
+        if not missing:
+            return
+
+        raise UserError(_(
+            "Inserire la Data contratto prima di confermare l'ordine.\n\n"
+            "Ordini senza Data contratto:\n%s"
+        ) % "\n".join("- %s" % order.display_name for order in missing))
+
+    def _check_etichetta_si_on_editable_load_lines(self):
+        """
+        Alla conferma del modulo ogni riga editabile del Caricamento Prodotti
+        deve avere il campo SI/NO valorizzato: il venditore deve aver deciso
+        esplicitamente se la riga va installata (SI) oppure no (NO).
+        """
+        for order in self:
+            missing = order.x_load_line_ids.filtered(
+                lambda l: not l.display_type
+                          and l.editable
+                          and l.etichetta_si not in ('yes', 'no')
+            )
+
+            if not missing:
+                continue
+
+            product_names = "\n".join(
+                "- %s" % (l.product_id.display_name or l.name or _("Riga senza prodotto"))
+                for l in missing
+            )
+
+            raise UserError(_(
+                "Tutte le righe editabili del Caricamento Prodotti devono avere "
+                "il campo SI/NO valorizzato prima di confermare il modulo.\n\n"
+                "Ordine: %s\n"
+                "Righe da completare:\n%s"
+            ) % (
+                order.display_name,
+                product_names,
+            ))
+
+    def _check_lavorazione_si_price_subtotal(self):
+        """
+        Alla conferma del modulo ogni riga di lavorazione con SI deve avere
+        il Tot.riga maggiore di zero: una lavorazione da eseguire non puo'
+        restare senza importo.
+        """
+        for order in self:
+            rounding = order.currency_id.rounding or 0.01
+
+            missing = order.x_load_line_ids.filtered(
+                lambda l: not l.display_type
+                          and l.x_lavorazione
+                          and l.etichetta_si == 'yes'
+                          and float_compare(
+                              l.price_subtotal, 0.0, precision_rounding=rounding
+                          ) <= 0
+            )
+
+            if not missing:
+                continue
+
+            product_names = "\n".join(
+                "- %s (Tot.riga: %s)" % (
+                    l.product_id.display_name or l.name or _("Riga senza prodotto"),
+                    l.price_subtotal,
+                )
+                for l in missing
+            )
+
+            raise UserError(_(
+                "Tutte le lavorazioni con SI devono avere il Tot.riga maggiore "
+                "di zero prima di confermare il modulo.\n\n"
+                "Ordine: %s\n"
+                "Righe da completare:\n%s"
+            ) % (
+                order.display_name,
+                product_names,
+            ))
+
+    def _get_modulo_installazione_lines(self):
+        """
+        Righe da stampare sul Modulo Installazione: le righe di caricamento
+        con SI e quantita' valorizzata, piu' le righe Sezione che le
+        contengono. Le sezioni senza righe da stampare vengono omesse.
+        """
+        self.ensure_one()
+
+        lines = self.x_load_line_ids.sorted(key=lambda l: (l.sequence, l.id))
+
+        line_ids = []
+        pending_section_id = False
+
+        for line in lines:
+            if line.display_type == 'line_section':
+                pending_section_id = line.id
+                continue
+
+            if line.etichetta_si != 'yes' or not line.product_uom_qty:
+                continue
+
+            if pending_section_id:
+                line_ids.append(pending_section_id)
+                pending_section_id = False
+
+            line_ids.append(line.id)
+
+        return self.env['sale.order.x_load_line'].browse(line_ids)
+
+    def _generate_installation_module_pdf(self):
+        self.ensure_one()
+
+        report = self.env.ref(
+            'lasercom_2_13.action_report_saleorder_laser_modulo'
+        )
+
+
+        pdf_content, content_type = report.render_qweb_pdf([self.id])
+
+        filename = 'Modulo Installazione - %s.pdf' % self.name
+
+        # Cerca un eventuale allegato già esistente
+        attachment = self.env['ir.attachment'].search([
+            ('res_model', '=', 'sale.order'),
+            ('res_id', '=', self.id),
+            ('name', '=', filename),
+        ], limit=1)
+
+        vals = {
+            'name': filename,
+            'type': 'binary',
+            'datas': base64.b64encode(pdf_content),
+            'mimetype': 'application/pdf',
+            'res_model': 'sale.order',
+            'res_id': self.id,
+        }
+
+        if attachment:
+            attachment.write(vals)
+        else:
+            self.env['ir.attachment'].create(vals)
+
+        return True
+
 class SaleOrderXLoadLine(models.Model):
     _name = "sale.order.x_load_line"
     _description = "Righe Caricamento su Ordine di Vendita"
@@ -1383,6 +1335,20 @@ class SaleOrderXLoadLine(models.Model):
         string='SI/NO',default=''
     )
     attachment_product = fields.Binary("Allegato", Copy=False)
+    # Nome del file: serve al widget binary per scaricare l'allegato con
+    # nome ed estensione corretti.
+    attachment_product_name = fields.Char("Nome allegato", copy=False)
+    # Stesso file mostrato come miniatura in una colonna separata: un campo
+    # a parte permette di attivare/nascondere le due colonne indipendentemente.
+    attachment_product_preview = fields.Binary(
+        related="attachment_product", string="Anteprima", readonly=True
+    )
+    x_locked_by_tag = fields.Boolean(
+        string='Bloccata da etichetta',
+        compute='_compute_x_locked_by_tag',
+        store=False
+    )
+
     @api.depends('tag_ids', 'order_id.x_filter_tag_id')
     def _compute_x_tag_visible(self):
         for line in self:
@@ -1398,34 +1364,21 @@ class SaleOrderXLoadLine(models.Model):
             if rec.tag_true and not rec.tag_ids:
                 raise ValidationError(_("Il campo Tags è obbligatorio quando Edit è attivo."))
 
-    @api.onchange('etichetta_si', 'tag_ids')
-    def _onchange_etichetta_si_force_same_tag_no(self):
-        """
-        Aggiorna subito le altre righe con la stessa etichetta a NO,
-        senza attendere il salvataggio: così l'utente vede l'effetto
-        in tabella restando sulla riga che sta modificando.
-        """
-        for line in self:
-            if line.display_type or line.etichetta_si != 'yes' or not line.tag_ids or not line.order_id:
-                continue
-
-            siblings = (line.order_id.x_load_line_ids - line).filtered(
-                lambda other: not other.display_type
-                              and other.tag_ids
-                              and (other.tag_ids & line.tag_ids)
-            )
-
-            for sibling in siblings:
-                if sibling.etichetta_si != 'no':
-                    sibling.etichetta_si = 'no'
-
-    @api.onchange('uom_id', 'product_uom_height', 'product_uom_length')
+    @api.onchange('uom_id', 'product_uom_height', 'product_uom_length','x_lavorazione')
     def product_uom_change(self):
         if not self.uom_id or not self.product_id:
             self.product_uom_qty = 0.0
             return
-        self.product_uom_qty=self.product_uom_height*self.product_uom_length
-        self.price_unit=self.product_id.standard_price
+
+        if self.x_lavorazione:
+            self.product_uom_qty=self.product_uom_height*self.product_uom_length
+
+        # Il prezzo si tocca solo se la riga non ne ha ancora uno: altrimenti
+        # ogni modifica di Altezza/Lunghezza lo riportava a standard_price,
+        # azzerando il prezzo che arriva dal modulo di caricamento (o messo a
+        # mano) e con esso il Tot.riga. Stessa regola di _onchange_product_id.
+        if not self.price_unit:
+            self.price_unit=self.product_id.standard_price
     @api.onchange("product_id")
     def _onchange_product_id(self):
             for line in self:
@@ -1514,7 +1467,13 @@ class SaleOrderXLoadLine(models.Model):
         #locked = self.filtered(lambda r: not r.editable)
         #if locked:
         #    raise UserError(_("Riga bloccata: abilita 'Edit' sulla singola riga per eliminarla."))
+        self._check_order_not_locked()
         return super().unlink()
+
+    def _check_order_not_locked(self):
+        """Nessuna modifica alle righe di caricamento con modulo gia' confermato
+        per chi non e' Sales Manager o Admin LAV."""
+        self.mapped("order_id")._check_x_load_not_locked()
 
 
 
@@ -1544,9 +1503,135 @@ class SaleOrderXLoadLine(models.Model):
                     "supplier_id": False,
                     "editable": False,
                 })
+            else:
+                self._apply_lavorazione_qty_on_vals(vals)
 
-        return super().create(vals_list)
+        self._set_sequence_at_end_on_vals(vals_list)
+
+        order_ids = [vals["order_id"] for vals in vals_list if vals.get("order_id")]
+        if order_ids:
+            self.env["sale.order"].browse(set(order_ids))._check_x_load_not_locked()
+
+        lines = super().create(vals_list)
+        lines._check_unique_si_per_tag_group_by_user()
+        return lines
+
+    def _check_unique_si_per_tag_group_by_user(self):
+        """Scritture dell'utente fuori dal salvataggio dell'ordine (RPC,
+        import): se nel gruppo etichetta c'e' gia' un SI si blocca. Il
+        salvataggio dall'ordine lo controlla SaleOrder.write a fine scrittura;
+        le scritture interne in sudo (Applica Caricamento) mettono invece a
+        NO le altre righe del gruppo."""
+        if self.env.su or self.env.context.get('x_defer_si_tag_check'):
+            return
+        self.mapped('order_id')._check_unique_si_per_tag_group_on_order()
+
+    @api.model
+    def _apply_lavorazione_qty_on_vals(self, vals):
+        """Quantita' delle lavorazioni = Altezza * Lunghezza, calcolata qui in
+        creazione.
+
+        L'onchange product_uom_change fa lo stesso calcolo in interfaccia, ma
+        per chi non e' manager il campo Quantita' e' readonly (vista
+        Caricamento Prodotti) e il client non invia i campi readonly al
+        salvataggio: la riga finiva salvata con il default 1 al posto del
+        valore calcolato. Se la quantita' arriva esplicitamente nei vals la
+        rispetto, cosi' il manager puo' ancora forzarla a mano."""
+        if "product_uom_qty" in vals:
+            return
+
+        if not vals.get("product_id"):
+            return
+
+        product = self.env["product.product"].browse(vals["product_id"])
+        if not product.categ_id.x_lavorazione:
+            return
+
+        qty = (vals.get("product_uom_height") or 0.0) * (vals.get("product_uom_length") or 0.0)
+        if qty:
+            vals["product_uom_qty"] = qty
+
+    def _sync_lavorazione_qty_after_write(self, vals):
+        """Riallinea Quantita' = Altezza * Lunghezza sulle righe di lavorazione
+        quando vengono modificate le dimensioni.
+
+        Stesso motivo di _apply_lavorazione_qty_on_vals: la Quantita' e'
+        readonly per chi non e' manager e non arriva dal client. Se la
+        quantita' e' nei vals non tocco niente, cosi' resta forzabile a mano.
+        La write annidata contiene solo product_uom_qty, quindi esce subito da
+        questo metodo e non ricorre."""
+        if "product_uom_qty" in vals:
+            return
+
+        if "product_uom_height" not in vals and "product_uom_length" not in vals:
+            return
+
+        for line in self:
+            if line.display_type or not line.x_lavorazione:
+                continue
+
+            qty = (line.product_uom_height or 0.0) * (line.product_uom_length or 0.0)
+
+            if qty and float_compare(qty, line.product_uom_qty, precision_rounding=0.01) != 0:
+                line.write({"product_uom_qty": qty})
+
+    @api.model
+    def _set_sequence_at_end_on_vals(self, vals_list):
+        """La sequenza delle righe la decide Applica Caricamento (in sudo).
+        Le righe aggiunte a mano vanno sempre in fondo all'ordine, qualunque
+        sequenza arrivi dal client."""
+        if self.env.su:
+            return
+
+        next_sequence = {}
+
+        for vals in vals_list:
+            order_id = vals.get("order_id")
+            if not order_id:
+                continue
+
+            if order_id not in next_sequence:
+                existing = self.sudo().search(
+                    [("order_id", "=", order_id)], order="sequence desc", limit=1
+                )
+                next_sequence[order_id] = (existing.sequence or 0) + 10
+
+            vals["sequence"] = next_sequence[order_id]
+            next_sequence[order_id] += 10
+
+    def _check_sequence_not_changed(self, vals):
+        """La sequenza delle righe di caricamento non e' modificabile: resta
+        quella generata da Applica Caricamento."""
+        if "sequence" not in vals or self.env.su:
+            return
+
+        if any(line.sequence != vals["sequence"] for line in self):
+            raise UserError(_(
+                "La sequenza delle righe di caricamento non e' modificabile."
+            ))
+
+    def _check_product_not_changed_by_salesman(self, vals):
+        """Il prodotto delle righe di caricamento lo decide Applica
+        Caricamento (in sudo): chi non e' Sales Manager o Admin LAV non puo'
+        cambiarlo."""
+        if "product_id" not in vals or self.env.su:
+            return
+
+        if (self.env.user.has_group('sales_team.group_sale_manager')
+                or self.env.user.has_group('lasercom_2_13.group_admin_lav')):
+            return
+
+        new_product_id = vals["product_id"] or False
+        if any(line.product_id.id != new_product_id for line in self):
+            raise UserError(_(
+                "Il prodotto delle righe di caricamento non e' modificabile."
+            ))
+
     def write(self, vals):
+        self._check_order_not_locked()
+        self._check_product_not_changed_by_salesman(vals)
+        self._check_sequence_not_changed(vals)
+
         if vals.get("display_type") == "line_section":
             vals.update({
                 "product_id": False,
@@ -1569,10 +1654,18 @@ class SaleOrderXLoadLine(models.Model):
 
         res = super(SaleOrderXLoadLine, self).write(vals)
 
+        self._sync_lavorazione_qty_after_write(vals)
+
         if self.env.context.get("skip_force_same_tag_no"):
             return res
 
         if vals.get("etichetta_si") != "yes":
+            return res
+
+        # Per l'utente niente NO automatico: se nel gruppo c'e' gia' un SI
+        # il salvataggio si blocca con un errore.
+        if not self.env.su:
+            self._check_unique_si_per_tag_group_by_user()
             return res
 
         selected_lines = self.filtered(
@@ -1622,11 +1715,6 @@ class SaleOrderXLoadLine(models.Model):
         return tuple(sorted(self.tag_ids.ids))
 
 
-    x_locked_by_tag = fields.Boolean(
-        string='Bloccata da etichetta',
-        compute='_compute_x_locked_by_tag',
-        store=False
-    )
 
     @api.depends(
         'etichetta_si',
@@ -1684,4 +1772,102 @@ class SaleOrderXLoadLine(models.Model):
                     _("Può esistere una sola riga SI per gruppo con la stessa etichetta.")  )
 
 
+class SaleOrderXLoadLineDeduction(models.Model):
+    _name = "sale.order.x_load_line_deduction"
+    _description = "Righe Sottrazione Caricamento su Ordine di Vendita"
+    _order = "sequence,id asc"
+
+    order_id = fields.Many2one("sale.order", required=True, ondelete="cascade")
+    deduction_template_id = fields.Many2one(
+        "x.product.load.deduction",
+        string="Da template",
+        ondelete="set null",
+        readonly=True,
+        help="Valorizzato quando la riga e' stata generata da Applica "
+             "Caricamento a partire dal template Prodotti in Sottrazione.",
+    )
+    sequence = fields.Integer(string="Sequenza", default=10, index=True)
+    product_id = fields.Many2one("product.product", string="Prodotto", required=False)
+    default_code = fields.Char(related="product_id.default_code", string="Codice", readonly=True, store=False)
+    name = fields.Char(string="Descrizione")
+    product_uom_qty = fields.Float(string="Qta", default=1.0)
+    price_unit = fields.Float(string="P.Unitario", digits='Product Price')
+    currency_id = fields.Many2one(
+        'res.currency',
+        related='order_id.currency_id',
+        store=True,
+        readonly=True,
+    )
+    price_subtotal = fields.Monetary(compute='_compute_amount', string='Costo', store=True)
+    # Vuoto di default: il venditore sceglie esplicitamente SI o NO.
+    etichetta_si = fields.Selection(
+        [
+            ('yes', 'SI'),
+            ('no', 'NO'),
+        ],
+        string='SI/NO',
+        help="Solo le righe impostate a SI vengono sottratte dal Totale "
+             "costi installazione.",
+    )
+
+    @api.depends('product_uom_qty', 'price_unit')
+    def _compute_amount(self):
+        for line in self:
+            line.price_subtotal = (line.price_unit or 0.0) * (line.product_uom_qty or 0.0)
+
+    # Unici campi che il venditore puo' modificare sui prodotti in sottrazione.
+    _SALESMAN_WRITABLE_FIELDS = {'product_uom_qty', 'etichetta_si'}
+
+    def write(self, vals):
+        """Il venditore puo' modificare solo Qta e SI/NO. Creazione ed
+        eliminazione sono gia' negate dai permessi d'accesso."""
+        is_manager = (
+            self.env.su
+            or self.env.user.has_group('sales_team.group_sale_manager')
+            or self.env.user.has_group('lasercom_2_13.group_admin_lav')
+        )
+
+        if not is_manager and set(vals) - self._SALESMAN_WRITABLE_FIELDS:
+            raise UserError(_(
+                "Sui prodotti in sottrazione si puo' modificare solo la Qta."
+            ))
+
+        return super(SaleOrderXLoadLineDeduction, self).write(vals)
+
+    @api.onchange('product_id')
+    def _onchange_product_id(self):
+        for line in self:
+            if not line.product_id:
+                continue
+            if not line.name:
+                line.name = line.product_id.display_name
+            if not line.price_unit:
+                line.price_unit = line.product_id.standard_price
+
+
+class ProductLoadDeduction(models.Model):
+    """Template dei prodotti in sottrazione: elenco dei prodotti che possono
+    essere sottratti dal Caricamento Prodotti sull'ordine."""
+    _name = "x.product.load.deduction"
+    _description = "Template Prodotti in Sottrazione"
+    _order = "sequence,id asc"
+
+    sequence = fields.Integer(string="Sequenza", default=10, index=True)
+    active = fields.Boolean(default=True)
+    product_id = fields.Many2one("product.product", string="Prodotto", required=True)
+    default_code = fields.Char(related="product_id.default_code", string="Codice", readonly=True, store=False)
+    name = fields.Char(string="Descrizione")
+    product_uom_qty = fields.Float(string="Qta", default=1.0)
+    price_unit = fields.Float(string="Costo", digits='Product Price')
+    note = fields.Char(string="Nota")
+
+    @api.onchange('product_id')
+    def _onchange_product_id(self):
+        for line in self:
+            if not line.product_id:
+                continue
+            if not line.name:
+                line.name = line.product_id.display_name
+            if not line.price_unit:
+                line.price_unit = line.product_id.standard_price
 
