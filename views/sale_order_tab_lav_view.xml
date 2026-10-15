@@ -317,6 +317,13 @@
             <xpath expr="//field[@name='order_line']/tree//field[@name='price_unit']" position="after">
                    <field name="x_load_id" optional="hide" groups="base.group_user" attrs="{'column_invisible': [('parent.x_show_manager_fields','=',False)]}"/>
             </xpath>
+            <!-- Ordine confermato: righe in sola lettura per l'utente normale. -->
+            <xpath expr="//field[@name='order_line']" position="before">
+                <field name="x_order_lines_locked" invisible="1"/>
+            </xpath>
+            <xpath expr="//field[@name='order_line']" position="attributes">
+                <attribute name="attrs">{'readonly': ['|', ('state', 'in', ('done','cancel')), ('x_order_lines_locked', '=', True)]}</attribute>
+            </xpath>
         </field>
     </record>
 
@@ -349,7 +356,7 @@
                         <field name="x_load_ids" options="{'no_create': True}" widget="many2many_tags" attrs="{'readonly': [('x_load_locked','=',True)]}"/>
                         <button name="action_apply_product_load"
                     type="object"
-                    string="Applica Caricamento (Sostituisci righe)"
+                    string="Modulo d'ordine (Sostituisci righe)"
                     class="oe_highlight"
                     groups="sales_team.group_sale_manager,lasercom_2_13.group_admin_lav"
                     attrs="{'invisible': [('x_load_ids','=',False)]}"/>
@@ -361,7 +368,8 @@
                         <field name="date_installation_display" readonly="1" option="hide"/>
 <label for="sale_acq_usage" string="Acquisto usato" attrs="{'invisible': [('sale_acq_usage', '&lt;=', 0)]}"/>
                             <field name="sale_acq_usage" nolabel="1"  groups="base.group_user" />
-                          <field name="sale_val_usage"  groups="base.group_user" />
+                          <field name="sale_val_usage" invisible="1" groups="base.group_user" />
+                          <field name="sale_val_usage_text" groups="base.group_user" />
 
                         <!-- 16/02/20026 rocco
                         <button name="action_open_import_load_lines_wizard"
@@ -389,6 +397,7 @@
                                attrs="{'readonly': [('x_load_locked','=',True)]}"
                                widget="section_and_note_one2many" context="{'check_unique_si_tag_group': True}" >
                             <tree editable="bottom" decoration-info="sale_line_id" limit="160"
+                                  class="x_no_column_sort"
                                   decoration-danger="editable and not etichetta_si and not display_type"
                                   >
                                 <control>
@@ -471,8 +480,9 @@
                         type="object"
                         string="Torna all'ordine"
                         class="btn-secondary"/>
-                <button name="%(lasercom_2_13.action_report_saleorder_laser_modulo)d"
+                <button name="%(lasercom_2_13.action_print_modulo_wizard)d"
                         type="action"
+                        context="{'default_order_id': active_id}"
                         string="Stampa Modulo Installazione"
                         class="btn-secondary"
                         groups="sales_team.group_sale_manager,lasercom_2_13.group_admin_lav"/>
@@ -518,7 +528,8 @@
                         <field name="date_installation_display" readonly="1" />
                          <label for="sale_acq_usage" string="Acquisto usato" attrs="{'invisible': [('sale_acq_usage', '&lt;=', 0)]}"/>
                             <field name="sale_acq_usage" nolabel="1"  groups="base.group_user" />
-                          <field name="sale_val_usage"  groups="base.group_user" />
+                          <field name="sale_val_usage" invisible="1" groups="base.group_user" />
+                          <field name="sale_val_usage_text" groups="base.group_user" />
                     </group>
                 </group>
 
@@ -527,13 +538,13 @@
                     <field name="x_load_line_deduction_ids" nolabel="1" limit="160" attrs="{'readonly': [('x_load_locked','=',True)]}">
                         <tree editable="bottom" limit="160">
                             <field name="sequence" widget="handle" attrs="{'column_invisible': [('parent.x_show_manager_fields','=',False)]}"/>
-                            <field name="product_id" attrs="{'readonly': [('parent.x_show_manager_fields','=',False)]}"/>
-                            <field name="default_code" readonly="1"/>
+                            <field name="product_id" optional="hide" attrs="{'readonly': [('parent.x_show_manager_fields','=',False)]}"/>
+                            <field name="default_code" readonly="1" optional="hide"/>
                             <field name="name" string="Nome" attrs="{'readonly': [('parent.x_show_manager_fields','=',False)]}"/>
                             <field name="product_uom_qty" string="Qta"/>
                             <field name="etichetta_si"/>
                             <field name="price_unit" string="Costo" attrs="{'column_invisible': [('parent.x_show_manager_fields','=',False)]}"/>
-                            <field name="price_subtotal" string="Tot." attrs="{'column_invisible': [('parent.x_show_manager_fields','=',False)]}"/>
+                            <field name="price_subtotal" string="Tot."/>
                         </tree>
                     </field>
                 </div>
@@ -567,6 +578,7 @@
                        attrs="{'readonly': [('x_load_locked','=',True)]}"
                        widget="section_and_note_one2many" class="sticky_header_only_this_list"  context="{'check_unique_si_tag_group': True}">
                     <tree editable="bottom"
+                          class="x_no_column_sort"
                           decoration-info="sale_line_id"
                           decoration-danger="editable and not etichetta_si and not display_type"
                           limit="160" >

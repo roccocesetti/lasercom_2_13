@@ -339,6 +339,41 @@ class SaleOrder(models.Model):
                 not can_edit_confirmed and order.x_modulo_confermato
             )
 
+    x_order_lines_locked = fields.Boolean(
+        string="Righe ordine bloccate",
+        compute="_compute_x_order_lines_locked",
+        help="Vero quando l'ordine e' confermato e l'utente non e' Sales "
+             "Manager ne' Admin LAV: le righe dell'ordine diventano di sola "
+             "lettura.",
+    )
+
+    @api.depends('state')
+    @api.depends_context('uid')
+    def _compute_x_order_lines_locked(self):
+        can_edit_confirmed = (
+            self.env.user.has_group('sales_team.group_sale_manager')
+            or self.env.user.has_group('lasercom_2_13.group_admin_lav')
+        )
+        for order in self:
+            order.x_order_lines_locked = (
+                not can_edit_confirmed and order.state in ('sale', 'done')
+            )
+
+    def _check_order_lines_not_locked(self):
+        """Ordine confermato: l'utente normale non puo' modificare,
+        aggiungere o togliere righe salvando l'ordine. Le scritture interne
+        (sudo) non vengono bloccate."""
+        if self.env.su:
+            return
+
+        locked = self.filtered(lambda o: o.x_order_lines_locked)
+        if locked:
+            raise UserError(_(
+                "L'ordine e' confermato: le righe dell'ordine possono essere "
+                "modificate solo da un Sales Manager o da un Admin LAV.\n\n"
+                "Ordini: %s"
+            ) % ", ".join(locked.mapped('display_name')))
+
     def _check_x_load_not_locked(self):
         """Blocca le modifiche al Caricamento Prodotti a modulo confermato.
 
@@ -450,7 +485,7 @@ class SaleOrder(models.Model):
                         "product_uom_length": ll.product_uom_length,
                         "product_uom_width": ll.product_uom_width,
                         "product_uom_qty": 0.0 if ll.display_type else (ll.product_uom_qty or 0.0) * qta_multi,
-                        "price_unit": 0.0 if ll.display_type else ll.price_unit,
+                        "price_unit": 0.0 if ll.display_type else (ll.product_id.standard_price or 0.0),
                         "price_extra": 0.0 if ll.display_type else ll.price_extra,
                         "supplier_id": ll.supplier_id.id if ll.supplier_id and not ll.display_type else False,
                         "note": ll.note,
@@ -581,12 +616,10 @@ class SaleOrder(models.Model):
                             "product_uom_length": ll.product_uom_length,
                             "product_uom_width": ll.product_uom_width,
                             "product_uom_qty": 0.0 if ll.display_type else (ll.product_uom_qty or 0.0) * qty,
-                            # Prima il prezzo della riga del modulo di caricamento,
-                            # standard_price solo come fallback: prima si prendeva
-                            # sempre standard_price e il prezzo configurato sul
-                            # modulo veniva perso, mentre il price_extra della
-                            # stessa riga arrivava regolarmente.
-                            "price_unit": 0.0 if ll.display_type else (ll.price_unit or ll.product_id.standard_price or 0.0),
+                            # Il prezzo unitario arriva sempre dal costo del
+                            # prodotto (standard_price), non dalla riga del
+                            # modulo di caricamento.
+                            "price_unit": 0.0 if ll.display_type else (ll.product_id.standard_price or 0.0),
                             "price_extra": 0.0 if ll.display_type else (ll.price_extra or 0.0),
                             "supplier_id": ll.supplier_id.id if ll.supplier_id and not ll.display_type else False,
                             "editable": ll.editable,
@@ -637,9 +670,50 @@ class SaleOrder(models.Model):
                     })
 
             order._apply_deduction_templates(replace=replace)
+            order._sync_deduction_with_load_lines()
 
             order._compute_amount_lav()
         return True
+
+    def _sync_deduction_with_load_lines(self):
+        """Un prodotto messo a SI nel Caricamento Prodotti non va anche
+        sottratto: la riga corrispondente dei Prodotti in sottrazione viene
+        messa a NO e archiviata. Se nel caricamento il prodotto torna a NO (o
+        la riga viene tolta) la riga in sottrazione viene disarchiviata con
+        SI/NO vuoto, cosi' il venditore sceglie di nuovo.
+
+        Si disarchiviano solo le righe archiviate da questa regola
+        (x_hidden_by_load)."""
+        for order in self.sudo():
+            si_products = order.x_load_line_ids.filtered(
+                lambda l: l.etichetta_si == 'yes'
+                          and not l.display_type
+                          and l.product_id
+            ).mapped('product_id')
+
+            deductions = order.with_context(active_test=False).x_load_line_deduction_ids
+
+            to_hide = deductions.filtered(
+                lambda d: d.active and d.product_id and d.product_id in si_products
+            )
+            to_show = deductions.filtered(
+                lambda d: not d.active
+                          and d.x_hidden_by_load
+                          and d.product_id not in si_products
+            )
+
+            if to_hide:
+                to_hide.write({
+                    'active': False,
+                    'x_hidden_by_load': True,
+                    'etichetta_si': 'no',
+                })
+            if to_show:
+                to_show.write({
+                    'active': True,
+                    'x_hidden_by_load': False,
+                    'etichetta_si': False,
+                })
 
     def _apply_deduction_templates(self, replace=True):
         """Aggiunge ai Prodotti in sottrazione dell'ordine le righe del
@@ -652,7 +726,10 @@ class SaleOrder(models.Model):
         Deduction = self.env["sale.order.x_load_line_deduction"].sudo()
 
         for order in self:
-            from_template = order.x_load_line_deduction_ids.filtered(
+            # Anche le righe archiviate (prodotto a SI nel caricamento):
+            # altrimenti verrebbero ricreate dal template.
+            all_deductions = order.with_context(active_test=False).x_load_line_deduction_ids
+            from_template = all_deductions.filtered(
                 lambda l: l.deduction_template_id
             )
 
@@ -663,7 +740,7 @@ class SaleOrder(models.Model):
                 existing_templates = from_template.mapped("deduction_template_id")
 
             sequence = max(
-                (order.x_load_line_deduction_ids.exists().mapped("sequence") or [0])
+                (all_deductions.exists().mapped("sequence") or [0])
             ) + 10
 
             for template in templates - existing_templates:
@@ -674,7 +751,7 @@ class SaleOrder(models.Model):
                     "product_id": template.product_id.id,
                     "name": template.name or template.product_id.display_name,
                     "product_uom_qty": template.product_uom_qty,
-                    "price_unit": template.price_unit,
+                    "price_unit": template.product_id.standard_price or 0.0,
                 })
                 sequence += 10
 
@@ -1002,6 +1079,9 @@ class SaleOrder(models.Model):
         if set(vals) & self._X_LOAD_LOCKED_FIELDS:
             self._check_x_load_not_locked()
 
+        if 'order_line' in vals:
+            self._check_order_lines_not_locked()
+
         # Il controllo SI per gruppo etichetta si fa una volta sola a fine
         # salvataggio: riga per riga fallirebbe se nello stesso salvataggio
         # l'utente mette a NO la vecchia riga SI dopo aver messo a SI la nuova.
@@ -1185,15 +1265,57 @@ class SaleOrder(models.Model):
                 product_names,
             ))
 
-    def _get_modulo_installazione_lines(self):
+    # Campi su cui si puo' ordinare la stampa del Modulo Installazione
+    # (wizard di stampa): sono le colonne presenti nel modulo.
+    _MODULO_SORT_FIELDS = [
+        ('description', 'Descrizione'),
+        ('product_uom_qty', 'Quantità'),
+        ('product_cassetti_slave', 'Config.'),
+        ('product_uom_height', 'Alt'),
+        ('product_uom_length', 'Lung'),
+        ('note', 'Note'),
+        ('supplier_id', 'Fornitore'),
+    ]
+
+    def _get_modulo_installazione_lines(self, sort_field=False, sort_desc=False):
         """
         Righe da stampare sul Modulo Installazione: le righe di caricamento
         con SI e quantita' valorizzata, piu' le righe Sezione che le
         contengono. Le sezioni senza righe da stampare vengono omesse.
+
+        Con sort_field (uno dei _MODULO_SORT_FIELDS) le righe vengono
+        ordinate su quel campo e le Sezioni non si stampano: l'ordinamento
+        mescola le righe di sezioni diverse.
         """
         self.ensure_one()
 
         lines = self.x_load_line_ids.sorted(key=lambda l: (l.sequence, l.id))
+
+        if sort_field in dict(self._MODULO_SORT_FIELDS):
+            to_print = lines.filtered(
+                lambda l: not l.display_type
+                          and l.etichetta_si == 'yes'
+                          and l.product_uom_qty
+            )
+
+            def _key(line):
+                if sort_field == 'description':
+                    value = (
+                        line.product_id.with_context(display_default_code=False).display_name
+                        if line.product_id else line.name
+                    )
+                elif sort_field == 'supplier_id':
+                    value = line.supplier_id.display_name if line.supplier_id else ''
+                else:
+                    value = line[sort_field]
+                if isinstance(value, str) or sort_field in ('product_cassetti_slave', 'note', 'supplier_id'):
+                    value = (value or '').lower()
+                else:
+                    value = value or 0.0
+                return value
+
+            # sorted e' stabile: a parita' di valore resta l'ordine del modulo.
+            return to_print.sorted(key=_key, reverse=bool(sort_desc))
 
         line_ids = []
         pending_section_id = False
@@ -1283,8 +1405,8 @@ class SaleOrderXLoadLine(models.Model):
         readonly=True
     )
     product_id = fields.Many2one("product.product", string="Prodotto", required=False)
-    product_uom_height = fields.Float(string="Alt", default=0.0)
-    product_uom_length = fields.Float(string="Lung", default=0.0)
+    product_uom_height = fields.Float(string="LARG", default=0.0)
+    product_uom_length = fields.Float(string="AL/PR", default=0.0)
     product_uom_width = fields.Float(string="Prof", default=0.0)
     product_uom_qty = fields.Float(string="Qta", default=1.0)
     price_unit = fields.Float(string="P.Unitario",digits='Product Price')
@@ -1468,7 +1590,10 @@ class SaleOrderXLoadLine(models.Model):
         #if locked:
         #    raise UserError(_("Riga bloccata: abilita 'Edit' sulla singola riga per eliminarla."))
         self._check_order_not_locked()
-        return super().unlink()
+        orders = self.mapped("order_id")
+        res = super().unlink()
+        orders._sync_deduction_with_load_lines()
+        return res
 
     def _check_order_not_locked(self):
         """Nessuna modifica alle righe di caricamento con modulo gia' confermato
@@ -1514,6 +1639,7 @@ class SaleOrderXLoadLine(models.Model):
 
         lines = super().create(vals_list)
         lines._check_unique_si_per_tag_group_by_user()
+        lines.mapped("order_id")._sync_deduction_with_load_lines()
         return lines
 
     def _check_unique_si_per_tag_group_by_user(self):
@@ -1656,6 +1782,9 @@ class SaleOrderXLoadLine(models.Model):
 
         self._sync_lavorazione_qty_after_write(vals)
 
+        if {'etichetta_si', 'product_id', 'display_type'} & set(vals):
+            self.mapped("order_id")._sync_deduction_with_load_lines()
+
         if self.env.context.get("skip_force_same_tag_no"):
             return res
 
@@ -1778,6 +1907,12 @@ class SaleOrderXLoadLineDeduction(models.Model):
     _order = "sequence,id asc"
 
     order_id = fields.Many2one("sale.order", required=True, ondelete="cascade")
+    active = fields.Boolean(default=True)
+    # Archiviata perche' lo stesso prodotto e' a SI nel Caricamento Prodotti:
+    # torna attiva quando nel caricamento il prodotto non e' piu' a SI.
+    x_hidden_by_load = fields.Boolean(
+        string="Nascosta dal caricamento", readonly=True, copy=False,
+    )
     deduction_template_id = fields.Many2one(
         "x.product.load.deduction",
         string="Da template",

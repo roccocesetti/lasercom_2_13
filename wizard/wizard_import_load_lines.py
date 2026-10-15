@@ -29,10 +29,12 @@ class ImportLoadLinesWizard(models.TransientModel):
 
         # copia righe selezionate nella tab dell'ordine
         for ll in self.load_line_ids:
+            # il prezzo unitario arriva sempre dal costo del prodotto
+            price_unit = ll.product_id.standard_price or 0.0
             # logica di merge semplice (se stesso prodotto+prezzo+nota)
             existing = order.x_load_line_ids.filtered(
                 lambda r: r.product_id == ll.product_id
-                and (r.price_unit or 0.0) == (ll.price_unit or 0.0)
+                and (r.price_unit or 0.0) == price_unit
                 and (r.note or "") == (ll.note or "")
             )
             if existing:
@@ -45,7 +47,7 @@ class ImportLoadLinesWizard(models.TransientModel):
                     "product_uom_height": ll.product_uom_height,
                     "product_uom_length": ll.product_uom_qty,
                     "price_extra": ll.price_extra,
-                    "price_unit": ll.price_unit,
+                    "price_unit": price_unit,
                     "supplier_id": ll.supplier_id.id,
                     "note": ll.note,
                 })

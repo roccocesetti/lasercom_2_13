@@ -3,4 +3,5 @@
 
 from . import crm_lead
 from . import wizard_import_load_lines
+from . import wizard_print_modulo
 
