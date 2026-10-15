@@ -13,6 +13,8 @@
                     src="/lasercom_2_13/static/src/js/x_load_blank_row_class.js"/>
             <script type="text/javascript"
                     src="/lasercom_2_13/static/src/js/goto_tab_widget.js"/>
+            <script type="text/javascript"
+                    src="/lasercom_2_13/static/src/js/x_load_no_column_sort.js"/>
         </xpath>
     </template>
 

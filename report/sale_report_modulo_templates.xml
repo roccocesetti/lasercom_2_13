@@ -57,9 +57,10 @@
                         <strong>Acquisto usato:</strong>
                         <p class="m-0" t-field="doc.sale_acq_usage" t-options="{&quot;widget&quot;: &quot;monetary&quot;, &quot;display_currency&quot;: doc.currency_id}"/>
                     </div>
-                    <div t-if="doc.sale_val_usage &gt; 0" class="col-auto mw-100 mb-2">
+                    <!-- Nel modulo la valutazione usato e' il testo libero, non l'importo. -->
+                    <div t-if="doc.sale_val_usage_text" class="col-auto mw-100 mb-2">
                         <strong>Valutazione usato:</strong>
-                        <p class="m-0" t-field="doc.sale_val_usage" t-options="{&quot;widget&quot;: &quot;monetary&quot;, &quot;display_currency&quot;: doc.currency_id}"/>
+                        <p class="m-0" t-field="doc.sale_val_usage_text"/>
                     </div>
                 </div>
 
@@ -69,7 +70,7 @@
                 </div>
                 <h3>Modulo Installazione</h3>
 
-                <t t-set="modulo_lines" t-value="doc._get_modulo_installazione_lines()"/>
+                <t t-set="modulo_lines" t-value="doc._get_modulo_installazione_lines(x_sort_field, x_sort_desc)"/>
 
                 <div class="row m-0 mb32 avoid-page-break" id="dettaglio">
                     <table class="table table-sm o_main_table avoid-page-break x_modulo_table">
@@ -80,7 +81,7 @@
                                 <th name="th_config" class="text-right bordo-inferiore">Config.</th>
                                 <th name="th_height" class="text-right bordo-inferiore">Alt</th>
                                 <th name="th_length" class="text-right bordo-inferiore">Lung</th>
-                                <th name="th_width" class="text-right bordo-inferiore">Prof</th>
+                                <th t-if="x_show_supplier" name="th_supplier" class="text-left bordo-inferiore">Fornitore</th>
                                 <th name="th_note" class="text-left bordo-inferiore">Note</th>
                             </tr>
                         </thead>
@@ -109,8 +110,8 @@
                                     <td name="td_length" class="text-right">
                                         <span t-field="line.product_uom_length"/>
                                     </td>
-                                    <td name="td_width" class="text-right">
-                                        <span t-field="line.product_uom_width"/>
+                                    <td t-if="x_show_supplier" name="td_supplier" class="text-left">
+                                        <span t-esc="line.supplier_id.display_name or ''"/>
                                     </td>
                                     <td name="td_note" class="text-left">
                                         <span t-field="line.note"/>

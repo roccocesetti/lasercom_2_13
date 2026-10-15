@@ -274,6 +274,9 @@ class SaleOrder(models.Model):
         default="vendors")
     sale_acq_usage = fields.Monetary(string='Acquisto usato', digits='Product Price', default=0.0)
     sale_val_usage = fields.Monetary(string='valutazione usato', digits='Product Price', default=0.0)
+    # Valutazione usato in testo libero, mostrata sul Modulo Installazione al
+    # posto dell'importo sale_val_usage.
+    sale_val_usage_text = fields.Char(string='Valutazione usato', copy=False, default='')
     sale_ritiro_usato=fields.Boolean(string='Acquisto usato',default=False)
     sale_modello_usato = fields.Char(string='Modello usato', required=False, copy=False, readonly=False, default='')
     sale_promotion = fields.Monetary(string='Promozione', digits='Product Price', default=0.0)
