@@ -149,7 +149,7 @@
                                     <field name="price_extra" optional="show"
                                            attrs="{'invisible': [('display_type','!=',False)]}"/>
                                     <field name="supplier_id"
-                                           domain="[('commercial_partner_id.property_supplier_payment_term_id','!=',False)]"
+                                           domain="['|',('commercial_partner_id.property_supplier_payment_term_id','!=',False),('supplier_rank','&gt;',0)]"
                                            attrs="{'invisible': [('display_type','!=',False)]}"/>
                                     <field name="note"
                                            class="x_note_wide"
@@ -436,7 +436,7 @@
                                 <field name="product_uom_height" optional="show" attrs="{'readonly': ['|',('x_locked_by_tag', '=', True),('editable','=',False)]}"/>
                                 <field name="product_uom_length" optional="show" attrs="{'readonly': ['|',('x_locked_by_tag', '=', True),('editable','=',False)]}"/>
                                 <field name="product_uom_width" optional="show" attrs="{'readonly': ['|',('x_locked_by_tag', '=', True),('editable','=',False)],'column_invisible': [('parent.x_show_manager_fields','=',False)]}"/>
-                                <field name="supplier_id" domain="[('commercial_partner_id.property_supplier_payment_term_id','!=',False)]" optional="hide" attrs="{'readonly': ['|',('x_locked_by_tag', '=', True),('editable','=',False)],'column_invisible': [('parent.x_show_manager_fields','=',False)]}"/>
+                                <field name="supplier_id" domain="['|',('commercial_partner_id.property_supplier_payment_term_id','!=',False),('supplier_rank','&gt;',0)]" optional="hide" attrs="{'readonly': ['|',('x_locked_by_tag', '=', True),('editable','=',False)],'column_invisible': [('parent.x_show_manager_fields','=',False)]}"/>
                                 <field name="note" class="x_note_wide" optional="hide" attrs="{'readonly': ['|',('x_locked_by_tag', '=', True),('editable','=',False)]}"/>
                             </tree>
                         </field>
@@ -747,7 +747,7 @@
 
                         <field name="supplier_id"
                                optional="hide"
-                               domain="[('commercial_partner_id.property_supplier_payment_term_id','!=',False)]"
+                               domain="['|',('commercial_partner_id.property_supplier_payment_term_id','!=',False),('supplier_rank','&gt;',0)]"
                                attrs="{
                                    'readonly': [
                                        '|',
