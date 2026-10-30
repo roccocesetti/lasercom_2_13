@@ -1349,8 +1349,8 @@ class SaleOrder(models.Model):
         ('description', 'Descrizione'),
         ('product_uom_qty', 'Quantità'),
         ('product_cassetti_slave', 'Config.'),
-        ('product_uom_height', 'Alt'),
-        ('product_uom_length', 'Lung'),
+        ('product_uom_height', 'LARG'),
+        ('product_uom_length', 'PR'),
         ('note', 'Note'),
         ('supplier_id', 'Fornitore'),
     ]
