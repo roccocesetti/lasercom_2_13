@@ -369,7 +369,7 @@
 <label for="sale_acq_usage" string="Acquisto usato" attrs="{'invisible': [('sale_acq_usage', '&lt;=', 0)]}"/>
                             <field name="sale_acq_usage" nolabel="1"  groups="base.group_user" />
                           <field name="sale_val_usage" invisible="1" groups="base.group_user" />
-                          <field name="sale_val_usage_text" groups="base.group_user" />
+                          <field name="sale_val_usage_text" groups="base.group_user" attrs="{'readonly': [('x_load_locked','=',True)]}"/>
 
                         <!-- 16/02/20026 rocco
                         <button name="action_open_import_load_lines_wizard"
@@ -529,7 +529,7 @@
                          <label for="sale_acq_usage" string="Acquisto usato" attrs="{'invisible': [('sale_acq_usage', '&lt;=', 0)]}"/>
                             <field name="sale_acq_usage" nolabel="1"  groups="base.group_user" />
                           <field name="sale_val_usage" invisible="1" groups="base.group_user" />
-                          <field name="sale_val_usage_text" groups="base.group_user" />
+                          <field name="sale_val_usage_text" groups="base.group_user" attrs="{'readonly': [('x_load_locked','=',True)]}"/>
                     </group>
                 </group>
 

@@ -11,6 +11,7 @@ from datetime import datetime, timedelta
 import logging
 from collections import defaultdict
 import base64
+import json
 from lxml import etree
 _logger = logging.getLogger(__name__)
 
@@ -307,6 +308,17 @@ class SaleOrder(models.Model):
         'date_module',
         'date_installation',
         'price_aggiunt_inst',
+        'sale_val_usage_text',
+    }
+
+    # Campi che restano governati dal blocco del Caricamento (x_load_locked)
+    # anche a ordine confermato: il venditore li compila dopo la conferma
+    # dell'ordine, fino alla Conferma Modulo. 'state' resta fuori perche' lo
+    # scrivono i flussi standard (Blocca, Annulla, auto-blocco alla conferma).
+    _X_ORDER_LOCK_EXEMPT_FIELDS = _X_LOAD_LOCKED_FIELDS | {
+        'x_load_ids',
+        'x_modulo_confermato',
+        'state',
     }
 
     x_modulo_confermato = fields.Boolean(
@@ -340,11 +352,11 @@ class SaleOrder(models.Model):
             )
 
     x_order_lines_locked = fields.Boolean(
-        string="Righe ordine bloccate",
+        string="Ordine bloccato",
         compute="_compute_x_order_lines_locked",
         help="Vero quando l'ordine e' confermato e l'utente non e' Sales "
-             "Manager ne' Admin LAV: le righe dell'ordine diventano di sola "
-             "lettura.",
+             "Manager ne' Admin LAV: l'ordine diventa di sola lettura, "
+             "tranne il Caricamento Prodotti fino alla Conferma Modulo.",
     )
 
     @api.depends('state')
@@ -373,6 +385,33 @@ class SaleOrder(models.Model):
                 "modificate solo da un Sales Manager o da un Admin LAV.\n\n"
                 "Ordini: %s"
             ) % ", ".join(locked.mapped('display_name')))
+
+    def _check_order_not_locked_fields(self, vals):
+        """Ordine confermato: l'utente normale non puo' modificare i campi
+        dell'ordine visibili nel form. Si bloccano solo i campi che la vista
+        mette in sola lettura (vedi fields_view_get): i campi tecnici scritti
+        dai flussi standard (es. procurement_group_id alla conferma) passano."""
+        if self.env.su:
+            return
+
+        locked = self.filtered(lambda o: o.x_order_lines_locked)
+        if not locked:
+            return
+
+        arch = self.fields_view_get(view_type='form')['arch']
+        locked_fields = set(etree.XML(arch).xpath("//field[@x_order_lock='1']/@name"))
+        forbidden = set(vals) & locked_fields
+        if not forbidden:
+            return
+
+        raise UserError(_(
+            "L'ordine e' confermato: e' in sola lettura e puo' essere "
+            "modificato solo da un Sales Manager o da un Admin LAV.\n\n"
+            "Ordini: %s\nCampi: %s"
+        ) % (
+            ", ".join(locked.mapped('display_name')),
+            ", ".join(sorted(self._fields[f].string for f in forbidden)),
+        ))
 
     def _check_x_load_not_locked(self):
         """Blocca le modifiche al Caricamento Prodotti a modulo confermato.
@@ -1082,6 +1121,8 @@ class SaleOrder(models.Model):
         if 'order_line' in vals:
             self._check_order_lines_not_locked()
 
+        self._check_order_not_locked_fields(vals)
+
         # Il controllo SI per gruppo etichetta si fa una volta sola a fine
         # salvataggio: riga per riga fallirebbe se nello stesso salvataggio
         # l'utente mette a NO la vecchia riga SI dopo aver messo a SI la nuova.
@@ -1122,6 +1163,7 @@ class SaleOrder(models.Model):
         for field_name in locked_fields:
             for tree in doc.xpath("//field[@name='%s']/tree" % field_name):
                 _lock_tree(tree)
+        self._x_apply_order_lock_readonly(doc)
         res['arch'] = etree.tostring(doc, encoding='unicode')
 
         for field_name in locked_fields:
@@ -1132,6 +1174,42 @@ class SaleOrder(models.Model):
                 tree_view['arch'] = etree.tostring(sub_doc, encoding='unicode')
 
         return res
+
+    @api.model
+    def _x_apply_order_lock_readonly(self, doc):
+        """Ordine confermato: rende di sola lettura per il venditore tutti i
+        campi del form (x_order_lines_locked), tranne quelli del Caricamento
+        Prodotti, che seguono x_load_locked, e quelli del chatter.
+
+        Lavora sui modifiers gia' calcolati da Odoo e marca i campi bloccati
+        con x_order_lock="1", usato anche dal controllo lato server in write."""
+        if not doc.xpath("//field[@name='x_order_lines_locked']"):
+            return
+
+        lock_leaf = ['x_order_lines_locked', '=', True]
+
+        for node in doc.xpath("//field[not(ancestor::field)]"):
+            name = node.get('name')
+            if (name in self._X_ORDER_LOCK_EXEMPT_FIELDS
+                    or name == 'x_order_lines_locked'
+                    or name.startswith(('message_', 'activity_'))):
+                continue
+
+            modifiers = json.loads(node.get('modifiers') or '{}')
+            if modifiers.get('invisible') is True:
+                continue
+
+            readonly = modifiers.get('readonly', False)
+            if readonly is True:
+                continue
+            if readonly:
+                readonly = ['|', lock_leaf] + expression.normalize_domain(readonly)
+            else:
+                readonly = [lock_leaf]
+
+            modifiers['readonly'] = readonly
+            node.set('modifiers', json.dumps(modifiers))
+            node.set('x_order_lock', '1')
 
     def action_conferma_modulo(self):
         """
