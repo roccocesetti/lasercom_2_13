@@ -111,7 +111,8 @@
                                         <span t-field="line.product_uom_length"/>
                                     </td>
                                     <td t-if="x_show_supplier" name="td_supplier" class="text-left">
-                                        <span t-esc="line.supplier_id.display_name or ''"/>
+                                        <!-- Contenuto tra ## ## delle Note interne del fornitore. -->
+                                        <span t-esc="line._get_supplier_note_code()"/>
                                     </td>
                                     <td name="td_note" class="text-left">
                                         <span t-field="line.note"/>

@@ -12,6 +12,7 @@ import logging
 from collections import defaultdict
 import base64
 import json
+import re
 from lxml import etree
 _logger = logging.getLogger(__name__)
 
@@ -303,6 +304,7 @@ class SaleOrder(models.Model):
     _X_LOAD_LOCKED_FIELDS = {
         'x_load_line_ids',
         'x_load_line_deduction_ids',
+        'x_load_line_deduction_si_ids',
         'note_modulo_installazione',
         'note_modulo_agente',
         'date_module',
@@ -880,6 +882,15 @@ class SaleOrder(models.Model):
         copy=False,
     )
 
+    # A modulo confermato la vista mostra solo i prodotti in sottrazione a SI.
+    x_load_line_deduction_si_ids = fields.One2many(
+        "sale.order.x_load_line_deduction",
+        "order_id",
+        string="Prodotti in sottrazione a SI",
+        domain=[('etichetta_si', '=', 'yes')],
+        copy=False,
+    )
+
     x_has_load_line = fields.Boolean(
         string='Caricamento gia valorizzato',
         compute='_compute_x_has_load_line',
@@ -1151,7 +1162,7 @@ class SaleOrder(models.Model):
                 or self.env.user.has_group('lasercom_2_13.group_admin_lav')):
             return res
 
-        locked_fields = ('x_load_line_ids', 'x_load_line_deduction_ids')
+        locked_fields = ('x_load_line_ids', 'x_load_line_deduction_ids', 'x_load_line_deduction_si_ids')
 
         def _lock_tree(tree):
             tree.set('create', 'false')
@@ -1383,7 +1394,7 @@ class SaleOrder(models.Model):
                         if line.product_id else line.name
                     )
                 elif sort_field == 'supplier_id':
-                    value = line.supplier_id.display_name if line.supplier_id else ''
+                    value = line._get_supplier_note_code()
                 else:
                     value = line[sort_field]
                 if isinstance(value, str) or sort_field in ('product_cassetti_slave', 'note', 'supplier_id'):
@@ -1472,6 +1483,17 @@ class SaleOrderXLoadLine(models.Model):
                 line.product_updatable = False
             else:
                 line.product_updatable = True
+
+    def _get_supplier_note_code(self):
+        """Testo da stampare nella colonna Fornitore del Modulo
+        Installazione: il contenuto tra "##" e "##" nelle Note interne del
+        fornitore (piu' blocchi separati da spazio), non il suo nome."""
+        self.ensure_one()
+        comment = self.supplier_id.sudo().comment or ''
+        return ' '.join(
+            part.strip() for part in re.findall(r'##(.*?)##', comment, re.S)
+            if part.strip()
+        )
 
     x_load_id = fields.Many2one("x.product.load", required=False, ondelete="cascade")
     sequence = fields.Integer(string="Sequenza", default=10, index=True)
