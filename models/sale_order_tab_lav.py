@@ -757,7 +757,7 @@ class SaleOrder(models.Model):
             order._compute_amount_lav()
         return True
 
-    def _sync_deduction_with_load_lines(self):
+    def _sync_deduction_with_load_lines(self, force_confirmed=False):
         """Un prodotto messo a SI nel Caricamento Prodotti non va anche
         sottratto: la riga corrispondente dei Prodotti in sottrazione viene
         messa a NO e archiviata. Se nel caricamento il prodotto torna a NO (o
@@ -765,7 +765,10 @@ class SaleOrder(models.Model):
         SI/NO vuoto, cosi' il venditore sceglie di nuovo.
 
         Si disarchiviano solo le righe archiviate da questa regola
-        (x_hidden_by_load)."""
+        (x_hidden_by_load).
+
+        Con il modulo confermato (o in conferma, force_confirmed) le righe
+        corrispondenti vengono invece messe a SI e restano visibili."""
         for order in self.sudo():
             si_products = order.x_load_line_ids.filtered(
                 lambda l: l.etichetta_si == 'yes'
@@ -774,6 +777,10 @@ class SaleOrder(models.Model):
             ).mapped('product_id')
 
             deductions = order.with_context(active_test=False).x_load_line_deduction_ids
+
+            if force_confirmed or order.x_modulo_confermato:
+                order._sync_deduction_si_confirmed(deductions, si_products)
+                continue
 
             to_hide = deductions.filtered(
                 lambda d: d.active and d.product_id and d.product_id in si_products
@@ -796,6 +803,44 @@ class SaleOrder(models.Model):
                     'x_hidden_by_load': False,
                     'etichetta_si': False,
                 })
+
+    def _sync_deduction_si_confirmed(self, deductions, si_products):
+        """Modulo confermato: le righe in sottrazione dei prodotti a SI nel
+        caricamento vanno a SI e restano visibili. Si toccano una sola volta
+        (x_hidden_by_load): se il manager poi le mette a NO restano a NO.
+        Se il prodotto non e' piu' a SI nel caricamento la riga torna con
+        SI/NO vuoto."""
+        to_si = deductions.filtered(
+            lambda d: d.product_id and d.product_id in si_products
+                      and (not d.active or d.etichetta_si != 'yes')
+                      and not (d.active and d.x_hidden_by_load)
+        )
+        to_reset = deductions.filtered(
+            lambda d: d.x_hidden_by_load and d.product_id not in si_products
+        )
+
+        if to_si:
+            to_si.write({
+                'active': True,
+                'x_hidden_by_load': True,
+                'etichetta_si': 'yes',
+            })
+            # Senza quantita' prende quella del prodotto a SI nel caricamento.
+            si_lines = self.x_load_line_ids.filtered(
+                lambda l: l.etichetta_si == 'yes' and not l.display_type
+            )
+            for deduction in to_si.filtered(
+                lambda d: float_compare(d.product_uom_qty, 0.0, precision_digits=4) <= 0
+            ):
+                deduction.product_uom_qty = sum(si_lines.filtered(
+                    lambda l: l.product_id == deduction.product_id
+                ).mapped('product_uom_qty'))
+        if to_reset:
+            to_reset.write({
+                'active': True,
+                'x_hidden_by_load': False,
+                'etichetta_si': False,
+            })
 
     def _apply_deduction_templates(self, replace=True):
         """Aggiunge ai Prodotti in sottrazione dell'ordine le righe del
@@ -1285,6 +1330,11 @@ class SaleOrder(models.Model):
         self._check_lavorazione_si_price_subtotal()
         for order in self:
             order.x_load_line_ids._check_si_qty_positive()
+
+        # Le sottrazioni dei prodotti a SI nel caricamento vanno a SI; il
+        # controllo della Qta vale anche per loro.
+        self._sync_deduction_with_load_lines(force_confirmed=True)
+        for order in self:
             order.x_load_line_deduction_ids._check_si_qty_positive()
 
         for order in self:
