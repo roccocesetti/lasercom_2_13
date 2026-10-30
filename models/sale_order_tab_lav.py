@@ -17,6 +17,47 @@ from lxml import etree
 _logger = logging.getLogger(__name__)
 
 
+class _SiQtyTouched(object):
+    """Raccoglitore delle righe toccate durante SaleOrder.write, passato nel
+    context: un oggetto (hashabile per identita') e non un dict, perche' il
+    context deve restare hashabile."""
+
+    def __init__(self):
+        self.ids = defaultdict(set)
+
+
+def _touch_si_qty_lines(lines):
+    """Righe del Caricamento o prodotti in sottrazione creati/modificati
+    dall'utente: SI richiede quantita' > 0. Dentro il salvataggio dell'ordine
+    le righe si raccolgono e le controlla SaleOrder.write a fine scrittura;
+    fuori (RPC, import) il controllo e' immediato. Le scritture interne in
+    sudo (es. Modulo d'ordine) non vengono controllate."""
+    if not lines or lines.env.su:
+        return
+    touched = lines.env.context.get('x_si_qty_touched')
+    if isinstance(touched, _SiQtyTouched):
+        touched.ids[lines._name].update(lines.ids)
+    else:
+        lines._check_si_qty_positive()
+
+
+def _check_si_qty_positive(lines):
+    wrong = lines._x_si_qty_not_positive()
+    if not wrong:
+        return
+    raise UserError(_(
+        "Le righe impostate a SI devono avere la quantita' maggiore di zero.\n\n"
+        "Righe da correggere:\n%s"
+    ) % "\n".join(
+        "- %s: %s (Qta: %s)" % (
+            l.order_id.display_name,
+            l.product_id.display_name or l.name or _("Riga senza prodotto"),
+            l.product_uom_qty,
+        )
+        for l in wrong
+    ))
+
+
 
 
 class ProductCategory(models.Model):
@@ -1137,10 +1178,20 @@ class SaleOrder(models.Model):
         # Il controllo SI per gruppo etichetta si fa una volta sola a fine
         # salvataggio: riga per riga fallirebbe se nello stesso salvataggio
         # l'utente mette a NO la vecchia riga SI dopo aver messo a SI la nuova.
-        res = super(SaleOrder, self.with_context(x_defer_si_tag_check=True)).write(vals)
+        # Lo stesso vale per SI con quantita' > 0: le righe toccate
+        # dall'utente si raccolgono in x_si_qty_touched e si controllano a
+        # fine salvataggio (es. SI e misure della lavorazione insieme).
+        touched = _SiQtyTouched()
+        res = super(SaleOrder, self.with_context(
+            x_defer_si_tag_check=True,
+            x_si_qty_touched=touched,
+        )).write(vals)
 
         if 'x_load_line_ids' in vals and not self.env.context.get('skip_unique_si_tag_check'):
             self._check_unique_si_per_tag_group_on_order()
+
+        for model, ids in touched.ids.items():
+            self.env[model].browse(ids).exists()._check_si_qty_positive()
 
         return res
 
@@ -1232,6 +1283,9 @@ class SaleOrder(models.Model):
         self._check_conferma_modulo_allowed()
         self._check_etichetta_si_on_editable_load_lines()
         self._check_lavorazione_si_price_subtotal()
+        for order in self:
+            order.x_load_line_ids._check_si_qty_positive()
+            order.x_load_line_deduction_ids._check_si_qty_positive()
 
         for order in self:
             order._generate_installation_module_pdf()
@@ -1464,6 +1518,12 @@ class SaleOrderXLoadLine(models.Model):
     _name = "sale.order.x_load_line"
     _description = "Righe Caricamento su Ordine di Vendita"
     _order = "sequence,id asc"
+
+    # Campi che, modificati dall'utente, fanno ricontrollare SI con Qta > 0.
+    _SI_QTY_FIELDS = {
+        'etichetta_si', 'product_uom_qty', 'product_uom_height',
+        'product_uom_length', 'product_id', 'display_type',
+    }
 
     @api.depends('product_uom_qty', 'price_unit', 'price_extra')
     def _compute_amount(self):
@@ -1738,6 +1798,7 @@ class SaleOrderXLoadLine(models.Model):
             self.env["sale.order"].browse(set(order_ids))._check_x_load_not_locked()
 
         lines = super().create(vals_list)
+        _touch_si_qty_lines(lines)
         lines._check_unique_si_per_tag_group_by_user()
         lines.mapped("order_id")._sync_deduction_with_load_lines()
         return lines
@@ -1882,6 +1943,9 @@ class SaleOrderXLoadLine(models.Model):
 
         self._sync_lavorazione_qty_after_write(vals)
 
+        if self._SI_QTY_FIELDS & set(vals):
+            _touch_si_qty_lines(self)
+
         if {'etichetta_si', 'product_id', 'display_type'} & set(vals):
             self.mapped("order_id")._sync_deduction_with_load_lines()
 
@@ -1938,6 +2002,16 @@ class SaleOrderXLoadLine(models.Model):
         return res
 
 
+
+    def _x_si_qty_not_positive(self):
+        return self.filtered(
+            lambda l: not l.display_type
+                      and l.etichetta_si == 'yes'
+                      and float_compare(l.product_uom_qty, 0.0, precision_digits=4) <= 0
+        )
+
+    def _check_si_qty_positive(self):
+        _check_si_qty_positive(self)
 
     def _tag_signature(self):
         self.ensure_one()
@@ -2067,7 +2141,30 @@ class SaleOrderXLoadLineDeduction(models.Model):
                 "Sui prodotti in sottrazione si puo' modificare solo la Qta."
             ))
 
-        return super(SaleOrderXLoadLineDeduction, self).write(vals)
+        res = super(SaleOrderXLoadLineDeduction, self).write(vals)
+
+        if {'etichetta_si', 'product_uom_qty'} & set(vals):
+            _touch_si_qty_lines(self)
+
+        return res
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        lines = super(SaleOrderXLoadLineDeduction, self).create(vals_list)
+        _touch_si_qty_lines(lines)
+        return lines
+
+    def _x_si_qty_not_positive(self):
+        """Solo le righe visibili: quelle archiviate dal caricamento non
+        contano."""
+        return self.filtered(
+            lambda l: l.active
+                      and l.etichetta_si == 'yes'
+                      and float_compare(l.product_uom_qty, 0.0, precision_digits=4) <= 0
+        )
+
+    def _check_si_qty_positive(self):
+        _check_si_qty_positive(self)
 
     @api.onchange('product_id')
     def _onchange_product_id(self):
