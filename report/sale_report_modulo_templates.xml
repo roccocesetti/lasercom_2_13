@@ -57,9 +57,9 @@
                         <strong>Acquisto usato:</strong>
                         <p class="m-0" t-field="doc.sale_acq_usage" t-options="{&quot;widget&quot;: &quot;monetary&quot;, &quot;display_currency&quot;: doc.currency_id}"/>
                     </div>
-                    <!-- Nel modulo la valutazione usato e' il testo libero, non l'importo. -->
+                    <!-- Nel modulo il Distributore da rottamare e' il testo libero (sale_val_usage_text), non l'importo. -->
                     <div t-if="doc.sale_val_usage_text" class="col-auto mw-100 mb-2">
-                        <strong>Valutazione usato:</strong>
+                        <strong>Distributore da rottamare:</strong>
                         <p class="m-0" t-field="doc.sale_val_usage_text"/>
                     </div>
                 </div>
@@ -79,8 +79,8 @@
                                 <th name="th_description" class="text-left bordo-inferiore">Descrizione</th>
                                 <th name="th_quantity" class="text-right bordo-inferiore">Quantità</th>
                                 <th name="th_config" class="text-right bordo-inferiore">Config.</th>
-                                <th name="th_height" class="text-right bordo-inferiore">Alt</th>
-                                <th name="th_length" class="text-right bordo-inferiore">Lung</th>
+                                <th name="th_height" class="text-right bordo-inferiore">LARG</th>
+                                <th name="th_length" class="text-right bordo-inferiore">PR</th>
                                 <th t-if="x_show_supplier" name="th_supplier" class="text-left bordo-inferiore">Fornitore</th>
                                 <th name="th_note" class="text-left bordo-inferiore">Note</th>
                             </tr>
