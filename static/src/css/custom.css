@@ -110,3 +110,8 @@ table.x_modulo_table td {
 table.x_modulo_table p {
     margin-bottom: 0;
 }
+
+/* Modulo Installazione: riga del fornitore sopra i suoi articoli. */
+table.x_modulo_table tr.x_modulo_supplier td {
+    background-color: #f2f2f2;
+}

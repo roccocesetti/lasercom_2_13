@@ -1465,7 +1465,7 @@ class SaleOrder(models.Model):
         ('product_uom_qty', 'Quantità'),
         ('product_cassetti_slave', 'Config.'),
         ('product_uom_height', 'LARG'),
-        ('product_uom_length', 'PR'),
+        ('product_uom_length', 'AL/PR'),
         ('note', 'Note'),
         ('supplier_id', 'Fornitore'),
     ]
@@ -1473,7 +1473,8 @@ class SaleOrder(models.Model):
     def _get_modulo_installazione_lines(self, sort_field=False, sort_desc=False):
         """
         Righe da stampare sul Modulo Installazione: le righe di caricamento
-        con SI e quantita' valorizzata, piu' le righe Sezione che le
+        con SI e quantita' valorizzata (tranne le Righe in bianco, tipo
+        vetrina 'blank'), piu' le righe Sezione che le
         contengono. Le sezioni senza righe da stampare vengono omesse.
 
         Con sort_field (uno dei _MODULO_SORT_FIELDS) le righe vengono
@@ -1489,6 +1490,7 @@ class SaleOrder(models.Model):
                 lambda l: not l.display_type
                           and l.etichetta_si == 'yes'
                           and l.product_uom_qty
+                          and l.tipo_vetrina != 'blank'
             )
 
             def _key(line):
@@ -1518,7 +1520,8 @@ class SaleOrder(models.Model):
                 pending_section_id = line.id
                 continue
 
-            if line.etichetta_si != 'yes' or not line.product_uom_qty:
+            if (line.etichetta_si != 'yes' or not line.product_uom_qty
+                    or line.tipo_vetrina == 'blank'):
                 continue
 
             if pending_section_id:
