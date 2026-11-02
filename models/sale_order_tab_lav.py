@@ -806,14 +806,13 @@ class SaleOrder(models.Model):
 
     def _sync_deduction_si_confirmed(self, deductions, si_products):
         """Modulo confermato: le righe in sottrazione dei prodotti a SI nel
-        caricamento vanno a SI e restano visibili. Si toccano una sola volta
-        (x_hidden_by_load): se il manager poi le mette a NO restano a NO.
-        Se il prodotto non e' piu' a SI nel caricamento la riga torna con
-        SI/NO vuoto."""
+        caricamento vengono forzate a SI e marcate (x_hidden_by_load): sono le
+        sole visibili dopo la conferma. Se il prodotto non e' piu' a SI nel
+        caricamento la riga torna con SI/NO vuoto."""
         to_si = deductions.filtered(
             lambda d: d.product_id and d.product_id in si_products
-                      and (not d.active or d.etichetta_si != 'yes')
-                      and not (d.active and d.x_hidden_by_load)
+                      and not (d.active and d.x_hidden_by_load
+                               and d.etichetta_si == 'yes')
         )
         to_reset = deductions.filtered(
             lambda d: d.x_hidden_by_load and d.product_id not in si_products
@@ -973,7 +972,8 @@ class SaleOrder(models.Model):
         "sale.order.x_load_line_deduction",
         "order_id",
         string="Prodotti in sottrazione a SI",
-        domain=[('etichetta_si', '=', 'yes')],
+        # Solo quelle forzate a SI dai prodotti a SI del caricamento.
+        domain=[('etichetta_si', '=', 'yes'), ('x_hidden_by_load', '=', True)],
         copy=False,
     )
 
@@ -2153,8 +2153,8 @@ class SaleOrderXLoadLineDeduction(models.Model):
 
     order_id = fields.Many2one("sale.order", required=True, ondelete="cascade")
     active = fields.Boolean(default=True)
-    # Archiviata perche' lo stesso prodotto e' a SI nel Caricamento Prodotti:
-    # torna attiva quando nel caricamento il prodotto non e' piu' a SI.
+    # Lo stesso prodotto e' a SI nel Caricamento Prodotti: prima della Conferma
+    # Modulo la riga e' archiviata, dopo e' forzata a SI e visibile.
     x_hidden_by_load = fields.Boolean(
         string="Nascosta dal caricamento", readonly=True, copy=False,
     )
