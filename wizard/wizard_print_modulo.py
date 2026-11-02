@@ -24,7 +24,7 @@ class PrintModuloWizard(models.TransientModel):
         default='module',
     )
     sort_desc = fields.Boolean(string="Decrescente")
-    print_supplier = fields.Boolean(string="Stampa colonna Fornitore")
+    print_supplier = fields.Boolean(string="Stampa Fornitore")
 
     def action_print(self):
         self.ensure_one()
@@ -48,8 +48,8 @@ class ReportSaleOrderLaserModulo(models.AbstractModel):
     def _get_report_values(self, docids, data=None):
         data = data or {}
         docids = docids or data.get('ids') or []
-        # Colonna Fornitore solo se richiesta dal wizard (spunta "Stampa
-        # colonna Fornitore") e solo per Sales Manager e Admin LAV: dal menu
+        # Fornitore sopra gli articoli solo se richiesto dal wizard (spunta
+        # "Stampa Fornitore") e solo per Sales Manager e Admin LAV: dal menu
         # Stampa e nel PDF allegato alla conferma del modulo non c'e' mai.
         user = self.env.user
         show_supplier = (

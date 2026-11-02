@@ -1529,6 +1529,27 @@ class SaleOrder(models.Model):
 
         return self.env['sale.order.x_load_line'].browse(line_ids)
 
+    def _get_modulo_supplier_headers(self, lines):
+        """Fornitore da stampare sopra gli articoli del Modulo Installazione:
+        {id riga: codice} per la prima riga di ogni gruppo di righe
+        consecutive con lo stesso fornitore (testo tra ## ## delle note). Una
+        Sezione fa ricominciare il gruppo; le righe senza codice non hanno
+        intestazione."""
+        headers = {}
+        previous = None
+
+        for line in lines:
+            if line.display_type:
+                previous = None
+                continue
+
+            code = line._get_supplier_note_code()
+            if code != previous and code:
+                headers[line.id] = code
+            previous = code
+
+        return headers
+
     def _generate_installation_module_pdf(self):
         self.ensure_one()
 
