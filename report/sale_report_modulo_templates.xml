@@ -90,7 +90,7 @@
                             <t t-foreach="modulo_lines" t-as="line">
                             <tr t-if="supplier_headers.get(line.id)" class="font-weight-bold x_modulo_supplier">
                                 <td name="td_supplier_header" colspan="99">
-                                    Fornitore: <span t-esc="supplier_headers[line.id]"/>
+                                    <span t-esc="supplier_headers[line.id]"/>
                                 </td>
                             </tr>
                             <tr t-att-class="'bg-200 font-weight-bold o_line_section' if line.display_type == 'line_section' else ''">
