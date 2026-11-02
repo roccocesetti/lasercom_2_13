@@ -82,7 +82,7 @@
                                 <th name="th_quantity" class="text-right bordo-inferiore">Quantità</th>
                                 <th name="th_config" class="text-right bordo-inferiore">Config.</th>
                                 <th name="th_height" class="text-right bordo-inferiore">LARG</th>
-                                <th name="th_length" class="text-right bordo-inferiore">PR</th>
+                                <th name="th_length" class="text-right bordo-inferiore">AL/PR</th>
                                 <th name="th_note" class="text-left bordo-inferiore">Note</th>
                             </tr>
                         </thead>
