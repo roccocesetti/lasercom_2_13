@@ -145,8 +145,8 @@ class ProductLoadLine(models.Model):
     product_uom_length = fields.Float(string="Lunghezza", default=0.0)
     product_uom_width = fields.Float(string="Larghezza", default=0.0)
     product_uom_qty = fields.Float(string="Quantità", default=1.0)
-    price_unit = fields.Float(string="Prezzo Unitario",digits='Product Price')
-    price_extra = fields.Float(string="Prezzo Extra",digits='Product Price')
+    price_unit = fields.Float(string="Prezzo Unitario", digits=(16, 5))
+    price_extra = fields.Float(string="Prezzo Extra", digits=(16, 5))
     supplier_id = fields.Many2one("res.partner", string="Fornitore", required=False)
     editable = fields.Boolean(string="Edit", default=True)
     # Nota riga (se serve anche per ogni prodotto)
@@ -757,18 +757,11 @@ class SaleOrder(models.Model):
             order._compute_amount_lav()
         return True
 
-    def _sync_deduction_with_load_lines(self, force_confirmed=False):
-        """Un prodotto messo a SI nel Caricamento Prodotti non va anche
-        sottratto: la riga corrispondente dei Prodotti in sottrazione viene
-        messa a NO e archiviata. Se nel caricamento il prodotto torna a NO (o
-        la riga viene tolta) la riga in sottrazione viene disarchiviata con
-        SI/NO vuoto, cosi' il venditore sceglie di nuovo.
-
-        Si disarchiviano solo le righe archiviate da questa regola
-        (x_hidden_by_load).
-
-        Con il modulo confermato (o in conferma, force_confirmed) le righe
-        corrispondenti vengono invece messe a SI e restano visibili."""
+    def _sync_deduction_with_load_lines(self):
+        """Al salvataggio e alla Conferma Modulo le righe in sottrazione dei
+        prodotti a SI nel Caricamento Prodotti vengono forzate a SI e marcate
+        (x_hidden_by_load): sono le sole visibili. Se il prodotto non e' piu'
+        a SI nel caricamento la riga torna con SI/NO vuoto."""
         for order in self.sudo():
             si_products = order.x_load_line_ids.filtered(
                 lambda l: l.etichetta_si == 'yes'
@@ -777,38 +770,9 @@ class SaleOrder(models.Model):
             ).mapped('product_id')
 
             deductions = order.with_context(active_test=False).x_load_line_deduction_ids
+            order._sync_deduction_si(deductions, si_products)
 
-            if force_confirmed or order.x_modulo_confermato:
-                order._sync_deduction_si_confirmed(deductions, si_products)
-                continue
-
-            to_hide = deductions.filtered(
-                lambda d: d.active and d.product_id and d.product_id in si_products
-            )
-            to_show = deductions.filtered(
-                lambda d: not d.active
-                          and d.x_hidden_by_load
-                          and d.product_id not in si_products
-            )
-
-            if to_hide:
-                to_hide.write({
-                    'active': False,
-                    'x_hidden_by_load': True,
-                    'etichetta_si': 'no',
-                })
-            if to_show:
-                to_show.write({
-                    'active': True,
-                    'x_hidden_by_load': False,
-                    'etichetta_si': False,
-                })
-
-    def _sync_deduction_si_confirmed(self, deductions, si_products):
-        """Modulo confermato: le righe in sottrazione dei prodotti a SI nel
-        caricamento vengono forzate a SI e marcate (x_hidden_by_load): sono le
-        sole visibili dopo la conferma. Se il prodotto non e' piu' a SI nel
-        caricamento la riga torna con SI/NO vuoto."""
+    def _sync_deduction_si(self, deductions, si_products):
         to_si = deductions.filtered(
             lambda d: d.product_id and d.product_id in si_products
                       and not (d.active and d.x_hidden_by_load
@@ -1235,6 +1199,11 @@ class SaleOrder(models.Model):
         if 'x_load_line_ids' in vals and not self.env.context.get('skip_unique_si_tag_check'):
             self._check_unique_si_per_tag_group_on_order()
 
+        # Al salvataggio dall'ordine anche gli ordini gia' esistenti
+        # allineano le sottrazioni al caricamento.
+        if not self.env.su:
+            self._sync_deduction_with_load_lines()
+
         for model, ids in touched.ids.items():
             self.env[model].browse(ids).exists()._check_si_qty_positive()
 
@@ -1333,7 +1302,7 @@ class SaleOrder(models.Model):
 
         # Le sottrazioni dei prodotti a SI nel caricamento vanno a SI; il
         # controllo della Qta vale anche per loro.
-        self._sync_deduction_with_load_lines(force_confirmed=True)
+        self._sync_deduction_with_load_lines()
         for order in self:
             order.x_load_line_deduction_ids._check_si_qty_positive()
 
@@ -1643,8 +1612,8 @@ class SaleOrderXLoadLine(models.Model):
     product_uom_length = fields.Float(string="AL/PR", default=0.0)
     product_uom_width = fields.Float(string="Prof", default=0.0)
     product_uom_qty = fields.Float(string="Qta", default=1.0)
-    price_unit = fields.Float(string="P.Unitario",digits='Product Price')
-    price_extra = fields.Float(string="P.Extra",digits='Product Price')
+    price_unit = fields.Float(string="P.Unitario", digits=(16, 5))
+    price_extra = fields.Float(string="P.Extra", digits=(16, 5))
     note = fields.Char(string="Nota")
     supplier_id = fields.Many2one("res.partner", string="For", required=False)
     default_code = fields.Char(related="product_id.default_code", string="Codice", readonly=True, store=False)
@@ -2156,8 +2125,8 @@ class SaleOrderXLoadLineDeduction(models.Model):
 
     order_id = fields.Many2one("sale.order", required=True, ondelete="cascade")
     active = fields.Boolean(default=True)
-    # Lo stesso prodotto e' a SI nel Caricamento Prodotti: prima della Conferma
-    # Modulo la riga e' archiviata, dopo e' forzata a SI e visibile.
+    # Lo stesso prodotto e' a SI nel Caricamento Prodotti: la riga e' forzata
+    # a SI ed e' visibile (le righe archiviate vengono dalla vecchia regola).
     x_hidden_by_load = fields.Boolean(
         string="Nascosta dal caricamento", readonly=True, copy=False,
     )
