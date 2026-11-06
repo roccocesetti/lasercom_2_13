@@ -46,7 +46,8 @@ class ImportLoadLinesWizard(models.TransientModel):
                     "product_uom_qty": ll.product_uom_qty,
                     "product_uom_height": ll.product_uom_height,
                     "product_uom_length": ll.product_uom_qty,
-                    "price_extra": ll.price_extra,
+                    # prezzo extra dal listino dell'ordine
+                    "price_extra": order._get_pricelist_extra(ll.product_id, ll.product_uom_qty),
                     "price_unit": price_unit,
                     "supplier_id": ll.supplier_id.id,
                     "note": ll.note,
