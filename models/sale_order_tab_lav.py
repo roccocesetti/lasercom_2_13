@@ -507,6 +507,22 @@ class SaleOrder(models.Model):
         self._sync_x_load_ids_from_order_lines()
         #self.action_apply_product_load()
 
+    def _get_pricelist_extra(self, product, qty=1.0):
+        """Prezzo extra (price_surcharge) della regola del listino dell'ordine
+        che si applica al prodotto; 0 senza regola o se la regola non e' di
+        tipo Formula."""
+        self.ensure_one()
+        if not product or not self.pricelist_id:
+            return 0.0
+        res = self.pricelist_id._compute_price_rule(
+            [(product, qty or 1.0, self.partner_id)],
+            date=self.date_order,
+        )
+        rule = self.env['product.pricelist.item'].browse(res[product.id][1])
+        if rule and rule.compute_price == 'formula':
+            return rule.price_surcharge or 0.0
+        return 0.0
+
     def _rebuild_x_load_lines_from_loads(self):
         for order in self:
             commands = [(5, 0, 0)]
@@ -568,7 +584,7 @@ class SaleOrder(models.Model):
                         "product_uom_width": ll.product_uom_width,
                         "product_uom_qty": 0.0 if ll.display_type else (ll.product_uom_qty or 0.0) * qta_multi,
                         "price_unit": 0.0 if ll.display_type else (ll.product_id.standard_price or 0.0),
-                        "price_extra": 0.0 if ll.display_type else ll.price_extra,
+                        "price_extra": 0.0 if ll.display_type else order._get_pricelist_extra(ll.product_id, ll.product_uom_qty),
                         "supplier_id": ll.supplier_id.id if ll.supplier_id and not ll.display_type else False,
                         "note": ll.note,
                     }))
@@ -699,10 +715,11 @@ class SaleOrder(models.Model):
                             "product_uom_width": ll.product_uom_width,
                             "product_uom_qty": 0.0 if ll.display_type else (ll.product_uom_qty or 0.0) * qty,
                             # Il prezzo unitario arriva sempre dal costo del
-                            # prodotto (standard_price), non dalla riga del
-                            # modulo di caricamento.
+                            # prodotto (standard_price) e il prezzo extra dal
+                            # listino dell'ordine, non dalla riga del modulo
+                            # di caricamento.
                             "price_unit": 0.0 if ll.display_type else (ll.product_id.standard_price or 0.0),
-                            "price_extra": 0.0 if ll.display_type else (ll.price_extra or 0.0),
+                            "price_extra": 0.0 if ll.display_type else order._get_pricelist_extra(ll.product_id, ll.product_uom_qty),
                             "supplier_id": ll.supplier_id.id if ll.supplier_id and not ll.display_type else False,
                             "editable": ll.editable,
                             "tipo_vetrina": ll.tipo_vetrina,
