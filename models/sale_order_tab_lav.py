@@ -508,9 +508,9 @@ class SaleOrder(models.Model):
         #self.action_apply_product_load()
 
     def _get_pricelist_extra(self, product, qty=1.0):
-        """Prezzo extra (price_surcharge) della regola del listino dell'ordine
-        che si applica al prodotto; 0 senza regola o se la regola non e' di
-        tipo Formula."""
+        """Prezzo extra del modulo: Prezzo fisso (fixed_price) della regola
+        del listino dell'ordine che si applica al prodotto; 0 senza regola o
+        se la regola non e' a prezzo fisso."""
         self.ensure_one()
         if not product or not self.pricelist_id:
             return 0.0
@@ -519,8 +519,8 @@ class SaleOrder(models.Model):
             date=self.date_order,
         )
         rule = self.env['product.pricelist.item'].browse(res[product.id][1])
-        if rule and rule.compute_price == 'formula':
-            return rule.price_surcharge or 0.0
+        if rule and rule.compute_price == 'fixed':
+            return rule.fixed_price or 0.0
         return 0.0
 
     def _rebuild_x_load_lines_from_loads(self):
