@@ -104,6 +104,11 @@
                                         <span t-if="line.product_id" t-esc="line.product_id.with_context(display_default_code=False).display_name"/>
                                         <span t-if="not line.product_id" t-field="line.name"/>
                                     </td>
+                                    <!-- Riga in bianco: solo il nome del prodotto. -->
+                                    <t t-if="line.tipo_vetrina == 'blank'">
+                                        <td name="td_blank" colspan="99"/>
+                                    </t>
+                                    <t t-else="">
                                     <td name="td_quantity" class="text-right">
                                         <span t-field="line.product_uom_qty"/>
                                     </td>
@@ -119,6 +124,7 @@
                                     <td name="td_note" class="text-left">
                                         <span t-field="line.note"/>
                                     </td>
+                                    </t>
                                 </t>
                             </tr>
                             </t>

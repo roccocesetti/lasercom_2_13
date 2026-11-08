@@ -1459,9 +1459,9 @@ class SaleOrder(models.Model):
     def _get_modulo_installazione_lines(self, sort_field=False, sort_desc=False):
         """
         Righe da stampare sul Modulo Installazione: le righe di caricamento
-        con SI e quantita' valorizzata (tranne le Righe in bianco, tipo
-        vetrina 'blank'), piu' le righe Sezione che le
-        contengono. Le sezioni senza righe da stampare vengono omesse.
+        con SI e quantita' valorizzata (delle Righe in bianco, tipo vetrina
+        'blank', si stampa solo il nome del prodotto), piu' le righe Sezione
+        che le contengono. Le sezioni senza righe da stampare vengono omesse.
 
         Con sort_field (uno dei _MODULO_SORT_FIELDS) le righe vengono
         ordinate su quel campo e le Sezioni non si stampano: l'ordinamento
@@ -1476,7 +1476,6 @@ class SaleOrder(models.Model):
                 lambda l: not l.display_type
                           and l.etichetta_si == 'yes'
                           and l.product_uom_qty
-                          and l.tipo_vetrina != 'blank'
             )
 
             def _key(line):
@@ -1506,8 +1505,7 @@ class SaleOrder(models.Model):
                 pending_section_id = line.id
                 continue
 
-            if (line.etichetta_si != 'yes' or not line.product_uom_qty
-                    or line.tipo_vetrina == 'blank'):
+            if line.etichetta_si != 'yes' or not line.product_uom_qty:
                 continue
 
             if pending_section_id:
@@ -1523,13 +1521,15 @@ class SaleOrder(models.Model):
         {id riga: codice} per la prima riga di ogni gruppo di righe
         consecutive con lo stesso fornitore (testo tra ## ## delle note). Una
         Sezione fa ricominciare il gruppo; le righe senza codice non hanno
-        intestazione."""
+        intestazione. Le Righe in bianco non contano."""
         headers = {}
         previous = None
 
         for line in lines:
             if line.display_type:
                 previous = None
+                continue
+            if line.tipo_vetrina == 'blank':
                 continue
 
             code = line._get_supplier_note_code()
