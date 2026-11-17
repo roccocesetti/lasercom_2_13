@@ -71,6 +71,8 @@
                 <h3>Modulo Installazione</h3>
 
                 <t t-set="modulo_lines" t-value="doc._get_modulo_installazione_lines(x_sort_field, x_sort_desc)"/>
+                <!-- Con il fornitore le righe si raggruppano per fornitore. -->
+                <t t-if="x_show_supplier" t-set="modulo_lines" t-value="doc._group_modulo_lines_by_supplier(modulo_lines)"/>
                 <!-- Fornitore (testo tra ## ## delle Note interne) sopra i suoi articoli. -->
                 <t t-set="supplier_headers" t-value="doc._get_modulo_supplier_headers(modulo_lines) if x_show_supplier else {}"/>
 

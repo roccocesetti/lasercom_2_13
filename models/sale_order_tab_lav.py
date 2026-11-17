@@ -1516,6 +1516,24 @@ class SaleOrder(models.Model):
 
         return self.env['sale.order.x_load_line'].browse(line_ids)
 
+    def _group_modulo_lines_by_supplier(self, lines):
+        """Stampa con il fornitore: righe raggruppate per fornitore (codice tra
+        ## ## delle note, in ordine alfabetico). Dentro ogni gruppo resta
+        l'ordine ricevuto; le Sezioni non si stampano. In fondo le righe
+        senza codice e poi le Righe in bianco."""
+        articles = lines.filtered(lambda l: not l.display_type)
+
+        def _key(line):
+            if line.tipo_vetrina == 'blank':
+                return (2, '')
+            code = line._get_supplier_note_code()
+            if not code:
+                return (1, '')
+            return (0, code.lower())
+
+        # sorted e' stabile: a parita' di fornitore resta l'ordine ricevuto.
+        return articles.sorted(key=_key)
+
     def _get_modulo_supplier_headers(self, lines):
         """Fornitore da stampare sopra gli articoli del Modulo Installazione:
         {id riga: codice} per la prima riga di ogni gruppo di righe
