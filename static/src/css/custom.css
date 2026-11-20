@@ -98,14 +98,14 @@
   margin-top: 70mm; /* da tarare in base a quanto è alto laser_doc_header */
 }
 
-/* Modulo Installazione: righe della tabella dettaglio il piu' compatte possibile.
-   Il selettore parte da table. per vincere sul padding di .table-sm di bootstrap
-   senza ricorrere a !important. */
+/* Modulo Installazione: righe della tabella dettaglio compatte, leggermente
+   distanziate. Il selettore parte da table. per vincere sul padding di
+   .table-sm di bootstrap senza ricorrere a !important. */
 table.x_modulo_table th,
 table.x_modulo_table td {
-    padding-top: 0;
-    padding-bottom: 0;
-    line-height: 1.1; /* alza questo valore se le righe risultano troppo strette */
+    padding-top: 2px;
+    padding-bottom: 2px;
+    line-height: 1.25; /* alza questo valore se le righe risultano troppo strette */
 }
 table.x_modulo_table p {
     margin-bottom: 0;

@@ -95,7 +95,8 @@
                                     <span t-esc="supplier_headers[line.id]"/>
                                 </td>
                             </tr>
-                            <tr t-att-class="'bg-200 font-weight-bold o_line_section' if line.display_type == 'line_section' else ''">
+                            <!-- Articoli principali (prodotto del contratto) in grassetto. -->
+                            <tr t-att-class="'bg-200 font-weight-bold o_line_section' if line.display_type == 'line_section' else ('font-weight-bold' if line._is_modulo_main_line() else '')">
                                 <t t-if="line.display_type == 'line_section'">
                                     <td name="td_section_line" colspan="99">
                                         <span t-field="line.name"/>

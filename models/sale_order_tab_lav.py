@@ -657,6 +657,13 @@ class SaleOrder(models.Model):
             if replace and order.x_load_line_ids:
                 order.x_load_line_ids.unlink()
 
+            # Con piu' distributori (moduli) nel contratto: dal secondo modulo
+            # le etichette prendono il suffisso _2, _3, ... e gli articoli del
+            # contratto non vanno a SI (a SI resta solo il prodotto principale).
+            multi_module = len(main_lines) > 1
+            module_index = 0
+            tag_cache = {}
+
             sequence = 10
             current_main_line = False
             current_generated_by_product = {}
@@ -671,6 +678,7 @@ class SaleOrder(models.Model):
                         _("La quantità del prodotto '%s' deve essere maggiore di zero.") % product.display_name)
 
                 if _is_main_line(so_line):
+                    module_index += 1
                     current_main_line = so_line
                     current_generated_by_product = {}
                     current_optional_counter = defaultdict(int)
@@ -726,7 +734,8 @@ class SaleOrder(models.Model):
                             "note": ll.note,
                             "x_lavorazione": ll.x_lavorazione,
                             "tag_true": ll.tag_true,
-                            "tag_ids": [(6, 0, ll.tag_ids.ids)],
+                            "tag_ids": [(6, 0, order._get_module_tags(
+                                ll.tag_ids, module_index, tag_cache).ids)],
                             "product_cassetti_slave": False
                         }
 
@@ -761,18 +770,37 @@ class SaleOrder(models.Model):
                 target_line = current_generated_by_product.get(product_key)
 
                 if target_line:
-                    target_line.write({
+                    target_vals = {
                         "product_uom_qty": (target_line.product_uom_qty or 0.0) * qty,
-                        "etichetta_si": "yes",
                         "tipo_vetrina": False,
                         "editable": True,
-                    })
+                    }
+                    if not multi_module:
+                        target_vals["etichetta_si"] = "yes"
+                    target_line.write(target_vals)
 
             order._apply_deduction_templates(replace=replace)
             order._sync_deduction_with_load_lines()
 
             order._compute_amount_lav()
         return True
+
+    def _get_module_tags(self, tags, module_index, cache=None):
+        """Etichette per il modulo numero module_index del contratto: il
+        primo usa quelle del caricamento, dal secondo si usa l'etichetta con
+        il suffisso _<numero> (es. VETRINA_2), creata se non esiste."""
+        if module_index <= 1 or not tags:
+            return tags
+        cache = {} if cache is None else cache
+        Tag = self.env['x.product.load.tag'].sudo().with_context(lang=False)
+        result = Tag.browse()
+        for tag in tags.with_context(lang=False):
+            name = '%s_%d' % (tag.name, module_index)
+            if name not in cache:
+                cache[name] = (Tag.search([('name', '=', name)], limit=1)
+                               or Tag.create({'name': name, 'color': tag.color}))
+            result |= cache[name]
+        return result
 
     def _sync_deduction_with_load_lines(self):
         """Al salvataggio e alla Conferma Modulo le righe in sottrazione dei
@@ -1518,14 +1546,12 @@ class SaleOrder(models.Model):
 
     def _group_modulo_lines_by_supplier(self, lines):
         """Stampa con il fornitore: righe raggruppate per fornitore (codice tra
-        ## ## delle note, in ordine alfabetico). Dentro ogni gruppo resta
-        l'ordine ricevuto; le Sezioni non si stampano. In fondo le righe
-        senza codice e poi le Righe in bianco."""
+        ## ## delle note, in ordine alfabetico), Righe in bianco comprese.
+        Dentro ogni gruppo resta l'ordine ricevuto; le Sezioni non si
+        stampano. In fondo le righe senza codice."""
         articles = lines.filtered(lambda l: not l.display_type)
 
         def _key(line):
-            if line.tipo_vetrina == 'blank':
-                return (2, '')
             code = line._get_supplier_note_code()
             if not code:
                 return (1, '')
@@ -1539,15 +1565,13 @@ class SaleOrder(models.Model):
         {id riga: codice} per la prima riga di ogni gruppo di righe
         consecutive con lo stesso fornitore (testo tra ## ## delle note). Una
         Sezione fa ricominciare il gruppo; le righe senza codice non hanno
-        intestazione. Le Righe in bianco non contano."""
+        intestazione. Le Righe in bianco contano come le altre."""
         headers = {}
         previous = None
 
         for line in lines:
             if line.display_type:
                 previous = None
-                continue
-            if line.tipo_vetrina == 'blank':
                 continue
 
             code = line._get_supplier_note_code()
@@ -1621,6 +1645,19 @@ class SaleOrderXLoadLine(models.Model):
                 line.product_updatable = False
             else:
                 line.product_updatable = True
+
+    def _is_modulo_main_line(self):
+        """Riga del prodotto principale del contratto (testata del modulo):
+        come in action_apply_product_load, il suo prodotto ha prodotti
+        opzionali e un modulo di caricamento."""
+        self.ensure_one()
+        template = self.product_id.product_tmpl_id
+        return bool(
+            not self.display_type
+            and template
+            and template.x_load_id
+            and getattr(template, 'optional_product_ids', False)
+        )
 
     def _get_supplier_note_code(self):
         """Testo da stampare nella colonna Fornitore del Modulo
